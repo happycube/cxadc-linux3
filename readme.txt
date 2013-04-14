@@ -12,7 +12,6 @@ Caveats:
 
 - Still need to mknod
 - Does not support runtime parameters
-- Eats 100% cpu during capture (interrupts don't work right yet)
 - Not tested (and probably doesn't work) under 64-bit
 
 - generally nowhere near linux coding standards

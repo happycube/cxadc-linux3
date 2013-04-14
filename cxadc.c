@@ -1,12 +1,10 @@
 /*
-    cxadc - cx2388x adc dma driver for linux 2.6.18
-    version 0.3
-    developed on Fedora Core 6
-
-    uname -a
-    Linux localhost.localdomain 2.6.18-1.2798.fc6 #1 SMP Mon Oct 16 14:54:20 EDT 2006 i686 i686 i386 GNU/Linux
+    cxadc - cx2388x adc dma driver for linux 3.x
+    version 0.4
 
     Copyright (c) 2005-2007 Hew How Chee <how_chee@yahoo.com>
+    Copyright (c) 2013 Chad Page <Chad.Page@gmail.com>
+ 
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,9 +30,9 @@ Output file    : cxadc.ko
 Create node    : mknod /dev/cxadc c 126 0 
 Install driver : insmod ./cxadc.ko
 
-Run 'cxcap' to capture raw data. See cxcap.c to info on how to compile cxcap
+read /dev/cxadc to get data
 
-Reference      : btaudio driver, mc4020 driver , cxadc driver v0.2
+Reference      : btaudio driver, mc4020 driver , cxadc driver v0.3
 */
 
 /* 'dmesg' log after insmod ./cxadc.ko   (Addresses/Numbers might be different)
@@ -422,7 +420,7 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 			len = (*offset % 4096) ? (*offset % 4096) : 4096;
 			if (len > count) len = count;
 
-			printk("do read rv %d count %d cur %d len %d pnum %d\n", rv, count, cx_read(CX_VBI_GP_CNT), len, pnum);
+	//		printk("do read rv %d count %d cur %d len %d pnum %d\n", rv, count, cx_read(CX_VBI_GP_CNT), len, pnum);
 			copy_to_user(tgt, ctd->pgvec_virt[pnum] + (*offset % 4096), len); 
 
 			count -= len;
@@ -432,12 +430,13 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 
 			pnum = (pnum + 1) % MAX_DMA_PAGE;
 		};
-		if (count && (file->f_flags & O_NONBLOCK)) return rv; 
 
-		set_current_state(TASK_INTERRUPTIBLE);
-		schedule_timeout(HZ/100);
-		//ctd->newpage=0;
-                //wait_event_interruptible(ctd->readQ,ctd->newpage);
+		if (count) {
+			if (file->f_flags & O_NONBLOCK) return rv; 
+
+			ctd->newpage=0;
+                	wait_event_interruptible(ctd->readQ,ctd->newpage);
+		}
 	};
 
 	return rv;
@@ -467,9 +466,8 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 	{
 		printk(KERN_INFO "cxadc : Interrupt stat 0x%x Masked 0x%x\n",allstat,ostat);
 	}
-	//printk("IRQ\n");	
 	//allstat=cx_read(CX_VID_INT_STAT);
-	printk("int cur %d\n", cx_read(CX_VBI_GP_CNT));
+//	printk("int cur %d\n", cx_read(CX_VBI_GP_CNT));
 
 	if(!astat)
 	{
