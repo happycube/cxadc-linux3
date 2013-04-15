@@ -14,10 +14,10 @@ INCLUDE	:= -I/usr/include/asm/mach-default/
 KDIR	:= /lib/modules/$(shell uname -r)/build
 PWD		:= $(shell pwd)
 
-clean::
-	$(MAKE) -C $(KDIR) $(INCLUDE) SUBDIRS=$(PWD) clean 
-
 all::
 	$(MAKE) -C $(KDIR) $(INCLUDE) SUBDIRS=$(PWD) modules
+
+clean::
+	$(MAKE) -C $(KDIR) $(INCLUDE) SUBDIRS=$(PWD) clean 
 	
 
