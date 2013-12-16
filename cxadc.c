@@ -138,8 +138,8 @@ cxadc: release
 
 /* ------------------------------------------------------------------------ */
 
-//32 Mbytes VBI DMA BUFF
-#define VBI_DMA_BUFF_SIZE (1024*1024*32) 
+//64 Mbytes VBI DMA BUFF
+#define VBI_DMA_BUFF_SIZE (1024*1024*64) 
 //corresponds to 8192 DMA pages of 4k bytes
 #define MAX_DMA_PAGE (VBI_DMA_BUFF_SIZE/PAGE_SIZE)
 
@@ -403,6 +403,7 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 	struct cxadc *ctd = file->private_data;
 	unsigned int rv = 0;
 	unsigned int pnum;
+	int gp_cnt;
 
 	//printk("read pos %ld cur %d len %d\n", *offset, cx_read(CX_VBI_GP_CNT), count);
 
@@ -410,25 +411,30 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 	pnum += ctd->initial_page;
 	pnum %= MAX_DMA_PAGE;
 
-	if ((pnum == cx_read(CX_VBI_GP_CNT)) && (file->f_flags & O_NONBLOCK)) return rv; 
+	gp_cnt = cx_read(CX_VBI_GP_CNT);
+	gp_cnt = (!gp_cnt) ? (MAX_DMA_PAGE - 1) : (gp_cnt - 1);
+
+	if ((pnum == gp_cnt) && (file->f_flags & O_NONBLOCK)) return rv; 
 
 	while (count) {
-		while ((count > 0) && (pnum != cx_read(CX_VBI_GP_CNT))) {
+		while ((count > 0) && (pnum != gp_cnt)) {
 			unsigned len;
 
 			// handle partial pages for either reason 
 			len = (*offset % 4096) ? (*offset % 4096) : 4096;
 			if (len > count) len = count;
 
-	//		printk("do read rv %d count %d cur %d len %d pnum %d\n", rv, count, cx_read(CX_VBI_GP_CNT), len, pnum);
+		//	if (len != 4096) printk("do read rv %d count %d cur %d len %d pnum %d\n", rv, count, cx_read(CX_VBI_GP_CNT), len, pnum);
 			copy_to_user(tgt, ctd->pgvec_virt[pnum] + (*offset % 4096), len); 
 
 			count -= len;
 			tgt += len;
 			*offset += len;	
 			rv += len;
-
-			pnum = (pnum + 1) % MAX_DMA_PAGE;
+			
+			pnum = (*offset % VBI_DMA_BUFF_SIZE) / PAGE_SIZE;
+			pnum += ctd->initial_page;
+			pnum %= MAX_DMA_PAGE;
 		};
 
 		if (count) {
@@ -436,6 +442,9 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 
 			ctd->newpage=0;
                 	wait_event_interruptible(ctd->readQ,ctd->newpage);
+	
+			gp_cnt = cx_read(CX_VBI_GP_CNT);
+			gp_cnt = (!gp_cnt) ? (MAX_DMA_PAGE - 1) : (gp_cnt - 1);
 		}
 	};
 
@@ -747,7 +756,8 @@ static int __devinit cxadc_probe(struct pci_dev *pci_dev,
 			
 	cx_write((0<<27)|(0<<26) |(1<<25)| (0x100<<16) |(0xfff<<0),   0x310200);
 //	cx_write((0<<23)|(1<<22)|(1<<21)|(0x1f<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
-	cx_write((1<<23)|(1<<22)|(1<<21)|(0x1f<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
+//	cx_write((1<<23)|(1<<22)|(1<<21)|(0x1f<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
+	cx_write((1<<23)|(0<<22)|(0<<21)|(0x0f<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
 	cx_write((0x1c0<<17)|(0x0<<9)|(1<<7)|(0xf<<0),0x310208);
 	cx_write((0x20<<17)|(0x0<<9)|(1<<7)|(0x3f<<0),0x31020c);
 // for 'cooked' composite
