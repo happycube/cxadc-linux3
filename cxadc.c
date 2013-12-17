@@ -743,10 +743,10 @@ static int __devinit cxadc_probe(struct pci_dev *pci_dev,
 
 //	cx_write(0x20000,0x31016C);
 //  cx_write(0x11000000,CX_PLL_REG);//set PLL to 1:1
-//  cx_write(0x01400000,CX_PLL_REG);//set PLL to 1.25x/10fsc 
-  cx_write(0x01000000,CX_PLL_REG);//set PLL to 8xfsc 
-  cx_write(131072,0x310170);//set SRC to 8xfsc 
-//  cx_write(131072*3/4,0x310170);//set SRC to 1.25x/10fsc  
+  cx_write(0x01400000,CX_PLL_REG);//set PLL to 1.25x/10fsc 
+//  cx_write(0x01000000,CX_PLL_REG);//set PLL to 8xfsc 
+//  cx_write(131072,0x310170);//set SRC to 8xfsc 
+  cx_write(131072*4/5,0x310170);//set SRC to 1.25x/10fsc  
 
 	//set audio multiplexer
 	
