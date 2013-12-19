@@ -1,18 +1,20 @@
 
-Notes for Linux 3.5 version 0.1 (cxadc 0.4) 15 Apr 2013
-=======================================================
+Notes for Linux 3.x version 0.2 (cxadc 0.4+) 18 Dec 2013
+========================================================
 
-This version has been retargeted for ubuntu 12.04 on 32-bit x86 running Linux 3.5.
+This version has been retargeted for ubuntu 13.10 Linux 3.11.
 
 While still a mess, the driver has been simplified a bit.  Data is now read
-using standard read() semantics, no capture program is needed like the original 
+using standard read() semantics, so no capture program is needed like the original 
 version.
+
+For the first time, it also runs on 64-bit Linux, and *seems* to be OK under 
+SMP.
 
 Caveats:
 
 - Still need to mknod
-- Does not support runtime parameters
-- Not tested (and probably doesn't work) under 64-bit
+- Does not support runtime parameters yet
 
 - generally nowhere near linux coding standards
 
