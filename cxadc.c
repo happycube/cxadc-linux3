@@ -323,7 +323,7 @@ static int make_risc_instructions(struct cxadc *ctd)//,unsigned int cl_size,unsi
 	int irqt;
 	unsigned int loop_addr;
 	unsigned int dma_addr;
-	long *pp=(long *)ctd->risc_inst_virt;
+	unsigned int *pp=(unsigned int *)ctd->risc_inst_virt;
 
 	loop_addr=ctd->risc_inst_phy+4;
 	
@@ -757,7 +757,7 @@ static int __devinit cxadc_probe(struct pci_dev *pci_dev,
 	cx_write((0<<27)|(0<<26) |(1<<25)| (0x100<<16) |(0xfff<<0),   0x310200);
 //	cx_write((0<<23)|(1<<22)|(1<<21)|(0x1f<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
 //	cx_write((1<<23)|(1<<22)|(1<<21)|(0x1f<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
-	cx_write((1<<23)|(0<<22)|(0<<21)|(0x0f<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
+	cx_write((1<<23)|(0<<22)|(0<<21)|(0x10<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
 	cx_write((0x1c0<<17)|(0x0<<9)|(1<<7)|(0xf<<0),0x310208);
 	cx_write((0x20<<17)|(0x0<<9)|(1<<7)|(0x3f<<0),0x31020c);
 // for 'cooked' composite
