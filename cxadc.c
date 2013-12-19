@@ -521,22 +521,17 @@ static int latency = -1;
 static int audsel=2;
 static int vmux=2;
 
-static int __devinit cxadc_probe(struct pci_dev *pci_dev,
+static int cxadc_probe(struct pci_dev *pci_dev,
 				   const struct pci_device_id *pci_id)
 {
-//	int risc_res;
 	u32 i;
-//	char buffer[256];
 	struct cxadc *ctd;
-//	void *testmalloc;
 	unsigned char revision,lat;
 	int rc;
 	unsigned int total_size;
 	u64 startaddr,pcilen;
 	unsigned int pgsize;
-//printk("cxadc: sizeof(long)=%d sizeof(int)=%d sizeof(long int)=%d\n",sizeof(long),sizeof(int),sizeof(long int));	
-//printk("cxadc: no of write needed %d no of risc page %d\n",NUMBER_OF_WRITE_NEEDED,NUMBER_OF_RISC_PAGE);
-	
+
 	if( PAGE_SIZE!=4096)
 	{
 		printk(KERN_ERR "cxadc: only page size of 4096 is supported\n");
@@ -818,7 +813,7 @@ static int __devinit cxadc_probe(struct pci_dev *pci_dev,
 	return rc;
 }
 
-static void __devexit cxadc_remove(struct pci_dev *pci_dev)
+static void cxadc_remove(struct pci_dev *pci_dev)
 {
 	struct cxadc *ctd = pci_get_drvdata(pci_dev);
 	struct cxadc *walk;
@@ -861,22 +856,24 @@ static void __devexit cxadc_remove(struct pci_dev *pci_dev)
 	return;
 }
 
+MODULE_DEVICE_TABLE(pci, cxadc_pci_tbl);
+
 /* -------------------------------------------------------------- */
 static struct pci_driver cxadc_pci_driver = {
         .name     = "cxadc",
         .id_table = cxadc_pci_tbl,
         .probe    = cxadc_probe,
-        .remove   = __devexit_p(cxadc_remove),
+        .remove   = cxadc_remove,
 };
 
-static int cxadc_init_module(void)
+static int __init cxadc_init_module(void)
 {
 	int rv = pci_register_driver(&cxadc_pci_driver);
 
 	return rv;
 }
 
-static void cxadc_cleanup_module(void)
+static void __exit cxadc_cleanup_module(void)
 {
 	pci_unregister_driver(&cxadc_pci_driver);
 	return;
@@ -892,7 +889,6 @@ module_param(vmux, int, 0644);
 //vmux=2 is taken from 2nd IF (after hardware mod)
 //vmux=1 is taken from video in
 
-MODULE_DEVICE_TABLE(pci, cxadc_pci_tbl);
 MODULE_DESCRIPTION("cx2388xx adc driver");
 MODULE_AUTHOR("Hew How Chee");
 MODULE_LICENSE("GPL");
