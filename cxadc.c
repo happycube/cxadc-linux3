@@ -451,9 +451,31 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 	return rv;
 }
 
+static long cxadc_char_ioctl(struct file *file,
+                               unsigned int cmd, unsigned long arg)
+{
+        struct cxadc *ctd = file->private_data;
+	int ret=0;
+
+	if (cmd == 0x12345670) {
+		int gain = arg;
+
+		if (gain < 0) gain = 0;
+		if (gain > 31) gain = 31;
+		cx_write((1<<23)|(0<<22)|(0<<21)|(gain<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
+	}
+
+	if (cmd == 0x12345670) {
+
+	}
+
+	return ret;
+}
+
 static struct file_operations cxadc_char_fops = {
 	.owner    = THIS_MODULE,
 	.llseek   = no_llseek,
+	.unlocked_ioctl = cxadc_char_ioctl,
 	.open     = cxadc_char_open,
 	.release  = cxadc_char_release,
 	.read     = cxadc_char_read,
@@ -752,7 +774,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	cx_write((0<<27)|(0<<26) |(1<<25)| (0x100<<16) |(0xfff<<0),   0x310200);
 //	cx_write((0<<23)|(1<<22)|(1<<21)|(0x1f<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
 //	cx_write((1<<23)|(1<<22)|(1<<21)|(0x1f<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
-	cx_write((1<<23)|(0<<22)|(0<<21)|(0x10<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
+	cx_write((1<<23)|(0<<22)|(0<<21)|(0x17<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
 	cx_write((0x1c0<<17)|(0x0<<9)|(1<<7)|(0xf<<0),0x310208);
 	cx_write((0x20<<17)|(0x0<<9)|(1<<7)|(0x3f<<0),0x31020c);
 // for 'cooked' composite
