@@ -902,6 +902,8 @@ module_param(latency, int, 0644);
 module_param(audsel, int, 0644);
 module_param(vmux, int, 0644);
 module_param(level, int, 0644);
+module_param(tenbit, int, 0644);
+module_param(tenxfsc, int, 0644);
 
 //audsel=2 is taken from tuner stereo out ?
 //vmux=2 is taken from 2nd IF (after hardware mod)
