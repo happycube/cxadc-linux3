@@ -2,14 +2,26 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <string.h>
 
 // this needs to be one over the ring buffer size to work
-const int bufsize = 1024*1024*65;
+#define bufsize (1024*1024*65)
 unsigned char buf[bufsize];
 
 int readlen = 256 * 1024;
 
-int main(void)
+void set_level(int level) 
+{
+	int fd = open("/sys/module/cxadc/parameters/level", O_WRONLY);
+	char str[512];
+
+	sprintf(str, "%d", level); 
+	write(fd, str, strlen(str) + 1);
+
+	close(fd);
+}
+
+int main(int argc, char *argv[])
 {
 	int fd;
 	int level = 0x10;
@@ -20,18 +32,26 @@ int main(void)
 		fprintf(stderr, "nope.\n");
 		return -1;
 	}
+	close(fd);
+
+	if (argc >= 2) {
+		level = atoi(argv[1]);
+
+		set_level(level);
+		return 0;
+	}
 
 	while (go_on) {
 		int over = 0;
 		unsigned char low = 255, high = 0;
-		ioctl(fd, 0x12345670, level); 
+		set_level(level);
+	
+		fd = open("/dev/cxadc", O_RDWR);
 
 		printf("testing level %x\n", level);
 
-		// dump cache
-		read(fd, buf, bufsize);
-	
 		// read a bit
+		read(fd, buf, (1024 * 1024) * 4);
 		read(fd, buf, readlen);	
 		for (int i = 0; i < readlen && !over; i++) {
 			if (buf[i] < low) low = buf[i]; 
@@ -54,9 +74,8 @@ int main(void)
 		else if (go_on == 2) level--;
 
 		if ((level < 0) || (level > 0x1f)) go_on = 0;
+		close(fd);
 	}
-
-	close(fd);
 
 	return 0;
 }

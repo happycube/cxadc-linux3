@@ -1,11 +1,10 @@
 /*
     cxadc - cx2388x adc dma driver for linux 3.x
-    version 0.4
+    version 0.5
 
     Copyright (c) 2005-2007 Hew How Chee <how_chee@yahoo.com>
-    Copyright (c) 2013 Chad Page <Chad.Page@gmail.com>
+    Copyright (c) 2013-2015 Chad Page <Chad.Page@gmail.com>
  
-
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
@@ -49,13 +48,11 @@ cxadc: dev 0x8800 (rev 5) at 02:0b.0, cxadc: irq: 11, latency: 255, mmio: 0xfd00
 cxadc: char dev register ok
 cxadc: audsel = 2
 
-
 */
 
 /* dmesg log after running cxcap to capture data 
    note that once cxadc driver is loaded, DMA is always running
    to stop driver use 'rmmod cxadc'
-
  
 cxadc: open [0] private_data c7aa0000
 cxadc: vm end b7f8b000 vm start b5f8b000  size 2000000
@@ -75,13 +72,11 @@ cxadc: release
               - added vmux and audsel as parms during driver loading
                 (for 2nd IF hardware modification, load driver using vmux=2 )
                 By default audsel=2 is to route tv tuner audio signal to
-                audio out of TV card, vmux=1 use the signal from video in of tv card.
-                      
+                audio out of TV card, vmux=1 use the signal from video in of tv card
+                     
   Feb-Mac 2007 - change code to compile and run in kernel 2.6.18		
                - clean up mess in version 0.2 code
                - it still a mess in this code
-  
-
 */
 
 #include <linux/cdev.h>
@@ -97,6 +92,11 @@ cxadc: release
 #include <linux/fs.h>
 #include <linux/mm.h>
 
+static int debug = 0;
+static int level = 16;
+static int tenbit = 0;
+static int tenxfsc = 0;
+
 #define cx_read(adr)         readl(ctd->mmio+((adr)>>2))
 #define cx_write(dat,adr)    writel((dat),(ctd->mmio+((adr)>>2)))
 
@@ -107,8 +107,8 @@ cxadc: release
 
 /* ------------------------------------------------------------------------- */
 /* CX registers                                                              */
-#define CX_PLL_REG            0x310168 //PLL register
-#define CX_SAMP_RATE_CONV_REG 0x310170 //sample rate conversion register
+#define CX_PLL_REG              0x310168 //PLL register
+#define CX_SAMP_RATE_CONV_REG   0x310170 //sample rate conversion register
 #define CX_DEV_CNTRL2       	0x200034 //  Device control
 #define CX_VID_INT_STAT     	0x200054 //  Video interrupt status
 #define CX_DMA24_PTR1       	0x30008C //  DMA Current Ptr : Ch#24_ir
@@ -360,11 +360,11 @@ static int make_risc_instructions(struct cxadc *ctd)//,unsigned int cl_size,unsi
 	*pp++=0xffffffff;
 	//test
 #endif	
-//1<<24 = irq , 11<<16 = cnt
+	//1<<24 = irq , 11<<16 = cnt
 	*pp++=RISC_JUMP|(0<<24)|(0<<16); //interrupt and increment counter
 	*pp++=loop_addr;
 	
-	printk("cxadc: end of risc inst 0x%p total size %d kbyte\n",pp,((void *)pp-(void *)ctd->risc_inst_virt)/1024);
+	printk("cxadc: end of risc inst 0x%p total size %ld kbyte\n",pp,((void *)pp-(void *)ctd->risc_inst_virt)/1024);
 	return 0;
 }
 
@@ -379,11 +379,30 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	if (NULL == ctd)
 		return -ENODEV;
 
-	//if (debug)
+	if (debug)
 		printk("cxadc: open [%d] private_data %p\n",minor,ctd);
+
+	// reset the level in case userspace changes the param
+	if (level < 0) level = 0;	
+	if (level > 31) level = 31;	
+	cx_write((1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
+
+	// set higher clock rate	
+	if (tenxfsc) {
+		cx_write(131072*4/5,0x310170);//set SRC to 1.25x/10fsc  
+	} else {
+		cx_write(131072,0x310170);//set SRC to 8xfsc 
+	}
+		
+	if (tenbit) {
+		cx_write(((1<<6)|(3<<1)|(1<<5)),0x310180); //capture 16 bit raw
+	} else {
+		cx_write(((1<<6)|(3<<1)|(0<<5)),0x310180); //capture 8 bit raw
+	}
+
 	file->private_data = ctd;
 
-	ctd->initial_page = cx_read(CX_VBI_GP_CNT);
+	ctd->initial_page = cx_read(CX_VBI_GP_CNT) - 1;
 	cx_write(1,CX_PCI_INT_MSK); //enable interrupt
 
 	return 0;
@@ -394,7 +413,10 @@ static int cxadc_char_release(struct inode *inode, struct file *file)
 	struct cxadc *ctd = file->private_data;
 
 	cx_write(0,CX_PCI_INT_MSK);
-	printk("cxadc: release\n");
+
+	if (debug)
+		printk("cxadc: release\n");
+
 	return 0;
 }
 
@@ -413,6 +435,8 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 
 	gp_cnt = cx_read(CX_VBI_GP_CNT);
 	gp_cnt = (!gp_cnt) ? (MAX_DMA_PAGE - 1) : (gp_cnt - 1);
+
+	printk("read pos %ld cur %d len %d pnum %d gp_cnt %d\n", *offset, cx_read(CX_VBI_GP_CNT), count, pnum, gp_cnt);
 
 	if ((pnum == gp_cnt) && (file->f_flags & O_NONBLOCK)) return rv; 
 
@@ -465,10 +489,6 @@ static long cxadc_char_ioctl(struct file *file,
 		cx_write((1<<23)|(0<<22)|(0<<21)|(gain<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
 	}
 
-	if (cmd == 0x12345670) {
-
-	}
-
 	return ret;
 }
 
@@ -486,33 +506,23 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 	int count = 0;
 	u32 stat,astat,ostat,allstat;
 	struct cxadc *ctd = dev_id;
-	int handled = 0;
 	
-	allstat=cx_read(CX_VID_INT_STAT);
-	stat=cx_read(CX_VID_INT_MSK);
-	astat=stat & allstat;
-	ostat=astat;
+	allstat = cx_read(CX_VID_INT_STAT);
+	stat  = cx_read(CX_VID_INT_MSK);
+	astat = stat & allstat;
+	ostat = astat;
 
-	if(ostat!=8 && allstat!=0 && ostat!=0)
-	{
+	if (ostat!=8 && allstat!=0 && ostat!=0) {
 		printk(KERN_INFO "cxadc : Interrupt stat 0x%x Masked 0x%x\n",allstat,ostat);
 	}
-	//allstat=cx_read(CX_VID_INT_STAT);
-//	printk("int cur %d\n", cx_read(CX_VBI_GP_CNT));
 
-	if(!astat)
-	{
-//		printk(KERN_INFO "cxadc : IRQ not handled\n");
-		 return IRQ_RETVAL(handled); //if no interrupt bit set we return
+	if (!astat) {
+		 return IRQ_RETVAL(0); //if no interrupt bit set we return
 	}	
 
-	handled=1;
-	for(count=0;count<20;count++)
-	{
-		if(astat&1)
-		{
-			if(count==3)
-			{
+	for (count = 0; count < 20; count++) {
+		if (astat&1) {
+			if(count==3) {
 //				unsigned int uu=cx_read(0x310220);
 //				printk("%8.8x %x %x %x %x\n",
 //			uu,uu>>16,(uu>>16)&0x1f,(uu>>8)&0xff,uu&0xff);
@@ -527,12 +537,8 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 		astat>>=1;
 	}
 	cx_write(ostat,CX_VID_INT_STAT);
-	/*if(allstat&(~ostat))
-	{
-		printk("IRQ additional %x\n",allstat);
-	}*/
 	
-	return IRQ_RETVAL(handled);
+	return IRQ_RETVAL(1);
 }
 
 /* -------------------------------------------------------------- */
@@ -554,18 +560,17 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	u64 startaddr,pcilen;
 	unsigned int pgsize;
 
-	if( PAGE_SIZE!=4096)
+	if (PAGE_SIZE != 4096)
 	{
 		printk(KERN_ERR "cxadc: only page size of 4096 is supported\n");
 		return -EIO;
-
 	}
+
 	if (CXADC_MAX == cxcount)
 	{
 		printk(KERN_ERR "cxadc: only 1 card is supported\n");
 		return -EBUSY;
 	}
-
 
 	if (pci_enable_device(pci_dev))
 	{
@@ -579,8 +584,6 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		printk(KERN_ERR "cxadc: request memory region failed\n");
 		return -EBUSY;
 	}
-//	printk(KERN_INFO "cxadc: mem addr 0x%lx size 0x%x\n",startaddr,pcilen);
-	
 	
 	ctd = kmalloc(sizeof(*ctd),GFP_ATOMIC);
 	if (!ctd) {
@@ -590,8 +593,8 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	}
 	memset(ctd,0,sizeof(*ctd));
 
-	ctd->pci  = pci_dev;
-	ctd->irq  = pci_dev->irq;
+	ctd->pci = pci_dev;
+	ctd->irq = pci_dev->irq;
 	
 	if (alloc_risc_inst_buffer(ctd))
 	{
@@ -600,8 +603,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		goto fail1;
 	}	
 	
-	for (i=0;i<(MAX_DMA_PAGE+1);i++)
-	{
+	for (i = 0; i < (MAX_DMA_PAGE+1); i++) {
 		ctd->pgvec_virt[i]=0;
 		ctd->pgvec_phy[i]=0;
 	}
@@ -609,18 +611,12 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	total_size=0;
 	pgsize=4096;
 	
-	for(i=0;i<MAX_DMA_PAGE;i++)
-	{
+	for (i=0; i<MAX_DMA_PAGE; i++) {
 		dma_addr_t dma_handle;
 
 		ctd->pgvec_virt[i]=(void*)dma_alloc_coherent(&ctd->pci->dev,4096,&dma_handle,GFP_KERNEL);
-		if(ctd->pgvec_virt[i]!=0)
-		{
+		if(ctd->pgvec_virt[i]!=0) {
 			ctd->pgvec_phy[i]=dma_handle;
-//if(i<100)
-//{
-//	printk("dma addr %x virtual pgvec %x page =%x cnt=%d\n",ctd->pgvec_phy[i],ctd->pgvec_virt[i],virt_to_page (ctd->pgvec_virt[i]),virt_to_page (ctd->pgvec_virt[i])->_count);
-//}
 			total_size+=pgsize;
  		} else {	
 			printk("cxadc: alloc dma buffer failed. index = %d\n",i);
@@ -635,28 +631,17 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 
 	make_risc_instructions(ctd);
 	
-	//ctd->pci  = pci_dev;
-	//ctd->irq  = pci_dev->irq;
-	printk("cxadc: IRQ used %d\n",ctd->irq);
+//	printk("cxadc: IRQ used %d\n",ctd->irq);
 	ctd->mem  = pci_resource_start(pci_dev,0);
 	
 	ctd->mmio = ioremap(pci_resource_start(pci_dev,0),
 			    pci_resource_len(pci_dev,0));
 	printk("cxadc: MEM :%x MMIO :%p\n",ctd->mem,ctd->mmio);
-	//ctd->source     = 1;
-	//ctd->bits       = 8;
-	//ctd->channels   = 1;
-	//printk("btprobe3\n");
-	/* sample rate */
-	//ctd->rate = card->rate;
-	//if (rate[cxcount])
 
 //	ctd->rate = rate[cxcount];
 	
 	mutex_init(&ctd->lock);
-        //init_waitqueue_head(&ctd->readq);
 	init_waitqueue_head(&ctd->readQ);
-//	printk("cxadc: init waitq %x\n",ctd->readQ);
 
 	if (-1 != latency) {
 		printk(KERN_INFO "cxadc: setting pci latency timer to %d\n",
@@ -719,7 +704,12 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		
 		//raw mode & byte swap <<8 (3<<8=swap)
 		cx_write( ((0xe)|(0xe<<4)|(0<<8)) , 0x310184);
-		cx_write(((1<<6)|(3<<1)|(1<<0)),0x310180); //capture 8 bit raw
+
+		if (tenbit) {
+			cx_write(((1<<6)|(3<<1)|(1<<5)),0x310180); //capture 16 bit raw
+		} else {
+			cx_write(((1<<6)|(3<<1)|(0<<5)),0x310180); //capture 8 bit raw
+		}
 		//cx_write(((1<<6)|(3<<1)|(1<<5)),0x310180); //capture 16 bit raw
 //		cx_write(((1<<6)),0x310180);
 		//run risc
@@ -761,20 +751,25 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 //	cx_write(0x20000,0x31016C);
 //  cx_write(0x11000000,CX_PLL_REG);//set PLL to 1:1
 //  cx_write(0x01400000,CX_PLL_REG);//set PLL to 1.25x/10fsc 
-  cx_write(0x01000000,CX_PLL_REG);//set PLL to 8xfsc 
-  cx_write(131072,0x310170);//set SRC to 8xfsc 
-//  cx_write(131072*4/5,0x310170);//set SRC to 1.25x/10fsc  
+	cx_write(0x01000000,CX_PLL_REG);//set PLL to 8xfsc 
+
+	if (tenxfsc) {
+		cx_write(131072*4/5,0x310170);//set SRC to 1.25x/10fsc  
+	} else {
+		cx_write(131072,0x310170);//set SRC to 8xfsc 
+	}
 
 	//set audio multiplexer
 	
 	//set vbi agc
 //	cx_write((0<<21)|(0<<20)|(0<<19)|(4<<16)|(0x60<<8)|(0x1c<<0),0x310204);
 	cx_write(0x0,0x310204);
+	
+	if (level < 0) level = 0;	
+	if (level > 31) level = 31;	
 			
 	cx_write((0<<27)|(0<<26) |(1<<25)| (0x100<<16) |(0xfff<<0),   0x310200);
-//	cx_write((0<<23)|(1<<22)|(1<<21)|(0x1f<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
-//	cx_write((1<<23)|(1<<22)|(1<<21)|(0x1f<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
-	cx_write((1<<23)|(0<<22)|(0<<21)|(0x17<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
+	cx_write((1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
 	cx_write((0x1c0<<17)|(0x0<<9)|(1<<7)|(0xf<<0),0x310208);
 	cx_write((0x20<<17)|(0x0<<9)|(1<<7)|(0x3f<<0),0x31020c);
 // for 'cooked' composite
@@ -850,14 +845,14 @@ static void cxadc_remove(struct pci_dev *pci_dev)
 	/* free resources */
 	free_risc_inst_buffer(ctd);
         free_irq(ctd->irq,ctd);
-	printk("cxadc: irq freed\n");
+//	printk("cxadc: irq freed\n");
 	free_dma_buffer(ctd);
-	printk("cxadc: dma page freed\n");
+//	printk("cxadc: dma page freed\n");
 //	printk("cxadc: try release mem region\n");
 	iounmap(ctd->mmio);
 	release_mem_region(pci_resource_start(pci_dev,0),
 			   pci_resource_len(pci_dev,0));
-	printk("cxadc: release mem region ok\n");
+//	printk("cxadc: release mem region ok\n");
 
 	/* remove from linked list */
 	if (ctd == cxadcs) {
@@ -874,7 +869,6 @@ static void cxadc_remove(struct pci_dev *pci_dev)
 	printk("cxadc: reset drv ok\n");
 	kfree(ctd);
 
-	printk("cxadc: end\n");
 	return;
 }
 
@@ -907,6 +901,8 @@ module_exit(cxadc_cleanup_module);
 module_param(latency, int, 0644);
 module_param(audsel, int, 0644);
 module_param(vmux, int, 0644);
+module_param(level, int, 0644);
+
 //audsel=2 is taken from tuner stereo out ?
 //vmux=2 is taken from 2nd IF (after hardware mod)
 //vmux=1 is taken from video in
