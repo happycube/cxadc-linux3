@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 	
 		fd = open("/dev/cxadc", O_RDWR);
 
-		printf("testing level %x\n", level);
+		printf("testing level %d\n", level);
 
 		// read a bit
 		read(fd, buf, (1024 * 1024) * 4);
