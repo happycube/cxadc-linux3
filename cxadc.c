@@ -382,7 +382,8 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	if (debug)
 		printk("cxadc: open [%d] private_data %p\n",minor,ctd);
 
-	// reset the level in case userspace changes the param
+	// re-set the level, clock speed, and bit size
+
 	if (level < 0) level = 0;	
 	if (level > 31) level = 31;	
 	cx_write((1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16

@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <string.h>
+#include <getopt.h>
 
 // this needs to be one over the ring buffer size to work
 #define bufsize (1024*1024*65)
@@ -10,10 +11,11 @@ unsigned char buf[bufsize];
 
 int readlen = 256 * 1024;
 
-void set_level(int level) 
+void set(char *name, int level) 
 {
-	int fd = open("/sys/module/cxadc/parameters/level", O_WRONLY);
 	char str[512];
+	sprintf(str, "/sys/module/cxadc/parameters/%s", name); 
+	int fd = open(str, O_WRONLY);
 
 	sprintf(str, "%d", level); 
 	write(fd, str, strlen(str) + 1);
@@ -34,17 +36,37 @@ int main(int argc, char *argv[])
 	}
 	close(fd);
 
-	if (argc >= 2) {
-		level = atoi(argv[1]);
+	int tenbit  = 0;
+	int tenxfsc = 0;  
 
-		set_level(level);
+	int c;
+        opterr = 0;
+
+        while ((c = getopt(argc, argv, "bx")) != -1) {
+		switch (c) {
+			case 'b':
+				tenbit = 1;
+				break;	
+			case 'x':
+				tenxfsc = 1;
+				break;	
+		}; 
+	}
+		
+	set("tenbit", tenbit);
+	set("tenxfsc", tenxfsc);
+
+	if (argc > optind) {
+		level = atoi(argv[optind]);
+
+		set("level", level);
 		return 0;
 	}
 
 	while (go_on) {
 		int over = 0;
-		unsigned char low = 255, high = 0;
-		set_level(level);
+		unsigned int low = tenbit ? 65535 : 255, high = 0;
+		set("level", level);
 	
 		fd = open("/dev/cxadc", O_RDWR);
 
@@ -53,12 +75,25 @@ int main(int argc, char *argv[])
 		// read a bit
 		read(fd, buf, (1024 * 1024) * 4);
 		read(fd, buf, readlen);	
-		for (int i = 0; i < readlen && !over; i++) {
-			if (buf[i] < low) low = buf[i]; 
-			if (buf[i] > high) high = buf[i]; 
 
-			if ((buf[i] < 0x08) || (buf[i] > 0xf8)) {
-				over = 1;
+		if (tenbit) {
+			unsigned short *wbuf = buf;
+			for (int i = 0; i < (readlen / 2) && !over; i++) {
+				if (wbuf[i] < low) low = wbuf[i]; 
+				if (wbuf[i] > high) high = wbuf[i]; 
+
+				if ((wbuf[i] < 0x0800) || (wbuf[i] > 0xf800)) {
+					over = 1;
+				}
+			}
+		} else {
+			for (int i = 0; i < readlen && !over; i++) {
+				if (buf[i] < low) low = buf[i]; 
+				if (buf[i] > high) high = buf[i]; 
+
+				if ((buf[i] < 0x08) || (buf[i] > 0xf8)) {
+					over = 1;
+				}
 			}
 		}
 
