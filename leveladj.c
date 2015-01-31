@@ -4,6 +4,7 @@
 #include <sys/ioctl.h>
 #include <string.h>
 #include <getopt.h>
+#include <stdlib.h>
 
 // this needs to be one over the ring buffer size to work
 #define bufsize (1024*1024*65)
@@ -77,7 +78,7 @@ int main(int argc, char *argv[])
 		read(fd, buf, readlen);	
 
 		if (tenbit) {
-			unsigned short *wbuf = buf;
+			unsigned short *wbuf = (void *)buf;
 			for (int i = 0; i < (readlen / 2) && !over; i++) {
 				if (wbuf[i] < low) low = wbuf[i]; 
 				if (wbuf[i] > high) high = wbuf[i]; 
