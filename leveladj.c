@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 
 	fd = open("/dev/cxadc", O_RDWR);
 	if (fd <= 0) {
-		fprintf(stderr, "nope.\n");
+		fprintf(stderr, "/dev/cxadc not found\n");
 		return -1;
 	}
 	close(fd);
@@ -83,8 +83,8 @@ int main(int argc, char *argv[])
 				if (wbuf[i] < low) low = wbuf[i]; 
 				if (wbuf[i] > high) high = wbuf[i]; 
 
-				if ((wbuf[i] < 0x0800) || (wbuf[i] > 0xf800)) {
-					over = 1;
+				if ((wbuf[i] < 0x0200) || (wbuf[i] > 0xfe00)) {
+					over++;
 				}
 			}
 		} else {
@@ -92,15 +92,15 @@ int main(int argc, char *argv[])
 				if (buf[i] < low) low = buf[i]; 
 				if (buf[i] > high) high = buf[i]; 
 
-				if ((buf[i] < 0x08) || (buf[i] > 0xf8)) {
-					over = 1;
+				if ((buf[i] < 0x04) || (buf[i] > 0xfc)) {
+					over++;
 				}
 			}
 		}
 
-		printf("low %d high %d\n", (int)low, (int)high);
+		printf("low %d high %d clipped %d nsamp %d\n", (int)low, (int)high, over, readlen);
 
-		if (over) {
+		if (over > (readlen / 1000)) {
 			go_on = 2;
 		} else {
 			if (go_on == 2) go_on = 0;
