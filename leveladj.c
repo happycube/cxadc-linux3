@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
 		printf("low %d high %d clipped %d nsamp %d\n", (int)low, (int)high, over, readlen);
 
-		if (over > (readlen / 1000)) {
+		if (over > (readlen / 10000)) {
 			go_on = 2;
 		} else {
 			if (go_on == 2) go_on = 0;

@@ -394,6 +394,13 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	} else {
 		cx_write(131072,0x310170);//set SRC to 8xfsc 
 	}
+	if (tenxfsc) {
+		cx_write(131072*4/5,0x310170);//set SRC to 1.25x/10fsc  
+		cx_write(0x01400000,CX_PLL_REG);//set PLL to 1.25x/10fsc 
+	} else {
+		cx_write(131072,0x310170);//set SRC to 8xfsc 
+		cx_write(0x11000000,CX_PLL_REG);//set PLL to 1:1
+	}
 		
 	if (tenbit) {
 		cx_write(((1<<6)|(3<<1)|(1<<5)),0x310180); //capture 16 bit raw
@@ -711,6 +718,10 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		} else {
 			cx_write(((1<<6)|(3<<1)|(0<<5)),0x310180); //capture 8 bit raw
 		}
+	
+		// power down audio and chroma DAC+ADC	
+		cx_write( 0x12, 0x35C04C);
+
 		//cx_write(((1<<6)|(3<<1)|(1<<5)),0x310180); //capture 16 bit raw
 //		cx_write(((1<<6)),0x310180);
 		//run risc
@@ -756,8 +767,10 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 
 	if (tenxfsc) {
 		cx_write(131072*4/5,0x310170);//set SRC to 1.25x/10fsc  
+		cx_write(0x01400000,CX_PLL_REG);//set PLL to 1.25x/10fsc 
 	} else {
 		cx_write(131072,0x310170);//set SRC to 8xfsc 
+		cx_write(0x11000000,CX_PLL_REG);//set PLL to 1:1
 	}
 
 	//set audio multiplexer
