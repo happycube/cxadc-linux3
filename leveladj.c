@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 		if (go_on == 1) level++;
 		else if (go_on == 2) level--;
 
-		if ((level < 0) || (level > 0x1f)) go_on = 0;
+		if ((level < 0) || (level > 28)) go_on = 0;
 		close(fd);
 	}
 
