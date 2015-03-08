@@ -795,8 +795,8 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	//select which output is redirected to audio output jack
 	//
 	cx_write(1<<25,CX_GP3_IO); //use as 24 bit GPIO/GPOE 
-	cx_write(0x0b,CX_GPOE); //bit 3 is to enable 4052 , bit 0-1 4052's AB
-	cx_write(audsel&3,CX_GPIO); //3=audio in to audio out
+	cx_write(0,CX_GPOE); //bit 3 is to enable 4052 , bit 0-1 4052's AB
+	cx_write(0,CX_GPIO); //3=audio in to audio out
 	                            //2=fm out?
 				    //1=silence ?
 				    //0=tuner tv audio out?
