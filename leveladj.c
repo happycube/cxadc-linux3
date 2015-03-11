@@ -27,7 +27,7 @@ void set(char *name, int level)
 int main(int argc, char *argv[])
 {
 	int fd;
-	int level = 0x10;
+	int level = 30;
 	int go_on = 1; // 2 after going over
 
 	fd = open("/dev/cxadc", O_RDWR);
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 		if (go_on == 1) level++;
 		else if (go_on == 2) level--;
 
-		if ((level < 0) || (level > 28)) go_on = 0;
+		if ((level < 0) || (level > 31)) go_on = 0;
 		close(fd);
 	}
 
