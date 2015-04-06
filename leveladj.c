@@ -27,7 +27,7 @@ void set(char *name, int level)
 int main(int argc, char *argv[])
 {
 	int fd;
-	int level = 30;
+	int level = 20;
 	int go_on = 1; // 2 after going over
 
 	fd = open("/dev/cxadc", O_RDWR);
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 				}
 			}
 		} else {
-			for (int i = 0; i < readlen && !over; i++) {
+			for (int i = 0; i < readlen && (over < 2000); i++) {
 				if (buf[i] < low) low = buf[i]; 
 				if (buf[i] > high) high = buf[i]; 
 
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
 		printf("low %d high %d clipped %d nsamp %d\n", (int)low, (int)high, over, readlen);
 
-		if (over > (readlen / 10000)) {
+		if (over >= 20) {
 			go_on = 2;
 		} else {
 			if (go_on == 2) go_on = 0;
