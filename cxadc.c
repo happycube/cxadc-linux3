@@ -444,7 +444,7 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 	gp_cnt = cx_read(CX_VBI_GP_CNT);
 	gp_cnt = (!gp_cnt) ? (MAX_DMA_PAGE - 1) : (gp_cnt - 1);
 
-	printk("read pos %ld cur %d len %d pnum %d gp_cnt %d\n", *offset, cx_read(CX_VBI_GP_CNT), count, pnum, gp_cnt);
+//	printk("read pos %ld cur %d len %d pnum %d gp_cnt %d\n", *offset, cx_read(CX_VBI_GP_CNT), count, pnum, gp_cnt);
 
 	if ((pnum == gp_cnt) && (file->f_flags & O_NONBLOCK)) return rv; 
 
@@ -453,11 +453,12 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 			unsigned len;
 
 			// handle partial pages for either reason 
-			len = (*offset % 4096) ? (*offset % 4096) : 4096;
+			len = (*offset % 4096) ? (4096 - (*offset % 4096)) : 4096;
 			if (len > count) len = count;
 
 		//	if (len != 4096) printk("do read rv %d count %d cur %d len %d pnum %d\n", rv, count, cx_read(CX_VBI_GP_CNT), len, pnum);
 			copy_to_user(tgt, ctd->pgvec_virt[pnum] + (*offset % 4096), len); 
+			memset(ctd->pgvec_virt[pnum] + (*offset % 4096), 0, len); 
 
 			count -= len;
 			tgt += len;
@@ -622,7 +623,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	for (i=0; i<MAX_DMA_PAGE; i++) {
 		dma_addr_t dma_handle;
 
-		ctd->pgvec_virt[i]=(void*)dma_alloc_coherent(&ctd->pci->dev,4096,&dma_handle,GFP_KERNEL);
+		ctd->pgvec_virt[i]=(void*)dma_zalloc_coherent(&ctd->pci->dev,4096,&dma_handle,GFP_KERNEL);
 		if(ctd->pgvec_virt[i]!=0) {
 			ctd->pgvec_phy[i]=dma_handle;
 			total_size+=pgsize;
