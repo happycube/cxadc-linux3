@@ -78,12 +78,16 @@ int main(int argc, char *argv[])
 
 		if (tenbit) {
 			unsigned short *wbuf = (void *)buf;
-			for (int i = 0; i < (readlen / 2) && !over; i++) {
+			for (int i = 0; i < (readlen / 2) && (over < (readlen / 200000)); i++) {
 				if (wbuf[i] < low) low = wbuf[i]; 
 				if (wbuf[i] > high) high = wbuf[i]; 
 
 				if ((wbuf[i] < 0x0800) || (wbuf[i] > 0xf800)) {
 					over++;
+				}
+				// auto fail on 0 and 65535 
+				if ((wbuf[i] == 0) || (wbuf[i] == 0xffff)) {
+					over += (readlen / 50000);
 				}
 			}
 		} else {
@@ -93,6 +97,11 @@ int main(int argc, char *argv[])
 
 				if ((buf[i] < 0x08) || (buf[i] > 0xf8)) {
 					over++;
+				}
+
+				// auto fail on 0 and 255
+				if ((buf[i] == 0) || (buf[i] == 0xff)) {
+					over += (readlen / 50000);
 				}
 			}
 		}
