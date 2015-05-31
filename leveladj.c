@@ -10,7 +10,7 @@
 #define bufsize (1024*1024*65)
 unsigned char buf[bufsize];
 
-int readlen = 256 * 1024;
+int readlen = 2048 * 1024;
 
 void set(char *name, int level) 
 {
@@ -74,7 +74,6 @@ int main(int argc, char *argv[])
 		printf("testing level %d\n", level);
 
 		// read a bit
-		read(fd, buf, (1024 * 1024) * 4);
 		read(fd, buf, readlen);	
 
 		if (tenbit) {
@@ -83,16 +82,16 @@ int main(int argc, char *argv[])
 				if (wbuf[i] < low) low = wbuf[i]; 
 				if (wbuf[i] > high) high = wbuf[i]; 
 
-				if ((wbuf[i] < 0x0200) || (wbuf[i] > 0xfe00)) {
+				if ((wbuf[i] < 0x0800) || (wbuf[i] > 0xf800)) {
 					over++;
 				}
 			}
 		} else {
-			for (int i = 0; i < readlen && (over < 2000); i++) {
+			for (int i = 0; i < readlen && (over < (readlen / 100000)); i++) {
 				if (buf[i] < low) low = buf[i]; 
 				if (buf[i] > high) high = buf[i]; 
 
-				if ((buf[i] < 0x04) || (buf[i] > 0xfc)) {
+				if ((buf[i] < 0x08) || (buf[i] > 0xf8)) {
 					over++;
 				}
 			}
