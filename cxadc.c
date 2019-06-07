@@ -52,8 +52,8 @@ static int level = 16;
 static int tenbit = 0;
 static int tenxfsc = 0;
 
-#define cx_read(adr)         readl(ctd->mmio+((adr)>>2))
-#define cx_write(dat,adr)    writel((dat),(ctd->mmio+((adr)>>2)))
+#define cx_read(reg)         readl(ctd->mmio + ((reg) >> 2))
+#define cx_write(reg, value) writel((value), ctd->mmio + ((reg) >> 2))
 
 #define CXADC_IOCTL_WRITE_PLL_REG 0x12345676
 
@@ -156,14 +156,14 @@ static void disable_card(struct cxadc *ctd)
 {
 	/* turn off all DMA / IRQs */
 	//turn off pci interrupt
-	cx_write(0,MO_PCI_INTMSK);
+	cx_write(MO_PCI_INTMSK, 0);
 	//turn off interrupt
-	cx_write(0,MO_VID_INTMSK);
-	cx_write(~(u32)0,MO_VID_INTSTAT);
+	cx_write(MO_VID_INTMSK, 0);
+	cx_write(MO_VID_INTSTAT, ~(u32)0);
 	//disable fifo and risc
-	cx_write(0,MO_VID_DMACNTRL);
+	cx_write(MO_VID_DMACNTRL, 0);
 	//disable risc
-	cx_write(0,MO_DEV_CNTRL2);
+	cx_write(MO_DEV_CNTRL2, 0);
 }
 
 
@@ -304,32 +304,32 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 
 	if (level < 0) level = 0;	
 	if (level > 31) level = 31;	
-	cx_write((1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0),MO_AGC_GAIN_ADJ4);//control gain also bit 16
+	cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0)); //control gain also bit 16
 
 	// set higher clock rate	
 	if (tenxfsc) {
-		cx_write(131072*4/5,MO_SCONV_REG);//set SRC to 1.25x/10fsc  
+		cx_write(MO_SCONV_REG, 131072*4/5); //set SRC to 1.25x/10fsc
 	} else {
-		cx_write(131072,MO_SCONV_REG);//set SRC to 8xfsc 
+		cx_write(MO_SCONV_REG, 131072); //set SRC to 8xfsc
 	}
 	if (tenxfsc) {
-		cx_write(131072*4/5,MO_SCONV_REG);//set SRC to 1.25x/10fsc  
-		cx_write(0x01400000,MO_PLL_REG);//set PLL to 1.25x/10fsc 
+		cx_write(MO_SCONV_REG, 131072*4/5); //set SRC to 1.25x/10fsc
+		cx_write(MO_PLL_REG, 0x01400000); //set PLL to 1.25x/10fsc
 	} else {
-		cx_write(131072,MO_SCONV_REG);//set SRC to 8xfsc 
-		cx_write(0x11000000,MO_PLL_REG);//set PLL to 1:1
+		cx_write(MO_SCONV_REG, 131072); //set SRC to 8xfsc
+		cx_write(MO_PLL_REG, 0x11000000); //set PLL to 1:1
 	}
 		
 	if (tenbit) {
-		cx_write(((1<<6)|(3<<1)|(1<<5)),MO_CAPTURE_CTRL); //capture 16 bit raw
+		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5))); //capture 16 bit raw
 	} else {
-		cx_write(((1<<6)|(3<<1)|(0<<5)),MO_CAPTURE_CTRL); //capture 8 bit raw
+		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5))); //capture 8 bit raw
 	}
 
 	file->private_data = ctd;
 
 	ctd->initial_page = cx_read(MO_VBI_GPCNT) - 1;
-	cx_write(1,MO_PCI_INTMSK); //enable interrupt
+	cx_write(MO_PCI_INTMSK, 1); //enable interrupt
 
 	return 0;
 }
@@ -338,7 +338,7 @@ static int cxadc_char_release(struct inode *inode, struct file *file)
 {
 	struct cxadc *ctd = file->private_data;
 
-	cx_write(0,MO_PCI_INTMSK);
+	cx_write(MO_PCI_INTMSK, 0);
 
 	if (debug)
 		printk("cxadc: release\n");
@@ -414,7 +414,7 @@ static long cxadc_char_ioctl(struct file *file,
 
 		if (gain < 0) gain = 0;
 		if (gain > 31) gain = 31;
-		cx_write((1<<23)|(0<<22)|(0<<21)|(gain<<16)|(0xff<<8)|(0x0<<0),MO_AGC_GAIN_ADJ4);//control gain also bit 16
+		cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(gain<<16)|(0xff<<8)|(0x0<<0)); //control gain also bit 16
 	}
 
 	return ret;
@@ -464,7 +464,7 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 		}
 		astat>>=1;
 	}
-	cx_write(ostat,MO_VID_INTSTAT);
+	cx_write(MO_VID_INTSTAT, ostat);
 	
 	return IRQ_RETVAL(1);
 }
@@ -594,67 +594,67 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	
 	/* we use 16kbytes of FIFO buffer */
 	create_cdt_table( ctd, NUMBER_OF_CLUSTER_BUFFER,CLUSTER_BUFFER_SIZE,CLUSTER_BUFFER_BASE,CDT_BASE);
-	cx_write((CLUSTER_BUFFER_SIZE/8-1),MO_DMA24_CNT1); /* size of one buffer in qword -1 */
+	cx_write(MO_DMA24_CNT1, (CLUSTER_BUFFER_SIZE/8-1)); /* size of one buffer in qword -1 */
 //	printk("cnt1:%x\n",CLUSTER_BUFFER_SIZE/8-1);
 	
-	cx_write(CDT_BASE,MO_DMA24_PTR2); /* ptr to cdt */
-	cx_write(2*NUMBER_OF_CLUSTER_BUFFER,MO_DMA24_CNT2); /* size of cdt in qword */
+	cx_write(MO_DMA24_PTR2, CDT_BASE); /* ptr to cdt */
+	cx_write(MO_DMA24_CNT2, 2*NUMBER_OF_CLUSTER_BUFFER); /* size of cdt in qword */
 	
 //	if(ctd->tbuf!=NULL)
 	{
 		unsigned int xxx;
 		xxx=cx_read(MO_VID_INTSTAT);
-		cx_write(xxx,MO_VID_INTSTAT); //clear interrupt	
+		cx_write(MO_VID_INTSTAT, xxx); //clear interrupt
 		
-		cx_write(ctd->risc_inst_phy,CHN24_CMDS_BASE);//working 
-		cx_write(CDT_BASE,CHN24_CMDS_BASE+4);
-		cx_write(2*NUMBER_OF_CLUSTER_BUFFER,CHN24_CMDS_BASE+8);
-		cx_write(RISC_INST_QUEUE,CHN24_CMDS_BASE+12);
+		cx_write(CHN24_CMDS_BASE, ctd->risc_inst_phy); //working
+		cx_write(CHN24_CMDS_BASE+4, CDT_BASE);
+		cx_write(CHN24_CMDS_BASE+8, 2*NUMBER_OF_CLUSTER_BUFFER);
+		cx_write(CHN24_CMDS_BASE+12, RISC_INST_QUEUE);
 
-		cx_write(0x40 ,CHN24_CMDS_BASE+16);
+		cx_write(CHN24_CMDS_BASE+16, 0x40);
 		
 		//source select (see datasheet on how to change adc source)
 		//1<<14 - video in
 		
 		vmux&=3;//default vmux=1
-//		cx_write((vmux<<14)|0x01|0x10|(0x01<<12),MO_INPUT_FORMAT); //pal-B, yadc =mux1 (<<14)
-//		cx_write((vmux<<14)|(1<<13)|0x01|0x10|0x10000,MO_INPUT_FORMAT); //pal-B, yadc =mux1 (<<14)
-		cx_write((vmux<<14)|(1<<13)|0x01|0x10|0x10000,MO_INPUT_FORMAT); //pal-B
-		cx_write(0x0f, MO_OUTPUT_FORMAT); // output format:  allow full range
+//		cx_write(MO_INPUT_FORMAT, (vmux<<14)|0x01|0x10|(0x01<<12)); //pal-B, yadc =mux1 (<<14)
+//		cx_write(MO_INPUT_FORMAT, (vmux<<14)|(1<<13)|0x01|0x10|0x10000); //pal-B, yadc =mux1 (<<14)
+		cx_write(MO_INPUT_FORMAT, (vmux<<14)|(1<<13)|0x01|0x10|0x10000); //pal-B
+		cx_write(MO_OUTPUT_FORMAT, 0x0f); // output format:  allow full range
 		
-		cx_write(0xff00, MO_CONTR_BRIGHT); // brightness and contrast 
+		cx_write(MO_CONTR_BRIGHT, 0xff00); // brightness and contrast
 		
 		//vbi lenght CLUSTER_BUFFER_SIZE/2  work
 				
-		cx_write((((CLUSTER_BUFFER_SIZE)<<17)|(2<<11)),MO_VBI_PACKET); //no of byte transferred from peripehral to fifo
+		cx_write(MO_VBI_PACKET, (((CLUSTER_BUFFER_SIZE)<<17)|(2<<11))); //no of byte transferred from peripehral to fifo
 								// if fifo buffer < this, it will still transfer this no of byte
 								//must be multiple of 8, if not go haywire?
 		
 		//raw mode & byte swap <<8 (3<<8=swap)
-		cx_write( ((0xe)|(0xe<<4)|(0<<8)) , MO_COLOR_CTRL);
+		cx_write(MO_COLOR_CTRL, ((0xe)|(0xe<<4)|(0<<8)));
 
 		if (tenbit) {
-			cx_write(((1<<6)|(3<<1)|(1<<5)),MO_CAPTURE_CTRL); //capture 16 bit raw
+			cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5))); //capture 16 bit raw
 		} else {
-			cx_write(((1<<6)|(3<<1)|(0<<5)),MO_CAPTURE_CTRL); //capture 8 bit raw
+			cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5))); //capture 8 bit raw
 		}
 	
 		// power down audio and chroma DAC+ADC	
-		cx_write( 0x12, MO_AFECFG_IO);
+		cx_write(MO_AFECFG_IO, 0x12);
 
-		//cx_write(((1<<6)|(3<<1)|(1<<5)),MO_CAPTURE_CTRL); //capture 16 bit raw
-//		cx_write(((1<<6)),MO_CAPTURE_CTRL);
+		//cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5))); //capture 16 bit raw
+//		cx_write(MO_CAPTURE_CTRL, ((1<<6)));
 		//run risc
 //		wmb();
-		cx_write(1<<5,MO_DEV_CNTRL2);
+		cx_write(MO_DEV_CNTRL2, 1<<5);
 //		wmb();
 		//enable fifo and risc
-		cx_write(((1<<7)|(1<<3)),MO_VID_DMACNTRL);
+		cx_write(MO_VID_DMACNTRL, ((1<<7)|(1<<3)));
 //		wmb();
 	
 	//	for(i=0x4000;i<0x8000;i+=4)
 	//	{	
-	//		cx_write(0xaaaaaaaa,(CX_SRAM_BASE+i));
+	//		cx_write((CX_SRAM_BASE+i), 0xaaaaaaaa);
 	//	}	
 	}
 
@@ -680,49 +680,49 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	}	
 #endif
 
-//	cx_write(0x20000,MO_PLL_ADJ_CTRL);
-//  cx_write(0x11000000,MO_PLL_REG);//set PLL to 1:1
-//  cx_write(0x01400000,MO_PLL_REG);//set PLL to 1.25x/10fsc 
-	cx_write(0x01000000,MO_PLL_REG);//set PLL to 8xfsc 
+//	cx_write(MO_PLL_ADJ_CTRL, 0x20000);
+//  cx_write(MO_PLL_REG, 0x11000000); //set PLL to 1:1
+//  cx_write(MO_PLL_REG, 0x01400000); //set PLL to 1.25x/10fsc
+	cx_write(MO_PLL_REG, 0x01000000); //set PLL to 8xfsc
 
 	if (tenxfsc) {
-		cx_write(131072*4/5,MO_SCONV_REG);//set SRC to 1.25x/10fsc  
-		cx_write(0x01400000,MO_PLL_REG);//set PLL to 1.25x/10fsc 
+		cx_write(MO_SCONV_REG, 131072*4/5); //set SRC to 1.25x/10fsc
+		cx_write(MO_PLL_REG, 0x01400000); //set PLL to 1.25x/10fsc
 	} else {
-		cx_write(131072,MO_SCONV_REG);//set SRC to 8xfsc 
-		cx_write(0x11000000,MO_PLL_REG);//set PLL to 1:1
+		cx_write(MO_SCONV_REG, 131072); //set SRC to 8xfsc
+		cx_write(MO_PLL_REG, 0x11000000); //set PLL to 1:1
 	}
 
 	//set audio multiplexer
 	
 	//set vbi agc
-//	cx_write((0<<21)|(0<<20)|(0<<19)|(4<<16)|(0x60<<8)|(0x1c<<0),MO_AGC_SYNC_SLICER);
-	cx_write(0x0,MO_AGC_SYNC_SLICER);
+//	cx_write(MO_AGC_SYNC_SLICER, (0<<21)|(0<<20)|(0<<19)|(4<<16)|(0x60<<8)|(0x1c<<0));
+	cx_write(MO_AGC_SYNC_SLICER, 0x0);
 	
 	if (level < 0) level = 0;	
 	if (level > 31) level = 31;	
 			
-	cx_write((0<<27)|(0<<26) |(1<<25)| (0x100<<16) |(0xfff<<0),MO_AGC_BACK_VBI);
-	cx_write((1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0),MO_AGC_GAIN_ADJ4);//control gain also bit 16
+	cx_write(MO_AGC_BACK_VBI, (0<<27)|(0<<26) |(1<<25)| (0x100<<16) |(0xfff<<0));
+	cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0)); //control gain also bit 16
 // for 'cooked' composite
-	cx_write((0x1c0<<17)|(0x0<<9)|(0<<7)|(0xf<<0),MO_AGC_SYNC_TIP1);
-	cx_write((0x20<<17)|(0x0<<9)|(0<<7)|(0xf<<0),MO_AGC_SYNC_TIP2);
-	cx_write((0x1e48<<16)|(0xff<<8)|(0x8),MO_AGC_SYNC_TIP3);
-	cx_write((0xe0<<17)|(0xe<<9)|(0x0<<7)|(0x7<<0),MO_AGC_GAIN_ADJ1);
-	cx_write((0x28<<16)|(0x28<<8)|(0x50<<0),MO_AGC_GAIN_ADJ3);//set gain of agc but not offset
+	cx_write(MO_AGC_SYNC_TIP1, (0x1c0<<17)|(0x0<<9)|(0<<7)|(0xf<<0));
+	cx_write(MO_AGC_SYNC_TIP2, (0x20<<17)|(0x0<<9)|(0<<7)|(0xf<<0));
+	cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(0x8));
+	cx_write(MO_AGC_GAIN_ADJ1, (0xe0<<17)|(0xe<<9)|(0x0<<7)|(0x7<<0));
+	cx_write(MO_AGC_GAIN_ADJ3, (0x28<<16)|(0x28<<8)|(0x50<<0)); //set gain of agc but not offset
 	
 	//==========Pixelview PlayTVPro Ultracard specific============
 	//select which output is redirected to audio output jack
 	//
-	cx_write(1<<25,MO_GP3_IO); //use as 24 bit GPIO/GPOE 
-	cx_write(0x0b,MO_GP1_IO); //bit 3 is to enable 4052 , bit 0-1 4052's AB
-	cx_write(audsel&3,MO_GP0_IO);
+	cx_write(MO_GP3_IO, 1<<25); //use as 24 bit GPIO/GPOE
+	cx_write(MO_GP1_IO, 0x0b); //bit 3 is to enable 4052 , bit 0-1 4052's AB
+	cx_write(MO_GP0_IO, audsel&3);
 	printk("cxadc: audsel = %d\n",audsel&3);
 	//=================================================
 	
 	//i2c sda/scl set to high and use software control
 	
-	cx_write(3,MO_I2C);
+	cx_write(MO_I2C, 3);
 	//=================================================
 	
 	/* hook into linked list */
@@ -731,8 +731,8 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	cxcount++;
 
 	pci_set_drvdata(pci_dev,ctd);
-	cx_write(INTERRUPT_MASK,MO_VID_INTMSK);
-	//cx_write(1,MO_PCI_INTMSK); //enable interrupt
+	cx_write(MO_VID_INTMSK, INTERRUPT_MASK);
+	//cx_write(MO_PCI_INTMSK, 1); //enable interrupt
 //	printk("page size %d\n",PAGE_SIZE);
         return 0;
 
