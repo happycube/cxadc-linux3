@@ -458,7 +458,8 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 			if (len > count) len = count;
 
 		//	if (len != 4096) printk("do read rv %d count %d cur %d len %d pnum %d\n", rv, count, cx_read(CX_VBI_GP_CNT), len, pnum);
-			copy_to_user(tgt, ctd->pgvec_virt[pnum] + (*offset % 4096), len); 
+			if (copy_to_user(tgt, ctd->pgvec_virt[pnum] + (*offset % 4096), len))
+				return -EFAULT;
 			memset(ctd->pgvec_virt[pnum] + (*offset % 4096), 0, len); 
 
 			count -= len;
