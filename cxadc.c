@@ -22,6 +22,9 @@
 
 */
 
+
+#include "cx88-reg.h"
+
 #include <linux/version.h>
 #include <linux/cdev.h>
 #include <linux/debugfs.h>
@@ -52,41 +55,7 @@ static int tenxfsc = 0;
 #define cx_read(adr)         readl(ctd->mmio+((adr)>>2))
 #define cx_write(dat,adr)    writel((dat),(ctd->mmio+((adr)>>2)))
 
-#define CX_SRAM_BASE 0x180000
-#define CX_VIDEO_VBI_CMDS_BASE  (CX_SRAM_BASE+0x100)
-
 #define CXADC_IOCTL_WRITE_PLL_REG 0x12345676
-
-/* ------------------------------------------------------------------------- */
-/* CX registers                                                              */
-#define CX_PLL_REG              0x310168 //PLL register
-#define CX_SAMP_RATE_CONV_REG   0x310170 //sample rate conversion register
-#define CX_DEV_CNTRL2       	0x200034 //  Device control
-#define CX_VID_INT_STAT     	0x200054 //  Video interrupt status
-#define CX_DMA24_PTR1       	0x30008C //  DMA Current Ptr : Ch#24_ir
-#define CX_DMA24_PTR2       	0x3000CC //  DMA Tab Ptr     : Ch#24
-#define CX_DMA24_CNT1       	0x30010C //  DMA Buffer Size : Ch#24
-#define CX_DMA24_CNT2       	0x30014C //  DMA Table Size  : Ch#24
-#define CX_VID_DMA_CNTRL       	0x31c040 //  Video DMA control
-#define CX_VBI_GP_CNT        	0x31C02C //  VBI general purpose counter
-#define VID_CAPTURE_CONTROL  	0x310180
-#define CX_PCI_INT_STAT		0x200044
-#define CX_PCI_INT_MSK		0x200040
-
-#define CX_GPIO                 0x350010
-#define CX_GPOE			0x350014	
-#define CX_PINMUX_IO            0x35c044
-#define CX_GP3_IO               0x35001C
-
-#define CX_I2C_COMP_DATACNTRL   0x368000
-/* ------------------------------------------------------------------------ */
-
-#define RISC_SYNC		 0x80000000
-#define RISC_WRITE		 0x10000000
-#define RISC_JUMP		 0x70000000
-#define RISC_WRITERM		 0xB0000000
-#define RISC_WRITECM		 0xC0000000
-#define RISC_WRITECR		 0xD0000000
 
 /* ------------------------------------------------------------------------ */
 
@@ -168,9 +137,6 @@ static unsigned int risc_start_phy_addr=0;
 #define CHN24_CMDS_BASE	0x180100
 #define DMA_BUFFER_SIZE (256*1024)
 
-#define CX_VID_INT_MSTAT 0x200058
-#define CX_VID_INT_STAT 0x200054
-#define CX_VID_INT_MSK 0x200050
 #define INTERRUPT_MASK 0x18888
 
 static struct pci_device_id cxadc_pci_tbl[] = 
@@ -190,14 +156,14 @@ static void disable_card(struct cxadc *ctd)
 {
 	/* turn off all DMA / IRQs */
 	//turn off pci interrupt
-	cx_write(0,CX_PCI_INT_MSK);
+	cx_write(0,MO_PCI_INTMSK);
 	//turn off interrupt
-	cx_write(0,CX_VID_INT_MSK);
-	cx_write(~(u32)0,CX_VID_INT_STAT);
+	cx_write(0,MO_VID_INTMSK);
+	cx_write(~(u32)0,MO_VID_INTSTAT);
 	//disable fifo and risc
-	cx_write(0,CX_VID_DMA_CNTRL);
+	cx_write(0,MO_VID_DMACNTRL);
 	//disable risc
-	cx_write(0,CX_DEV_CNTRL2);
+	cx_write(0,MO_DEV_CNTRL2);
 }
 
 
@@ -307,7 +273,7 @@ static int make_risc_instructions(struct cxadc *ctd)//,unsigned int cl_size,unsi
 #if 0	
 	//test stop FIFO and RISC
 	*pp++=RISC_WRITECR|1;
-	*pp++=CX_VID_DMA_CNTRL;
+	*pp++=MO_VID_DMACNTRL;
 	*pp++=0;
 	*pp++=0xffffffff;
 	//test
@@ -348,10 +314,10 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	}
 	if (tenxfsc) {
 		cx_write(131072*4/5,0x310170);//set SRC to 1.25x/10fsc  
-		cx_write(0x01400000,CX_PLL_REG);//set PLL to 1.25x/10fsc 
+		cx_write(0x01400000,MO_PLL_REG);//set PLL to 1.25x/10fsc 
 	} else {
 		cx_write(131072,0x310170);//set SRC to 8xfsc 
-		cx_write(0x11000000,CX_PLL_REG);//set PLL to 1:1
+		cx_write(0x11000000,MO_PLL_REG);//set PLL to 1:1
 	}
 		
 	if (tenbit) {
@@ -362,8 +328,8 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 
 	file->private_data = ctd;
 
-	ctd->initial_page = cx_read(CX_VBI_GP_CNT) - 1;
-	cx_write(1,CX_PCI_INT_MSK); //enable interrupt
+	ctd->initial_page = cx_read(MO_VBI_GPCNT) - 1;
+	cx_write(1,MO_PCI_INTMSK); //enable interrupt
 
 	return 0;
 }
@@ -372,7 +338,7 @@ static int cxadc_char_release(struct inode *inode, struct file *file)
 {
 	struct cxadc *ctd = file->private_data;
 
-	cx_write(0,CX_PCI_INT_MSK);
+	cx_write(0,MO_PCI_INTMSK);
 
 	if (debug)
 		printk("cxadc: release\n");
@@ -387,16 +353,16 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 	unsigned int pnum;
 	int gp_cnt;
 
-	//printk("read pos %ld cur %d len %d\n", *offset, cx_read(CX_VBI_GP_CNT), count);
+	//printk("read pos %ld cur %d len %d\n", *offset, cx_read(MO_VBI_GPCNT), count);
 
 	pnum = (*offset % VBI_DMA_BUFF_SIZE) / PAGE_SIZE;
 	pnum += ctd->initial_page;
 	pnum %= MAX_DMA_PAGE;
 
-	gp_cnt = cx_read(CX_VBI_GP_CNT);
+	gp_cnt = cx_read(MO_VBI_GPCNT);
 	gp_cnt = (!gp_cnt) ? (MAX_DMA_PAGE - 1) : (gp_cnt - 1);
 
-//	printk("read pos %ld cur %d len %d pnum %d gp_cnt %d\n", *offset, cx_read(CX_VBI_GP_CNT), count, pnum, gp_cnt);
+//	printk("read pos %ld cur %d len %d pnum %d gp_cnt %d\n", *offset, cx_read(MO_VBI_GPCNT), count, pnum, gp_cnt);
 
 	if ((pnum == gp_cnt) && (file->f_flags & O_NONBLOCK)) return rv; 
 
@@ -408,7 +374,7 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 			len = (*offset % 4096) ? (4096 - (*offset % 4096)) : 4096;
 			if (len > count) len = count;
 
-		//	if (len != 4096) printk("do read rv %d count %d cur %d len %d pnum %d\n", rv, count, cx_read(CX_VBI_GP_CNT), len, pnum);
+		//	if (len != 4096) printk("do read rv %d count %d cur %d len %d pnum %d\n", rv, count, cx_read(MO_VBI_GPCNT), len, pnum);
 			if (copy_to_user(tgt, ctd->pgvec_virt[pnum] + (*offset % 4096), len))
 				return -EFAULT;
 			memset(ctd->pgvec_virt[pnum] + (*offset % 4096), 0, len); 
@@ -429,7 +395,7 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 			ctd->newpage=0;
                 	wait_event_interruptible(ctd->readQ,ctd->newpage);
 	
-			gp_cnt = cx_read(CX_VBI_GP_CNT);
+			gp_cnt = cx_read(MO_VBI_GPCNT);
 			gp_cnt = (!gp_cnt) ? (MAX_DMA_PAGE - 1) : (gp_cnt - 1);
 		}
 	};
@@ -469,8 +435,8 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 	u32 stat,astat,ostat,allstat;
 	struct cxadc *ctd = dev_id;
 	
-	allstat = cx_read(CX_VID_INT_STAT);
-	stat  = cx_read(CX_VID_INT_MSK);
+	allstat = cx_read(MO_VID_INTSTAT);
+	stat  = cx_read(MO_VID_INTMSK);
 	astat = stat & allstat;
 	ostat = astat;
 
@@ -489,7 +455,7 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 //				printk("%8.8x %x %x %x %x\n",
 //			uu,uu>>16,(uu>>16)&0x1f,(uu>>8)&0xff,uu&0xff);
 //			printk("gadj1 %x stip3 %x gadj3 %x gadj4 %x stat %x wc %x\n ",cx_read(0x310214),cx_read(0x310210),cx_read(0x31021c),cx_read(0x310220),cx_read(0x310100),cx_read(0x31011c));
-//				printk("cxadc: wake up %x\n",cx_read(CX_VBI_GP_CNT));
+//				printk("cxadc: wake up %x\n",cx_read(MO_VBI_GPCNT));
 //				
 				ctd->newpage=1;
 				wake_up_interruptible(&ctd->readQ);
@@ -498,7 +464,7 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 		}
 		astat>>=1;
 	}
-	cx_write(ostat,CX_VID_INT_STAT);
+	cx_write(ostat,MO_VID_INTSTAT);
 	
 	return IRQ_RETVAL(1);
 }
@@ -628,17 +594,17 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	
 	/* we use 16kbytes of FIFO buffer */
 	create_cdt_table( ctd, NUMBER_OF_CLUSTER_BUFFER,CLUSTER_BUFFER_SIZE,CLUSTER_BUFFER_BASE,CDT_BASE);
-	cx_write((CLUSTER_BUFFER_SIZE/8-1),CX_DMA24_CNT1); /* size of one buffer in qword -1 */
+	cx_write((CLUSTER_BUFFER_SIZE/8-1),MO_DMA24_CNT1); /* size of one buffer in qword -1 */
 //	printk("cnt1:%x\n",CLUSTER_BUFFER_SIZE/8-1);
 	
-	cx_write(CDT_BASE,CX_DMA24_PTR2); /* ptr to cdt */
-	cx_write(2*NUMBER_OF_CLUSTER_BUFFER,CX_DMA24_CNT2); /* size of cdt in qword */
+	cx_write(CDT_BASE,MO_DMA24_PTR2); /* ptr to cdt */
+	cx_write(2*NUMBER_OF_CLUSTER_BUFFER,MO_DMA24_CNT2); /* size of cdt in qword */
 	
 //	if(ctd->tbuf!=NULL)
 	{
 		unsigned int xxx;
-		xxx=cx_read(CX_VID_INT_STAT);
-		cx_write(xxx,CX_VID_INT_STAT); //clear interrupt	
+		xxx=cx_read(MO_VID_INTSTAT);
+		cx_write(xxx,MO_VID_INTSTAT); //clear interrupt	
 		
 		cx_write(ctd->risc_inst_phy,CHN24_CMDS_BASE);//working 
 		cx_write(CDT_BASE,CHN24_CMDS_BASE+4);
@@ -680,10 +646,10 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 //		cx_write(((1<<6)),0x310180);
 		//run risc
 //		wmb();
-		cx_write(1<<5,CX_DEV_CNTRL2);
+		cx_write(1<<5,MO_DEV_CNTRL2);
 //		wmb();
 		//enable fifo and risc
-		cx_write(((1<<7)|(1<<3)),CX_VID_DMA_CNTRL);
+		cx_write(((1<<7)|(1<<3)),MO_VID_DMACNTRL);
 //		wmb();
 	
 	//	for(i=0x4000;i<0x8000;i+=4)
@@ -715,16 +681,16 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 #endif
 
 //	cx_write(0x20000,0x31016C);
-//  cx_write(0x11000000,CX_PLL_REG);//set PLL to 1:1
-//  cx_write(0x01400000,CX_PLL_REG);//set PLL to 1.25x/10fsc 
-	cx_write(0x01000000,CX_PLL_REG);//set PLL to 8xfsc 
+//  cx_write(0x11000000,MO_PLL_REG);//set PLL to 1:1
+//  cx_write(0x01400000,MO_PLL_REG);//set PLL to 1.25x/10fsc 
+	cx_write(0x01000000,MO_PLL_REG);//set PLL to 8xfsc 
 
 	if (tenxfsc) {
 		cx_write(131072*4/5,0x310170);//set SRC to 1.25x/10fsc  
-		cx_write(0x01400000,CX_PLL_REG);//set PLL to 1.25x/10fsc 
+		cx_write(0x01400000,MO_PLL_REG);//set PLL to 1.25x/10fsc 
 	} else {
 		cx_write(131072,0x310170);//set SRC to 8xfsc 
-		cx_write(0x11000000,CX_PLL_REG);//set PLL to 1:1
+		cx_write(0x11000000,MO_PLL_REG);//set PLL to 1:1
 	}
 
 	//set audio multiplexer
@@ -748,15 +714,15 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	//==========Pixelview PlayTVPro Ultracard specific============
 	//select which output is redirected to audio output jack
 	//
-	cx_write(1<<25,CX_GP3_IO); //use as 24 bit GPIO/GPOE 
-	cx_write(0x0b,CX_GPOE); //bit 3 is to enable 4052 , bit 0-1 4052's AB
-	cx_write(audsel&3,CX_GPIO);
+	cx_write(1<<25,MO_GP3_IO); //use as 24 bit GPIO/GPOE 
+	cx_write(0x0b,MO_GP1_IO); //bit 3 is to enable 4052 , bit 0-1 4052's AB
+	cx_write(audsel&3,MO_GP0_IO);
 	printk("cxadc: audsel = %d\n",audsel&3);
 	//=================================================
 	
 	//i2c sda/scl set to high and use software control
 	
-	cx_write(3,CX_I2C_COMP_DATACNTRL);
+	cx_write(3,MO_I2C);
 	//=================================================
 	
 	/* hook into linked list */
@@ -765,8 +731,8 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	cxcount++;
 
 	pci_set_drvdata(pci_dev,ctd);
-	cx_write(INTERRUPT_MASK,CX_VID_INT_MSK);
-	//cx_write(1,CX_PCI_INT_MSK); //enable interrupt
+	cx_write(INTERRUPT_MASK,MO_VID_INTMSK);
+	//cx_write(1,MO_PCI_INTMSK); //enable interrupt
 //	printk("page size %d\n",PAGE_SIZE);
         return 0;
 
