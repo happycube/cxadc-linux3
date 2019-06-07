@@ -4,6 +4,7 @@
 
     Copyright (c) 2005-2007 Hew How Chee <how_chee@yahoo.com>
     Copyright (c) 2013-2015 Chad Page <Chad.Page@gmail.com>
+    Copyright (c) 2019 Adam Sampson <ats@offog.org>
  
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -87,7 +88,7 @@ cxadc: release
 #include <linux/pci.h>
 #include <linux/sched.h>
 #include <linux/interrupt.h>
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <linux/moduleparam.h>
 #include <linux/fs.h>
 #include <linux/mm.h>
