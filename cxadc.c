@@ -790,8 +790,6 @@ static void cxadc_remove(struct pci_dev *pci_dev)
 	pci_set_drvdata(pci_dev, NULL);
 	printk("cxadc: reset drv ok\n");
 	kfree(ctd);
-
-	return;
 }
 
 MODULE_DEVICE_TABLE(pci, cxadc_pci_tbl);
@@ -814,7 +812,6 @@ static int __init cxadc_init_module(void)
 static void __exit cxadc_cleanup_module(void)
 {
 	pci_unregister_driver(&cxadc_pci_driver);
-	return;
 }
 
 module_init(cxadc_init_module);
