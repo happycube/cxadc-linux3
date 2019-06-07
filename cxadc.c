@@ -80,6 +80,7 @@ cxadc: release
                - it still a mess in this code
 */
 
+#include <linux/version.h>
 #include <linux/cdev.h>
 #include <linux/debugfs.h>
 #include <linux/completion.h>
@@ -92,6 +93,14 @@ cxadc: release
 #include <linux/moduleparam.h>
 #include <linux/fs.h>
 #include <linux/mm.h>
+
+/*
+ * From Linux 4.21, dma_alloc_coherent always returns zeroed memory,
+ * and dma_zalloc_coherent was removed later.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 21, 0)
+#define dma_zalloc_coherent dma_alloc_coherent
+#endif
 
 static int debug = 0;
 static int level = 16;
