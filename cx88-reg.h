@@ -170,6 +170,7 @@
 #define MO_CONTR_BRIGHT     0x310110
 #define MO_UV_SATURATION    0x310114
 #define MO_HUE              0x310118
+#define MO_WHITE_CRUSH      0x31011c
 #define MO_HTOTAL           0x310120
 #define MO_HDELAY_EVEN      0x310124
 #define MO_HDELAY_ODD       0x310128
@@ -202,7 +203,14 @@
 #define MO_VBOS_CONTROL	    0x3101a8
 
 #define MO_AGC_BACK_VBI     0x310200
+#define MO_AGC_SYNC_SLICER  0x310204
 #define MO_AGC_SYNC_TIP1    0x310208
+#define MO_AGC_SYNC_TIP2    0x31020c
+#define MO_AGC_SYNC_TIP3    0x310210
+#define MO_AGC_GAIN_ADJ1    0x310214
+#define MO_AGC_GAIN_ADJ2    0x310218
+#define MO_AGC_GAIN_ADJ3    0x31021c
+#define MO_AGC_GAIN_ADJ4    0x310220
 
 #define MO_VIDY_GPCNT       0x31C020 // {16}RO Video Y general purpose counter
 #define MO_VIDU_GPCNT       0x31C024 // {16}RO Video U general purpose counter

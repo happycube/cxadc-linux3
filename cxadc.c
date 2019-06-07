@@ -304,26 +304,26 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 
 	if (level < 0) level = 0;	
 	if (level > 31) level = 31;	
-	cx_write((1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
+	cx_write((1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0),MO_AGC_GAIN_ADJ4);//control gain also bit 16
 
 	// set higher clock rate	
 	if (tenxfsc) {
-		cx_write(131072*4/5,0x310170);//set SRC to 1.25x/10fsc  
+		cx_write(131072*4/5,MO_SCONV_REG);//set SRC to 1.25x/10fsc  
 	} else {
-		cx_write(131072,0x310170);//set SRC to 8xfsc 
+		cx_write(131072,MO_SCONV_REG);//set SRC to 8xfsc 
 	}
 	if (tenxfsc) {
-		cx_write(131072*4/5,0x310170);//set SRC to 1.25x/10fsc  
+		cx_write(131072*4/5,MO_SCONV_REG);//set SRC to 1.25x/10fsc  
 		cx_write(0x01400000,MO_PLL_REG);//set PLL to 1.25x/10fsc 
 	} else {
-		cx_write(131072,0x310170);//set SRC to 8xfsc 
+		cx_write(131072,MO_SCONV_REG);//set SRC to 8xfsc 
 		cx_write(0x11000000,MO_PLL_REG);//set PLL to 1:1
 	}
 		
 	if (tenbit) {
-		cx_write(((1<<6)|(3<<1)|(1<<5)),0x310180); //capture 16 bit raw
+		cx_write(((1<<6)|(3<<1)|(1<<5)),MO_CAPTURE_CTRL); //capture 16 bit raw
 	} else {
-		cx_write(((1<<6)|(3<<1)|(0<<5)),0x310180); //capture 8 bit raw
+		cx_write(((1<<6)|(3<<1)|(0<<5)),MO_CAPTURE_CTRL); //capture 8 bit raw
 	}
 
 	file->private_data = ctd;
@@ -414,7 +414,7 @@ static long cxadc_char_ioctl(struct file *file,
 
 		if (gain < 0) gain = 0;
 		if (gain > 31) gain = 31;
-		cx_write((1<<23)|(0<<22)|(0<<21)|(gain<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
+		cx_write((1<<23)|(0<<22)|(0<<21)|(gain<<16)|(0xff<<8)|(0x0<<0),MO_AGC_GAIN_ADJ4);//control gain also bit 16
 	}
 
 	return ret;
@@ -451,10 +451,10 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 	for (count = 0; count < 20; count++) {
 		if (astat&1) {
 			if(count==3) {
-//				unsigned int uu=cx_read(0x310220);
+//				unsigned int uu=cx_read(MO_AGC_GAIN_ADJ4);
 //				printk("%8.8x %x %x %x %x\n",
 //			uu,uu>>16,(uu>>16)&0x1f,(uu>>8)&0xff,uu&0xff);
-//			printk("gadj1 %x stip3 %x gadj3 %x gadj4 %x stat %x wc %x\n ",cx_read(0x310214),cx_read(0x310210),cx_read(0x31021c),cx_read(0x310220),cx_read(0x310100),cx_read(0x31011c));
+//			printk("gadj1 %x stip3 %x gadj3 %x gadj4 %x stat %x wc %x\n ",cx_read(MO_AGC_GAIN_ADJ1),cx_read(MO_AGC_SYNC_TIP3),cx_read(MO_AGC_GAIN_ADJ3),cx_read(MO_AGC_GAIN_ADJ4),cx_read(MO_DEVICE_STATUS),cx_read(MO_WHITE_CRUSH));
 //				printk("cxadc: wake up %x\n",cx_read(MO_VBI_GPCNT));
 //				
 				ctd->newpage=1;
@@ -617,33 +617,33 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		//1<<14 - video in
 		
 		vmux&=3;//default vmux=1
-//		cx_write((vmux<<14)|0x01|0x10|(0x01<<12),0x310104); //pal-B, yadc =mux1 (<<14)
-//		cx_write((vmux<<14)|(1<<13)|0x01|0x10|0x10000,0x310104); //pal-B, yadc =mux1 (<<14)
-		cx_write((vmux<<14)|(1<<13)|0x01|0x10|0x10000,0x310104); //pal-B
-		cx_write(0x0f, 0x310164); // output format:  allow full range
+//		cx_write((vmux<<14)|0x01|0x10|(0x01<<12),MO_INPUT_FORMAT); //pal-B, yadc =mux1 (<<14)
+//		cx_write((vmux<<14)|(1<<13)|0x01|0x10|0x10000,MO_INPUT_FORMAT); //pal-B, yadc =mux1 (<<14)
+		cx_write((vmux<<14)|(1<<13)|0x01|0x10|0x10000,MO_INPUT_FORMAT); //pal-B
+		cx_write(0x0f, MO_OUTPUT_FORMAT); // output format:  allow full range
 		
-		cx_write(0xff00, 0x310110); // brightness and contrast 
+		cx_write(0xff00, MO_CONTR_BRIGHT); // brightness and contrast 
 		
 		//vbi lenght CLUSTER_BUFFER_SIZE/2  work
 				
-		cx_write((((CLUSTER_BUFFER_SIZE)<<17)|(2<<11)),0x310188); //no of byte transferred from peripehral to fifo
+		cx_write((((CLUSTER_BUFFER_SIZE)<<17)|(2<<11)),MO_VBI_PACKET); //no of byte transferred from peripehral to fifo
 								// if fifo buffer < this, it will still transfer this no of byte
 								//must be multiple of 8, if not go haywire?
 		
 		//raw mode & byte swap <<8 (3<<8=swap)
-		cx_write( ((0xe)|(0xe<<4)|(0<<8)) , 0x310184);
+		cx_write( ((0xe)|(0xe<<4)|(0<<8)) , MO_COLOR_CTRL);
 
 		if (tenbit) {
-			cx_write(((1<<6)|(3<<1)|(1<<5)),0x310180); //capture 16 bit raw
+			cx_write(((1<<6)|(3<<1)|(1<<5)),MO_CAPTURE_CTRL); //capture 16 bit raw
 		} else {
-			cx_write(((1<<6)|(3<<1)|(0<<5)),0x310180); //capture 8 bit raw
+			cx_write(((1<<6)|(3<<1)|(0<<5)),MO_CAPTURE_CTRL); //capture 8 bit raw
 		}
 	
 		// power down audio and chroma DAC+ADC	
-		cx_write( 0x12, 0x35C04C);
+		cx_write( 0x12, MO_AFECFG_IO);
 
-		//cx_write(((1<<6)|(3<<1)|(1<<5)),0x310180); //capture 16 bit raw
-//		cx_write(((1<<6)),0x310180);
+		//cx_write(((1<<6)|(3<<1)|(1<<5)),MO_CAPTURE_CTRL); //capture 16 bit raw
+//		cx_write(((1<<6)),MO_CAPTURE_CTRL);
 		//run risc
 //		wmb();
 		cx_write(1<<5,MO_DEV_CNTRL2);
@@ -680,36 +680,36 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	}	
 #endif
 
-//	cx_write(0x20000,0x31016C);
+//	cx_write(0x20000,MO_PLL_ADJ_CTRL);
 //  cx_write(0x11000000,MO_PLL_REG);//set PLL to 1:1
 //  cx_write(0x01400000,MO_PLL_REG);//set PLL to 1.25x/10fsc 
 	cx_write(0x01000000,MO_PLL_REG);//set PLL to 8xfsc 
 
 	if (tenxfsc) {
-		cx_write(131072*4/5,0x310170);//set SRC to 1.25x/10fsc  
+		cx_write(131072*4/5,MO_SCONV_REG);//set SRC to 1.25x/10fsc  
 		cx_write(0x01400000,MO_PLL_REG);//set PLL to 1.25x/10fsc 
 	} else {
-		cx_write(131072,0x310170);//set SRC to 8xfsc 
+		cx_write(131072,MO_SCONV_REG);//set SRC to 8xfsc 
 		cx_write(0x11000000,MO_PLL_REG);//set PLL to 1:1
 	}
 
 	//set audio multiplexer
 	
 	//set vbi agc
-//	cx_write((0<<21)|(0<<20)|(0<<19)|(4<<16)|(0x60<<8)|(0x1c<<0),0x310204);
-	cx_write(0x0,0x310204);
+//	cx_write((0<<21)|(0<<20)|(0<<19)|(4<<16)|(0x60<<8)|(0x1c<<0),MO_AGC_SYNC_SLICER);
+	cx_write(0x0,MO_AGC_SYNC_SLICER);
 	
 	if (level < 0) level = 0;	
 	if (level > 31) level = 31;	
 			
-	cx_write((0<<27)|(0<<26) |(1<<25)| (0x100<<16) |(0xfff<<0),   0x310200);
-	cx_write((1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0),0x310220);//control gain also bit 16
+	cx_write((0<<27)|(0<<26) |(1<<25)| (0x100<<16) |(0xfff<<0),MO_AGC_BACK_VBI);
+	cx_write((1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0),MO_AGC_GAIN_ADJ4);//control gain also bit 16
 // for 'cooked' composite
-	cx_write((0x1c0<<17)|(0x0<<9)|(0<<7)|(0xf<<0),0x310208);
-	cx_write((0x20<<17)|(0x0<<9)|(0<<7)|(0xf<<0),0x31020c);
-	cx_write((0x1e48<<16)|(0xff<<8)|(0x8),0x310210);
-	cx_write((0xe0<<17)|(0xe<<9)|(0x0<<7)|(0x7<<0),0x310214);
-	cx_write((0x28<<16)|(0x28<<8)|(0x50<<0),0x31021c);//set gain of agc but not offset
+	cx_write((0x1c0<<17)|(0x0<<9)|(0<<7)|(0xf<<0),MO_AGC_SYNC_TIP1);
+	cx_write((0x20<<17)|(0x0<<9)|(0<<7)|(0xf<<0),MO_AGC_SYNC_TIP2);
+	cx_write((0x1e48<<16)|(0xff<<8)|(0x8),MO_AGC_SYNC_TIP3);
+	cx_write((0xe0<<17)|(0xe<<9)|(0x0<<7)|(0x7<<0),MO_AGC_GAIN_ADJ1);
+	cx_write((0x28<<16)|(0x28<<8)|(0x50<<0),MO_AGC_GAIN_ADJ3);//set gain of agc but not offset
 	
 	//==========Pixelview PlayTVPro Ultracard specific============
 	//select which output is redirected to audio output jack
