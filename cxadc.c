@@ -17,7 +17,6 @@
  * GNU General Public License for more details.
  */
 
-
 #include "cx88-reg.h"
 
 #include <linux/version.h>
@@ -55,16 +54,16 @@ static int tenxfsc = 0;
 /* ------------------------------------------------------------------------ */
 
 //64 Mbytes VBI DMA BUFF
-#define VBI_DMA_BUFF_SIZE (1024*1024*64) 
+#define VBI_DMA_BUFF_SIZE (1024*1024*64)
 //corresponds to 8192 DMA pages of 4k bytes
 #define MAX_DMA_PAGE (VBI_DMA_BUFF_SIZE/PAGE_SIZE)
 
 /* -------------------------------------------------------------- */
 
-#define WRITE_INST_PER_PAGE 510 
-// WRITE_INST_PER_PAGE -  	1 sync instruction (first page only) followed by 510 write instruction and finally a
-//  		       		1 jmp instruction to next page/reloop  
-// 				this will give 4 + 510*8 +  8 = 4092 bytes, which fits into a page
+#define WRITE_INST_PER_PAGE 510
+// WRITE_INST_PER_PAGE -	1 sync instruction (first page only) followed by 510 write instruction and finally a
+//				1 jmp instruction to next page/reloop
+//				this will give 4 + 510*8 +  8 = 4092 bytes, which fits into a page
 
 #define NUMBER_OF_WRITE_PER_PAGE 510
 //number of write per page must be even
@@ -72,7 +71,7 @@ static int tenxfsc = 0;
 //and the end , there is a jmp to next page which is 8 byte
 //giving a total of 510 * 8 + 8 = 4088
 
-#define CLUSTER_BUFFER_SIZE 2048 
+#define CLUSTER_BUFFER_SIZE 2048
 
 #define NUMBER_OF_WRITE_NEEDED (VBI_DMA_BUFF_SIZE/CLUSTER_BUFFER_SIZE)
 #define NUMBER_OF_RISC_PAGE ((NUMBER_OF_WRITE_NEEDED/NUMBER_OF_WRITE_PER_PAGE)+1+1)
@@ -97,13 +96,13 @@ struct cxadc {
 	/* locking */
 	int            users;
 	struct mutex lock;
-	
+
 	unsigned int    risc_inst_buff_size;
 	unsigned int	*risc_inst_virt;
-	dma_addr_t    	risc_inst_phy;
-	
+	dma_addr_t	risc_inst_phy;
+
 	wait_queue_head_t readQ;
-	
+
 	void *pgvec_virt[MAX_DMA_PAGE+1];
 	dma_addr_t pgvec_phy[MAX_DMA_PAGE+1];
 
@@ -122,11 +121,11 @@ static unsigned int risc_start_phy_addr=0;
 #endif
 /* -------------------------------------------------------------- */
 
-#define NUMBER_OF_CLUSTER_BUFFER 8 
+#define NUMBER_OF_CLUSTER_BUFFER 8
 #define CX_SRAM_BASE 0x180000
 
-#define CDT_BASE  		(CX_SRAM_BASE+0x1000)
-#define CLUSTER_BUFFER_BASE 	(CX_SRAM_BASE+0x4000)
+#define CDT_BASE		(CX_SRAM_BASE+0x1000)
+#define CLUSTER_BUFFER_BASE	(CX_SRAM_BASE+0x4000)
 #define RISC_BUFFER_BASE        (CX_SRAM_BASE+0x2000)
 #define RISC_INST_QUEUE		(CX_SRAM_BASE+0x800)
 #define CHN24_CMDS_BASE	0x180100
@@ -134,16 +133,16 @@ static unsigned int risc_start_phy_addr=0;
 
 #define INTERRUPT_MASK 0x18888
 
-static struct pci_device_id cxadc_pci_tbl[] = 
+static struct pci_device_id cxadc_pci_tbl[] =
 {
 	{
 		.vendor       = 0x14f1, //conexant
-		.device       = 0x8800, 
+		.device       = 0x8800,
 		.subvendor    = PCI_ANY_ID,
 		.subdevice    = PCI_ANY_ID,
 	},
 	{
-	
+
 	}
 };
 
@@ -179,19 +178,19 @@ static void create_cdt_table(struct cxadc *ctd,unsigned int numbuf,unsigned int 
 	for (i=0;i<numbuf;i++)
 	{
 		//printk("cdtptr [%x]= %x\n",qq,pp);
-		
+
 		writel(pp,ctd->mmio+(qq>>2));
 		qq+=4;
-		
+
 		writel(0,ctd->mmio+(qq>>2)); /*not needed but we do it anyway*/
 		qq+=4;
-		
+
 		writel(0,ctd->mmio+(qq>>2)); /*not needed but we do it anyway*/
 		qq+=4;
-		
+
 		writel(0,ctd->mmio+(qq>>2)); /*not needed but we do it anyway*/
 		qq+=4;
-		
+
 		pp+=buffsize;
 	}
 
@@ -202,13 +201,13 @@ static void free_dma_buffer(struct cxadc *ctd)
 	int i;
 	for(i=0;i<MAX_DMA_PAGE;i++)
 	{
-		if(ctd->pgvec_virt[i]) 
+		if(ctd->pgvec_virt[i])
 		{
 			dma_free_coherent(&ctd->pci->dev, 4096, ctd->pgvec_virt[i],ctd->pgvec_phy[i]);
 		}
 	}
 }
-		
+
 static int alloc_risc_inst_buffer(struct cxadc *ctd) //used
 {
 	//unsigned int size=
@@ -217,17 +216,17 @@ static int alloc_risc_inst_buffer(struct cxadc *ctd) //used
 	if (ctd->risc_inst_virt==NULL)
 		return -ENOMEM;
 	memset(ctd->risc_inst_virt,0,ctd->risc_inst_buff_size);
-	
+
 	printk("cxadc: risc inst buff allocated at virt 0x%p phy 0x%lx size %d kbytes\n",
 	ctd->risc_inst_virt,(unsigned long)ctd->risc_inst_phy,ctd->risc_inst_buff_size/1024);
-	
+
 	return 0;
 }
 
 static void free_risc_inst_buffer(struct cxadc *ctd) //used
 {
 	if(ctd->risc_inst_virt!=NULL)
-	pci_free_consistent(ctd->pci,ctd->risc_inst_buff_size,ctd->risc_inst_virt,ctd->risc_inst_phy);
+		pci_free_consistent(ctd->pci,ctd->risc_inst_buff_size,ctd->risc_inst_virt,ctd->risc_inst_phy);
 }
 
 static int make_risc_instructions(struct cxadc *ctd)//,unsigned int cl_size,unsigned int max_page) //used
@@ -239,23 +238,23 @@ static int make_risc_instructions(struct cxadc *ctd)//,unsigned int cl_size,unsi
 	unsigned int *pp=(unsigned int *)ctd->risc_inst_virt;
 
 	loop_addr=ctd->risc_inst_phy+4;
-	
+
 	*pp++=RISC_SYNC|(3<<16);
-	
+
 	irqt=0;
 	for(i=0;i<MAX_DMA_PAGE;i++)
 	{
-		irqt++;	
+		irqt++;
 		irqt&=0x1ff;
-		*pp++=RISC_WRITE |CLUSTER_BUFFER_SIZE|(3<<26)|(0<<16);	
-		
+		*pp++=RISC_WRITE |CLUSTER_BUFFER_SIZE|(3<<26)|(0<<16);
+
 //		dma_addr=virt_to_bus(ctd->pgvec[i]);
 		dma_addr=ctd->pgvec_phy[i];
 		//printk("dma addr %x pgvec %x\n",dma_addr,ctd->pgvec[i]);
 		*pp++=dma_addr;
 		if(i!=MAX_DMA_PAGE-1)
-		{	
-			*pp++=RISC_WRITE |CLUSTER_BUFFER_SIZE|(((irqt==0)?1:0)<<24)|(3<<26)|(1<<16);	
+		{
+			*pp++=RISC_WRITE |CLUSTER_BUFFER_SIZE|(((irqt==0)?1:0)<<24)|(3<<26)|(1<<16);
 			*pp++=dma_addr+CLUSTER_BUFFER_SIZE;
 		}
 		else
@@ -264,19 +263,19 @@ static int make_risc_instructions(struct cxadc *ctd)//,unsigned int cl_size,unsi
 			*pp++=dma_addr+CLUSTER_BUFFER_SIZE;
 		}
 	}
-	
-#if 0	
+
+#if 0
 	//test stop FIFO and RISC
 	*pp++=RISC_WRITECR|1;
 	*pp++=MO_VID_DMACNTRL;
 	*pp++=0;
 	*pp++=0xffffffff;
 	//test
-#endif	
+#endif
 	//1<<24 = irq , 11<<16 = cnt
 	*pp++=RISC_JUMP|(0<<24)|(0<<16); //interrupt and increment counter
 	*pp++=loop_addr;
-	
+
 	printk("cxadc: end of risc inst 0x%p total size %ld kbyte\n",pp,((void *)pp-(void *)ctd->risc_inst_virt)/1024);
 	return 0;
 }
@@ -297,11 +296,11 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 
 	// re-set the level, clock speed, and bit size
 
-	if (level < 0) level = 0;	
-	if (level > 31) level = 31;	
+	if (level < 0) level = 0;
+	if (level > 31) level = 31;
 	cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0)); //control gain also bit 16
 
-	// set higher clock rate	
+	// set higher clock rate
 	if (tenxfsc) {
 		cx_write(MO_SCONV_REG, 131072*4/5); //set SRC to 1.25x/10fsc
 	} else {
@@ -314,7 +313,7 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 		cx_write(MO_SCONV_REG, 131072); //set SRC to 8xfsc
 		cx_write(MO_PLL_REG, 0x11000000); //set PLL to 1:1
 	}
-		
+
 	if (tenbit) {
 		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5))); //capture 16 bit raw
 	} else {
@@ -359,37 +358,37 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 
 //	printk("read pos %ld cur %d len %d pnum %d gp_cnt %d\n", *offset, cx_read(MO_VBI_GPCNT), count, pnum, gp_cnt);
 
-	if ((pnum == gp_cnt) && (file->f_flags & O_NONBLOCK)) return rv; 
+	if ((pnum == gp_cnt) && (file->f_flags & O_NONBLOCK)) return rv;
 
 	while (count) {
 		while ((count > 0) && (pnum != gp_cnt)) {
 			unsigned len;
 
-			// handle partial pages for either reason 
+			// handle partial pages for either reason
 			len = (*offset % 4096) ? (4096 - (*offset % 4096)) : 4096;
 			if (len > count) len = count;
 
 		//	if (len != 4096) printk("do read rv %d count %d cur %d len %d pnum %d\n", rv, count, cx_read(MO_VBI_GPCNT), len, pnum);
 			if (copy_to_user(tgt, ctd->pgvec_virt[pnum] + (*offset % 4096), len))
 				return -EFAULT;
-			memset(ctd->pgvec_virt[pnum] + (*offset % 4096), 0, len); 
+			memset(ctd->pgvec_virt[pnum] + (*offset % 4096), 0, len);
 
 			count -= len;
 			tgt += len;
-			*offset += len;	
+			*offset += len;
 			rv += len;
-			
+
 			pnum = (*offset % VBI_DMA_BUFF_SIZE) / PAGE_SIZE;
 			pnum += ctd->initial_page;
 			pnum %= MAX_DMA_PAGE;
 		};
 
 		if (count) {
-			if (file->f_flags & O_NONBLOCK) return rv; 
+			if (file->f_flags & O_NONBLOCK) return rv;
 
 			ctd->newpage=0;
-                	wait_event_interruptible(ctd->readQ,ctd->newpage);
-	
+			wait_event_interruptible(ctd->readQ,ctd->newpage);
+
 			gp_cnt = cx_read(MO_VBI_GPCNT);
 			gp_cnt = (!gp_cnt) ? (MAX_DMA_PAGE - 1) : (gp_cnt - 1);
 		}
@@ -399,9 +398,9 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 }
 
 static long cxadc_char_ioctl(struct file *file,
-                               unsigned int cmd, unsigned long arg)
+			     unsigned int cmd, unsigned long arg)
 {
-        struct cxadc *ctd = file->private_data;
+	struct cxadc *ctd = file->private_data;
 	int ret=0;
 
 	if (cmd == 0x12345670) {
@@ -429,7 +428,7 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 	int count = 0;
 	u32 stat,astat,ostat,allstat;
 	struct cxadc *ctd = dev_id;
-	
+
 	allstat = cx_read(MO_VID_INTSTAT);
 	stat  = cx_read(MO_VID_INTMSK);
 	astat = stat & allstat;
@@ -440,8 +439,8 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 	}
 
 	if (!astat) {
-		 return IRQ_RETVAL(0); //if no interrupt bit set we return
-	}	
+		return IRQ_RETVAL(0); //if no interrupt bit set we return
+	}
 
 	for (count = 0; count < 20; count++) {
 		if (astat&1) {
@@ -451,7 +450,7 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 //			uu,uu>>16,(uu>>16)&0x1f,(uu>>8)&0xff,uu&0xff);
 //			printk("gadj1 %x stip3 %x gadj3 %x gadj4 %x stat %x wc %x\n ",cx_read(MO_AGC_GAIN_ADJ1),cx_read(MO_AGC_SYNC_TIP3),cx_read(MO_AGC_GAIN_ADJ3),cx_read(MO_AGC_GAIN_ADJ4),cx_read(MO_DEVICE_STATUS),cx_read(MO_WHITE_CRUSH));
 //				printk("cxadc: wake up %x\n",cx_read(MO_VBI_GPCNT));
-//				
+//
 				ctd->newpage=1;
 				wake_up_interruptible(&ctd->readQ);
 			}
@@ -460,7 +459,7 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 		astat>>=1;
 	}
 	cx_write(MO_VID_INTSTAT, ostat);
-	
+
 	return IRQ_RETVAL(1);
 }
 
@@ -507,7 +506,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		printk(KERN_ERR "cxadc: request memory region failed\n");
 		return -EBUSY;
 	}
-	
+
 	ctd = kmalloc(sizeof(*ctd),GFP_ATOMIC);
 	if (!ctd) {
 		rc = -ENOMEM;
@@ -518,22 +517,22 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 
 	ctd->pci = pci_dev;
 	ctd->irq = pci_dev->irq;
-	
+
 	if (alloc_risc_inst_buffer(ctd))
 	{
 		printk(KERN_ERR "cxadc: cannot alloc risc buffer\n");
 		rc=-ENOMEM;
 		goto fail1;
-	}	
-	
+	}
+
 	for (i = 0; i < (MAX_DMA_PAGE+1); i++) {
 		ctd->pgvec_virt[i]=0;
 		ctd->pgvec_phy[i]=0;
 	}
-	
+
 	total_size=0;
 	pgsize=4096;
-	
+
 	for (i=0; i<MAX_DMA_PAGE; i++) {
 		dma_addr_t dma_handle;
 
@@ -541,28 +540,28 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		if(ctd->pgvec_virt[i]!=0) {
 			ctd->pgvec_phy[i]=dma_handle;
 			total_size+=pgsize;
- 		} else {	
+		} else {
 			printk("cxadc: alloc dma buffer failed. index = %d\n",i);
-			
+
 			rc=-ENOMEM;
 			goto fail1x;
 		}
-		
+
 	}
-	
+
 	printk(KERN_INFO "cxadc: total DMA size allocated = %d kb\n",total_size/1024);
 
 	make_risc_instructions(ctd);
-	
+
 //	printk("cxadc: IRQ used %d\n",ctd->irq);
 	ctd->mem  = pci_resource_start(pci_dev,0);
-	
+
 	ctd->mmio = ioremap(pci_resource_start(pci_dev,0),
 			    pci_resource_len(pci_dev,0));
 	printk("cxadc: MEM :%x MMIO :%p\n",ctd->mem,ctd->mmio);
 
 //	ctd->rate = rate[cxcount];
-	
+
 	mutex_init(&ctd->lock);
 	init_waitqueue_head(&ctd->readQ);
 
@@ -573,58 +572,58 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	} else {
 		pci_write_config_byte(pci_dev, PCI_LATENCY_TIMER, 255);
 	}
-       
+
 	pci_read_config_byte(pci_dev, PCI_CLASS_REVISION, &revision);
-        pci_read_config_byte(pci_dev, PCI_LATENCY_TIMER, &lat);
-        printk("cxadc: dev 0x%X (rev %d) at %02x:%02x.%x, ",
+	pci_read_config_byte(pci_dev, PCI_LATENCY_TIMER, &lat);
+	printk("cxadc: dev 0x%X (rev %d) at %02x:%02x.%x, ",
 	       pci_dev->device,revision,pci_dev->bus->number,
 	       PCI_SLOT(pci_dev->devfn),PCI_FUNC(pci_dev->devfn));
-        printk("cxadc: irq: %d, latency: %d, mmio: 0x%x\n",
+	printk("cxadc: irq: %d, latency: %d, mmio: 0x%x\n",
 	       ctd->irq, lat, ctd->mem);
 	//printk("cxadc: using card config \"%s\"\n", card->name);
 
 	/* init hw */
 	pci_set_master(pci_dev);
-	disable_card(ctd);	
-	
+	disable_card(ctd);
+
 	/* we use 16kbytes of FIFO buffer */
 	create_cdt_table( ctd, NUMBER_OF_CLUSTER_BUFFER,CLUSTER_BUFFER_SIZE,CLUSTER_BUFFER_BASE,CDT_BASE);
 	cx_write(MO_DMA24_CNT1, (CLUSTER_BUFFER_SIZE/8-1)); /* size of one buffer in qword -1 */
 //	printk("cnt1:%x\n",CLUSTER_BUFFER_SIZE/8-1);
-	
+
 	cx_write(MO_DMA24_PTR2, CDT_BASE); /* ptr to cdt */
 	cx_write(MO_DMA24_CNT2, 2*NUMBER_OF_CLUSTER_BUFFER); /* size of cdt in qword */
-	
+
 //	if(ctd->tbuf!=NULL)
 	{
 		unsigned int xxx;
 		xxx=cx_read(MO_VID_INTSTAT);
 		cx_write(MO_VID_INTSTAT, xxx); //clear interrupt
-		
+
 		cx_write(CHN24_CMDS_BASE, ctd->risc_inst_phy); //working
 		cx_write(CHN24_CMDS_BASE+4, CDT_BASE);
 		cx_write(CHN24_CMDS_BASE+8, 2*NUMBER_OF_CLUSTER_BUFFER);
 		cx_write(CHN24_CMDS_BASE+12, RISC_INST_QUEUE);
 
 		cx_write(CHN24_CMDS_BASE+16, 0x40);
-		
+
 		//source select (see datasheet on how to change adc source)
 		//1<<14 - video in
-		
+
 		vmux&=3;//default vmux=1
 //		cx_write(MO_INPUT_FORMAT, (vmux<<14)|0x01|0x10|(0x01<<12)); //pal-B, yadc =mux1 (<<14)
 //		cx_write(MO_INPUT_FORMAT, (vmux<<14)|(1<<13)|0x01|0x10|0x10000); //pal-B, yadc =mux1 (<<14)
 		cx_write(MO_INPUT_FORMAT, (vmux<<14)|(1<<13)|0x01|0x10|0x10000); //pal-B
 		cx_write(MO_OUTPUT_FORMAT, 0x0f); // output format:  allow full range
-		
+
 		cx_write(MO_CONTR_BRIGHT, 0xff00); // brightness and contrast
-		
+
 		//vbi lenght CLUSTER_BUFFER_SIZE/2  work
-				
+
 		cx_write(MO_VBI_PACKET, (((CLUSTER_BUFFER_SIZE)<<17)|(2<<11))); //no of byte transferred from peripehral to fifo
 								// if fifo buffer < this, it will still transfer this no of byte
 								//must be multiple of 8, if not go haywire?
-		
+
 		//raw mode & byte swap <<8 (3<<8=swap)
 		cx_write(MO_COLOR_CTRL, ((0xe)|(0xe<<4)|(0<<8)));
 
@@ -633,8 +632,8 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		} else {
 			cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5))); //capture 8 bit raw
 		}
-	
-		// power down audio and chroma DAC+ADC	
+
+		// power down audio and chroma DAC+ADC
 		cx_write(MO_AFECFG_IO, 0x12);
 
 		//cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5))); //capture 16 bit raw
@@ -646,11 +645,11 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		//enable fifo and risc
 		cx_write(MO_VID_DMACNTRL, ((1<<7)|(1<<3)));
 //		wmb();
-	
+
 	//	for(i=0x4000;i<0x8000;i+=4)
-	//	{	
+	//	{
 	//		cx_write((CX_SRAM_BASE+i), 0xaaaaaaaa);
-	//	}	
+	//	}
 	}
 
 	if ((rc = request_irq(ctd->irq, cxadc_irq, IRQF_SHARED,
@@ -662,17 +661,17 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 
 #if 1
 	/* register devices */
-#define CX2388XADC_MAJOR  126		       
-  	if (register_chrdev (CX2388XADC_MAJOR, "cxadc", &cxadc_char_fops))
+#define CX2388XADC_MAJOR  126
+	if (register_chrdev (CX2388XADC_MAJOR, "cxadc", &cxadc_char_fops))
 	{
-    		printk (KERN_ERR "cxadc: failed to register device\n");
+		printk (KERN_ERR "cxadc: failed to register device\n");
 		rc=-EIO;
 		goto fail2;
 	}
 	else
 	{
-		printk("cxadc: char dev register ok\n");	       
-	}	
+		printk("cxadc: char dev register ok\n");
+	}
 #endif
 
 //	cx_write(MO_PLL_ADJ_CTRL, 0x20000);
@@ -689,14 +688,14 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	}
 
 	//set audio multiplexer
-	
+
 	//set vbi agc
 //	cx_write(MO_AGC_SYNC_SLICER, (0<<21)|(0<<20)|(0<<19)|(4<<16)|(0x60<<8)|(0x1c<<0));
 	cx_write(MO_AGC_SYNC_SLICER, 0x0);
-	
-	if (level < 0) level = 0;	
-	if (level > 31) level = 31;	
-			
+
+	if (level < 0) level = 0;
+	if (level > 31) level = 31;
+
 	cx_write(MO_AGC_BACK_VBI, (0<<27)|(0<<26) |(1<<25)| (0x100<<16) |(0xfff<<0));
 	cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0)); //control gain also bit 16
 // for 'cooked' composite
@@ -705,7 +704,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(0x8));
 	cx_write(MO_AGC_GAIN_ADJ1, (0xe0<<17)|(0xe<<9)|(0x0<<7)|(0x7<<0));
 	cx_write(MO_AGC_GAIN_ADJ3, (0x28<<16)|(0x28<<8)|(0x50<<0)); //set gain of agc but not offset
-	
+
 	//==========Pixelview PlayTVPro Ultracard specific============
 	//select which output is redirected to audio output jack
 	//
@@ -714,12 +713,12 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	cx_write(MO_GP0_IO, audsel&3);
 	printk("cxadc: audsel = %d\n",audsel&3);
 	//=================================================
-	
+
 	//i2c sda/scl set to high and use software control
-	
+
 	cx_write(MO_I2C, 3);
 	//=================================================
-	
+
 	/* hook into linked list */
 	ctd->next = cxadcs;
 	cxadcs = ctd;
@@ -729,24 +728,24 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	cx_write(MO_VID_INTMSK, INTERRUPT_MASK);
 	//cx_write(MO_PCI_INTMSK, 1); //enable interrupt
 //	printk("page size %d\n",PAGE_SIZE);
-        return 0;
+	return 0;
 
 // fail4:
 	//unregister_sound_dsp(ctd->dsp_analog);
 // fail3:
 	//if (digital)
 	//	unregister_sound_dsp(ctd->dsp_digital);
- fail2:
-        free_irq(ctd->irq,ctd);	
- fail1x:
+fail2:
+	free_irq(ctd->irq,ctd);
+fail1x:
 	free_dma_buffer(ctd);
 	free_risc_inst_buffer(ctd);
- fail1:
+fail1:
 
 	kfree(ctd);
 
-//	if(ctd->mmio!=NULL) iounmap(ctd->mmio);	
- fail0:
+//	if(ctd->mmio!=NULL) iounmap(ctd->mmio);
+fail0:
 
 	release_mem_region(pci_resource_start(pci_dev,0),
 			   pci_resource_len(pci_dev,0));
@@ -758,16 +757,16 @@ static void cxadc_remove(struct pci_dev *pci_dev)
 	struct cxadc *ctd = pci_get_drvdata(pci_dev);
 	struct cxadc *walk;
 
-	disable_card(ctd);		
+	disable_card(ctd);
 //		wmb();
 	/* unregister devices */
 	/* Next, unregister ourselves with the character device driver handler */
 
 	unregister_chrdev(CX2388XADC_MAJOR, "cxadc");
-	
+
 	/* free resources */
 	free_risc_inst_buffer(ctd);
-        free_irq(ctd->irq,ctd);
+	free_irq(ctd->irq,ctd);
 //	printk("cxadc: irq freed\n");
 	free_dma_buffer(ctd);
 //	printk("cxadc: dma page freed\n");
@@ -799,10 +798,10 @@ MODULE_DEVICE_TABLE(pci, cxadc_pci_tbl);
 
 /* -------------------------------------------------------------- */
 static struct pci_driver cxadc_pci_driver = {
-        .name     = "cxadc",
-        .id_table = cxadc_pci_tbl,
-        .probe    = cxadc_probe,
-        .remove   = cxadc_remove,
+	.name     = "cxadc",
+	.id_table = cxadc_pci_tbl,
+	.probe    = cxadc_probe,
+	.remove   = cxadc_remove,
 };
 
 static int __init cxadc_init_module(void)
