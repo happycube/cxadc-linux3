@@ -102,7 +102,7 @@ struct cxadc {
 	unsigned int  *mmio;
 
 	/* locking */
-	int            users;
+	bool in_use;
 	struct mutex lock;
 
 	unsigned int    risc_inst_buff_size;
@@ -284,6 +284,14 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	if (ctd == NULL)
 		return -ENODEV;
 
+	mutex_lock(&ctd->lock);
+	if (ctd->in_use) {
+		mutex_unlock(&ctd->lock);
+		return -EBUSY;
+	}
+	ctd->in_use = true;
+	mutex_unlock(&ctd->lock);
+
 	/* re-set the level, clock speed, and bit size */
 
 	if (level < 0)
@@ -326,6 +334,10 @@ static int cxadc_char_release(struct inode *inode, struct file *file)
 	struct cxadc *ctd = file->private_data;
 
 	cx_write(MO_PCI_INTMSK, 0);
+
+	mutex_lock(&ctd->lock);
+	ctd->in_use = false;
+	mutex_unlock(&ctd->lock);
 
 	return 0;
 }
@@ -530,7 +542,9 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 			    pci_resource_len(pci_dev, 0));
 	cx_info("MEM :%x MMIO :%p\n", ctd->mem, ctd->mmio);
 
+	ctd->in_use = false;
 	mutex_init(&ctd->lock);
+
 	init_waitqueue_head(&ctd->readQ);
 
 	if (latency != -1) {
