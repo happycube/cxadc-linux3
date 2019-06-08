@@ -84,6 +84,7 @@ struct risc_page {
 	struct risc_page *next;
 	char buffer[PAGE_SIZE - sizeof(struct risc_page *)];
 };
+
 struct cxadc {
 	/* linked list */
 	struct cxadc *next;
@@ -118,6 +119,7 @@ struct cxadc {
 
 static struct cxadc *cxadcs;
 static unsigned int cxcount;
+#define CXCOUNT_MAX 1
 
 #define NUMBER_OF_CLUSTER_BUFFER 8
 #define CX_SRAM_BASE 0x180000
@@ -437,8 +439,6 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 	return IRQ_RETVAL(1);
 }
 
-#define CXADC_MAX 1
-
 static int cxadc_probe(struct pci_dev *pci_dev,
 		       const struct pci_device_id *pci_id)
 {
@@ -454,7 +454,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		return -EIO;
 	}
 
-	if (cxcount == CXADC_MAX) {
+	if (cxcount == CXCOUNT_MAX) {
 		printk(KERN_ERR "cxadc: only 1 card is supported\n");
 		return -EBUSY;
 	}
