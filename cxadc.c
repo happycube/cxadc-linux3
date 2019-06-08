@@ -671,6 +671,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	/* hook into linked list */
 	ctd->next = cxadcs;
 	cxadcs = ctd;
+	ctd->char_dev = cxcount;
 	cxcount++;
 
 	pci_set_drvdata(pci_dev, ctd);
