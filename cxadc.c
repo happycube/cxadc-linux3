@@ -49,32 +49,37 @@ static int tenxfsc = 0;
 #define cx_read(reg)         readl(ctd->mmio + ((reg) >> 2))
 #define cx_write(reg, value) writel((value), ctd->mmio + ((reg) >> 2))
 
-/* ------------------------------------------------------------------------ */
-
-//64 Mbytes VBI DMA BUFF
+/* 64 Mbytes VBI DMA BUFF */
 #define VBI_DMA_BUFF_SIZE (1024*1024*64)
-//corresponds to 8192 DMA pages of 4k bytes
+/* corresponds to 8192 DMA pages of 4k bytes */
 #define MAX_DMA_PAGE (VBI_DMA_BUFF_SIZE/PAGE_SIZE)
 
-/* -------------------------------------------------------------- */
-
+/*
+ * 1 sync instruction (first page only) followed by 510 write instruction
+ * and finally a 1 jmp instruction to next page/reloop
+ * this will give 4 + 510*8 +  8 = 4092 bytes, which fits into a page
+ */
 #define WRITE_INST_PER_PAGE 510
-// WRITE_INST_PER_PAGE -	1 sync instruction (first page only) followed by 510 write instruction and finally a
-//				1 jmp instruction to next page/reloop
-//				this will give 4 + 510*8 +  8 = 4092 bytes, which fits into a page
 
+/*
+ * number of write per page must be even
+ * each write risc instruction is 8 byte
+ * and the end , there is a jmp to next page which is 8 byte
+ * giving a total of 510 * 8 + 8 = 4088
+ */
 #define NUMBER_OF_WRITE_PER_PAGE 510
-//number of write per page must be even
-//each write risc instruction is 8 byte
-//and the end , there is a jmp to next page which is 8 byte
-//giving a total of 510 * 8 + 8 = 4088
 
 #define CLUSTER_BUFFER_SIZE 2048
 
 #define NUMBER_OF_WRITE_NEEDED (VBI_DMA_BUFF_SIZE/CLUSTER_BUFFER_SIZE)
+
+/*
+ * +1 page for additional one write page if
+ *   NUMBER_OF_WRITE_NEEDED/NUMBER_OF_WRITE_PER_PAGE is not integer
+ * +1 page for first sync and jmp instruction
+ *   (we used 12 bytes of 4 kbytes only)
+ */
 #define NUMBER_OF_RISC_PAGE ((NUMBER_OF_WRITE_NEEDED/NUMBER_OF_WRITE_PER_PAGE)+1+1)
-//+1 page for additional one write page if NUMBER_OF_WRITE_NEEDED/NUMBER_OF_WRITE_PER_PAGE is not integer
-//+1 page for first sync and jmp instruction (we used 12 bytes of 4 kbytes only)
 
 struct risc_page {
 	struct risc_page *next;
@@ -114,7 +119,6 @@ struct cxadc {
 
 static struct cxadc *cxadcs = NULL;
 static unsigned int cxcount = 0;
-/* -------------------------------------------------------------- */
 
 #define NUMBER_OF_CLUSTER_BUFFER 8
 #define CX_SRAM_BASE 0x180000
@@ -139,28 +143,28 @@ static struct pci_device_id cxadc_pci_tbl[] = {
 	}
 };
 
+/* turn off all DMA / IRQs */
 static void disable_card(struct cxadc *ctd)
 {
-	/* turn off all DMA / IRQs */
-	//turn off pci interrupt
+	/* turn off pci interrupt */
 	cx_write(MO_PCI_INTMSK, 0);
-	//turn off interrupt
+	/* turn off interrupt */
 	cx_write(MO_VID_INTMSK, 0);
 	cx_write(MO_VID_INTSTAT, ~(u32)0);
-	//disable fifo and risc
+	/* disable fifo and risc */
 	cx_write(MO_VID_DMACNTRL, 0);
-	//disable risc
+	/* disable risc */
 	cx_write(MO_DEV_CNTRL2, 0);
 }
 
-
 /*
-numbuf   - number of buffer
-buffsize - buffer size in bytes
-buffptr  - CX sram start addr for buffer e.g. 0x182000 as in example pg 2-62 of CX23880/1/2/3 datasheet
-cdtptr   - CX sram start addr for CDT    e.g. 0x181000 as in example pg 2-62 of CX23880/1/2/3 datasheet
-*/
-
+ * numbuf   - number of buffer
+ * buffsize - buffer size in bytes
+ * buffptr  - CX sram start addr for buffer
+ *            e.g. 0x182000 as in example pg 2-62 of CX23880/1/2/3 datasheet
+ * cdtptr   - CX sram start addr for CDT
+ *            e.g. 0x181000 as in example pg 2-62 of CX23880/1/2/3 datasheet
+ */
 static void create_cdt_table(struct cxadc *ctd,
 			     unsigned int numbuf, unsigned int buffsize,
 			     unsigned int buffptr, unsigned int cdtptr)
@@ -204,7 +208,8 @@ static void free_dma_buffer(struct cxadc *ctd)
 
 static int alloc_risc_inst_buffer(struct cxadc *ctd)
 {
-	ctd->risc_inst_buff_size = (VBI_DMA_BUFF_SIZE/CLUSTER_BUFFER_SIZE)*8+PAGE_SIZE; //add 1 page for sync instruct and jump
+	/* add 1 page for sync instruct and jump */
+	ctd->risc_inst_buff_size = (VBI_DMA_BUFF_SIZE/CLUSTER_BUFFER_SIZE)*8+PAGE_SIZE;
 	ctd->risc_inst_virt = pci_alloc_consistent(ctd->pci, ctd->risc_inst_buff_size, &ctd->risc_inst_phy);
 	if (ctd->risc_inst_virt == NULL)
 		return -ENOMEM;
@@ -247,13 +252,14 @@ static int make_risc_instructions(struct cxadc *ctd)
 			*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|(((irqt == 0) ? 1 : 0)<<24)|(3<<26)|(1<<16);
 			*pp++ = dma_addr+CLUSTER_BUFFER_SIZE;
 		} else {
-			*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|(((irqt == 0) ? 1 : 0)<<24)|(3<<26)|(3<<16);	//reset cnt to 0
+			/* reset cnt to 0 */
+			*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|(((irqt == 0) ? 1 : 0)<<24)|(3<<26)|(3<<16);
 			*pp++ = dma_addr+CLUSTER_BUFFER_SIZE;
 		}
 	}
 
-	//1<<24 = irq , 11<<16 = cnt
-	*pp++ = RISC_JUMP|(0<<24)|(0<<16); //interrupt and increment counter
+	/* 1<<24 = irq , 11<<16 = cnt */
+	*pp++ = RISC_JUMP|(0<<24)|(0<<16); /* interrupt and increment counter */
 	*pp++ = loop_addr;
 
 	printk("cxadc: end of risc inst 0x%p total size %ld kbyte\n", pp, ((void *)pp-(void *)ctd->risc_inst_virt)/1024);
@@ -274,37 +280,39 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	if (debug)
 		printk("cxadc: open [%d] private_data %p\n", minor, ctd);
 
-	// re-set the level, clock speed, and bit size
+	/* re-set the level, clock speed, and bit size */
 
 	if (level < 0)
 		level = 0;
 	if (level > 31)
 		level = 31;
-	cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0)); //control gain also bit 16
+	/* control gain also bit 16 */
+	cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0));
 
-	// set higher clock rate
+	/* set higher clock rate */
 	if (tenxfsc)
-		cx_write(MO_SCONV_REG, 131072*4/5); //set SRC to 1.25x/10fsc
+		cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
 	else
-		cx_write(MO_SCONV_REG, 131072); //set SRC to 8xfsc
+		cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
 
 	if (tenxfsc) {
-		cx_write(MO_SCONV_REG, 131072*4/5); //set SRC to 1.25x/10fsc
-		cx_write(MO_PLL_REG, 0x01400000); //set PLL to 1.25x/10fsc
+		cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
+		cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
 	} else {
-		cx_write(MO_SCONV_REG, 131072); //set SRC to 8xfsc
-		cx_write(MO_PLL_REG, 0x11000000); //set PLL to 1:1
+		cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+		cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
 	}
 
+	/* capture 16 bit or 8 bit raw samples */
 	if (tenbit)
-		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5))); //capture 16 bit raw
+		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5)));
 	else
-		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5))); //capture 8 bit raw
+		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5)));
 
 	file->private_data = ctd;
 
 	ctd->initial_page = cx_read(MO_VBI_GPCNT) - 1;
-	cx_write(MO_PCI_INTMSK, 1); //enable interrupt
+	cx_write(MO_PCI_INTMSK, 1); /* enable interrupt */
 
 	return 0;
 }
@@ -343,7 +351,7 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 		while ((count > 0) && (pnum != gp_cnt)) {
 			unsigned int len;
 
-			// handle partial pages for either reason
+			/* handle partial pages for either reason */
 			len = (*offset % 4096) ? (4096 - (*offset % 4096)) : 4096;
 			if (len > count)
 				len = count;
@@ -391,7 +399,8 @@ static long cxadc_char_ioctl(struct file *file,
 		if (gain > 31)
 			gain = 31;
 
-		cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(gain<<16)|(0xff<<8)|(0x0<<0)); //control gain also bit 16
+		/* control gain also bit 16 */
+		cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(gain<<16)|(0xff<<8)|(0x0<<0));
 	}
 
 	return ret;
@@ -419,7 +428,7 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 		printk(KERN_INFO "cxadc : Interrupt stat 0x%x Masked 0x%x\n", allstat, ostat);
 
 	if (!astat)
-		return IRQ_RETVAL(0); //if no interrupt bit set we return
+		return IRQ_RETVAL(0); /* if no interrupt bit set we return */
 
 	for (count = 0; count < 20; count++) {
 		if (astat & 1) {
@@ -434,8 +443,6 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 
 	return IRQ_RETVAL(1);
 }
-
-/* -------------------------------------------------------------- */
 
 #define CXADC_MAX 1
 
@@ -551,52 +558,60 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 
 	/* we use 16kbytes of FIFO buffer */
 	create_cdt_table(ctd, NUMBER_OF_CLUSTER_BUFFER, CLUSTER_BUFFER_SIZE, CLUSTER_BUFFER_BASE, CDT_BASE);
-	cx_write(MO_DMA24_CNT1, (CLUSTER_BUFFER_SIZE/8-1)); /* size of one buffer in qword -1 */
+	/* size of one buffer in qword -1 */
+	cx_write(MO_DMA24_CNT1, (CLUSTER_BUFFER_SIZE/8-1));
 
-	cx_write(MO_DMA24_PTR2, CDT_BASE); /* ptr to cdt */
-	cx_write(MO_DMA24_CNT2, 2*NUMBER_OF_CLUSTER_BUFFER); /* size of cdt in qword */
+	/* ptr to cdt */
+	cx_write(MO_DMA24_PTR2, CDT_BASE);
+	/* size of cdt in qword */
+	cx_write(MO_DMA24_CNT2, 2*NUMBER_OF_CLUSTER_BUFFER);
 
-//	if (ctd->tbuf!=NULL)
+	/* if (ctd->tbuf!=NULL) */
 	{
 		unsigned int xxx;
 
 		xxx = cx_read(MO_VID_INTSTAT);
-		cx_write(MO_VID_INTSTAT, xxx); //clear interrupt
+		cx_write(MO_VID_INTSTAT, xxx); /* clear interrupt */
 
-		cx_write(CHN24_CMDS_BASE, ctd->risc_inst_phy); //working
+		cx_write(CHN24_CMDS_BASE, ctd->risc_inst_phy); /* working */
 		cx_write(CHN24_CMDS_BASE+4, CDT_BASE);
 		cx_write(CHN24_CMDS_BASE+8, 2*NUMBER_OF_CLUSTER_BUFFER);
 		cx_write(CHN24_CMDS_BASE+12, RISC_INST_QUEUE);
 
 		cx_write(CHN24_CMDS_BASE+16, 0x40);
 
-		//source select (see datasheet on how to change adc source)
-		vmux &= 3;//default vmux=1
-		cx_write(MO_INPUT_FORMAT, (vmux<<14)|(1<<13)|0x01|0x10|0x10000); //pal-B
-		cx_write(MO_OUTPUT_FORMAT, 0x0f); // allow full range
+		/* source select (see datasheet on how to change adc source) */
+		vmux &= 3;/* default vmux=1 */
+		/* pal-B */
+		cx_write(MO_INPUT_FORMAT, (vmux<<14)|(1<<13)|0x01|0x10|0x10000);
+		cx_write(MO_OUTPUT_FORMAT, 0x0f); /* allow full range */
 
 		cx_write(MO_CONTR_BRIGHT, 0xff00);
 
-		//vbi lenght CLUSTER_BUFFER_SIZE/2  work
+		/* vbi lenght CLUSTER_BUFFER_SIZE/2  work */
 
-		cx_write(MO_VBI_PACKET, (((CLUSTER_BUFFER_SIZE)<<17)|(2<<11))); //no of byte transferred from peripehral to fifo
-								// if fifo buffer < this, it will still transfer this no of byte
-								//must be multiple of 8, if not go haywire?
+		/*
+		 * no of byte transferred from peripehral to fifo
+		 * if fifo buffer < this, it will still transfer this no of byte
+		 * must be multiple of 8, if not go haywire?
+		 */
+		cx_write(MO_VBI_PACKET, (((CLUSTER_BUFFER_SIZE)<<17)|(2<<11)));
 
-		//raw mode & byte swap <<8 (3<<8=swap)
+		/* raw mode & byte swap <<8 (3<<8=swap) */
 		cx_write(MO_COLOR_CTRL, ((0xe)|(0xe<<4)|(0<<8)));
 
+		/* capture 16 bit or 8 bit raw samples */
 		if (tenbit)
-			cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5))); //capture 16 bit raw
+			cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5)));
 		else
-			cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5))); //capture 8 bit raw
+			cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5)));
 
-		// power down audio and chroma DAC+ADC
+		/* power down audio and chroma DAC+ADC */
 		cx_write(MO_AFECFG_IO, 0x12);
 
-		//run risc
+		/* run risc */
 		cx_write(MO_DEV_CNTRL2, 1<<5);
-		//enable fifo and risc
+		/* enable fifo and risc */
 		cx_write(MO_VID_DMACNTRL, ((1<<7)|(1<<3)));
 	}
 
@@ -615,17 +630,17 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	}
 	printk("cxadc: char dev register ok\n");
 
-	cx_write(MO_PLL_REG, 0x01000000); //set PLL to 8xfsc
+	cx_write(MO_PLL_REG, 0x01000000); /* set PLL to 8xfsc */
 
 	if (tenxfsc) {
-		cx_write(MO_SCONV_REG, 131072*4/5); //set SRC to 1.25x/10fsc
-		cx_write(MO_PLL_REG, 0x01400000); //set PLL to 1.25x/10fsc
+		cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
+		cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
 	} else {
-		cx_write(MO_SCONV_REG, 131072); //set SRC to 8xfsc
-		cx_write(MO_PLL_REG, 0x11000000); //set PLL to 1:1
+		cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+		cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
 	}
 
-	//set vbi agc
+	/* set vbi agc */
 	cx_write(MO_AGC_SYNC_SLICER, 0x0);
 
 	if (level < 0)
@@ -634,27 +649,28 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		level = 31;
 
 	cx_write(MO_AGC_BACK_VBI, (0<<27)|(0<<26)|(1<<25)|(0x100<<16)|(0xfff<<0));
-	cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0)); //control gain also bit 16
-// for 'cooked' composite
+	/* control gain also bit 16 */
+	cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0));
+	/* for 'cooked' composite */
 	cx_write(MO_AGC_SYNC_TIP1, (0x1c0<<17)|(0x0<<9)|(0<<7)|(0xf<<0));
 	cx_write(MO_AGC_SYNC_TIP2, (0x20<<17)|(0x0<<9)|(0<<7)|(0xf<<0));
 	cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(0x8));
 	cx_write(MO_AGC_GAIN_ADJ1, (0xe0<<17)|(0xe<<9)|(0x0<<7)|(0x7<<0));
-	cx_write(MO_AGC_GAIN_ADJ3, (0x28<<16)|(0x28<<8)|(0x50<<0)); //set gain of agc but not offset
+	/* set gain of agc but not offset */
+	cx_write(MO_AGC_GAIN_ADJ3, (0x28<<16)|(0x28<<8)|(0x50<<0));
 
-	//==========Pixelview PlayTVPro Ultracard specific============
-	//select which output is redirected to audio output jack
-	//
-	cx_write(MO_GP3_IO, 1<<25); //use as 24 bit GPIO/GPOE
-	cx_write(MO_GP1_IO, 0x0b); //bit 3 is to enable 4052 , bit 0-1 4052's AB
+	/*
+	 * Pixelview PlayTVPro Ultracard specific
+	 * select which output is redirected to audio output jack
+	 * GPIO bit 3 is to enable 4052 , bit 0-1 4052's AB
+	 */
+	cx_write(MO_GP3_IO, 1<<25); /* use as 24 bit GPIO/GPOE */
+	cx_write(MO_GP1_IO, 0x0b);
 	cx_write(MO_GP0_IO, audsel&3);
 	printk("cxadc: audsel = %d\n", audsel&3);
-	//=================================================
 
-	//i2c sda/scl set to high and use software control
-
+	/* i2c sda/scl set to high and use software control */
 	cx_write(MO_I2C, 3);
-	//=================================================
 
 	/* hook into linked list */
 	ctd->next = cxadcs;
@@ -714,7 +730,6 @@ static void cxadc_remove(struct pci_dev *pci_dev)
 
 MODULE_DEVICE_TABLE(pci, cxadc_pci_tbl);
 
-/* -------------------------------------------------------------- */
 static struct pci_driver cxadc_pci_driver = {
 	.name     = "cxadc",
 	.id_table = cxadc_pci_tbl,
