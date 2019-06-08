@@ -699,6 +699,30 @@ static void cxadc_remove(struct pci_dev *pci_dev)
 
 	disable_card(ctd);
 
+	/*
+	 * Set AGC registers back to their default values, as per the CX23833
+	 * datasheet. This is in case you want to load cx8800 after unloading
+	 * cxadc; cx8800 doesn't know about all of these.
+	 */
+	cx_write(MO_AGC_BACK_VBI,
+		 (0xe0<<16)|0x555);
+	cx_write(MO_AGC_SYNC_SLICER,
+		 (1<<21)|(1<<20)|(1<<19)|(0x4<<16)|(0x60<<8)|0x1c);
+	cx_write(MO_AGC_SYNC_TIP1,
+		 (0x1c0<<17)|0x0f);
+	cx_write(MO_AGC_SYNC_TIP2,
+		 (0x20<<17)|(1<<7)|0x3f);
+	cx_write(MO_AGC_SYNC_TIP3,
+		 (0x1e48<<16)|(0xe0<<8)|0x40);
+	cx_write(MO_AGC_GAIN_ADJ1,
+		 (0xe0<<17)|(0x0e<<9)|0x07);
+	cx_write(MO_AGC_GAIN_ADJ2,
+		 (0x20<<17)|(2<<7)|0x0f);
+	cx_write(MO_AGC_GAIN_ADJ3,
+		 (0x28<<16)|(0x38<<8)|0xc0);
+	cx_write(MO_AGC_GAIN_ADJ4,
+		 (1<<22)|(1<<21)|(0xa<<16)|(0x2c<<8)|0x34);
+
 	unregister_chrdev(CX2388XADC_MAJOR, "cxadc");
 
 	/* free resources */
