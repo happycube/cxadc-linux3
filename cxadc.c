@@ -21,12 +21,9 @@
 
 #include <linux/version.h>
 #include <linux/cdev.h>
-#include <linux/debugfs.h>
-#include <linux/completion.h>
 #include <linux/device.h>
 #include <linux/module.h>
 #include <linux/pci.h>
-#include <linux/sched.h>
 #include <linux/interrupt.h>
 #include <linux/uaccess.h>
 #include <linux/moduleparam.h>
