@@ -456,7 +456,7 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 static int cxadc_probe(struct pci_dev *pci_dev,
 		       const struct pci_device_id *pci_id)
 {
-	u32 i;
+	u32 i, intstat;
 	struct cxadc *ctd;
 	unsigned char revision, lat;
 	int rc;
@@ -572,54 +572,50 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	/* size of cdt in qword */
 	cx_write(MO_DMA24_CNT2, 2*NUMBER_OF_CLUSTER_BUFFER);
 
-	/* if (ctd->tbuf!=NULL) */
-	{
-		unsigned int xxx;
+	/* clear interrupt */
+	intstat = cx_read(MO_VID_INTSTAT);
+	cx_write(MO_VID_INTSTAT, intstat);
 
-		xxx = cx_read(MO_VID_INTSTAT);
-		cx_write(MO_VID_INTSTAT, xxx); /* clear interrupt */
+	cx_write(CHN24_CMDS_BASE, ctd->risc_inst_phy); /* working */
+	cx_write(CHN24_CMDS_BASE+4, CDT_BASE);
+	cx_write(CHN24_CMDS_BASE+8, 2*NUMBER_OF_CLUSTER_BUFFER);
+	cx_write(CHN24_CMDS_BASE+12, RISC_INST_QUEUE);
 
-		cx_write(CHN24_CMDS_BASE, ctd->risc_inst_phy); /* working */
-		cx_write(CHN24_CMDS_BASE+4, CDT_BASE);
-		cx_write(CHN24_CMDS_BASE+8, 2*NUMBER_OF_CLUSTER_BUFFER);
-		cx_write(CHN24_CMDS_BASE+12, RISC_INST_QUEUE);
+	cx_write(CHN24_CMDS_BASE+16, 0x40);
 
-		cx_write(CHN24_CMDS_BASE+16, 0x40);
+	/* source select (see datasheet on how to change adc source) */
+	vmux &= 3;/* default vmux=1 */
+	/* pal-B */
+	cx_write(MO_INPUT_FORMAT, (vmux<<14)|(1<<13)|0x01|0x10|0x10000);
+	cx_write(MO_OUTPUT_FORMAT, 0x0f); /* allow full range */
 
-		/* source select (see datasheet on how to change adc source) */
-		vmux &= 3;/* default vmux=1 */
-		/* pal-B */
-		cx_write(MO_INPUT_FORMAT, (vmux<<14)|(1<<13)|0x01|0x10|0x10000);
-		cx_write(MO_OUTPUT_FORMAT, 0x0f); /* allow full range */
+	cx_write(MO_CONTR_BRIGHT, 0xff00);
 
-		cx_write(MO_CONTR_BRIGHT, 0xff00);
+	/* vbi lenght CLUSTER_BUFFER_SIZE/2  work */
 
-		/* vbi lenght CLUSTER_BUFFER_SIZE/2  work */
+	/*
+	 * no of byte transferred from peripehral to fifo
+	 * if fifo buffer < this, it will still transfer this no of byte
+	 * must be multiple of 8, if not go haywire?
+	 */
+	cx_write(MO_VBI_PACKET, (((CLUSTER_BUFFER_SIZE)<<17)|(2<<11)));
 
-		/*
-		 * no of byte transferred from peripehral to fifo
-		 * if fifo buffer < this, it will still transfer this no of byte
-		 * must be multiple of 8, if not go haywire?
-		 */
-		cx_write(MO_VBI_PACKET, (((CLUSTER_BUFFER_SIZE)<<17)|(2<<11)));
+	/* raw mode & byte swap <<8 (3<<8=swap) */
+	cx_write(MO_COLOR_CTRL, ((0xe)|(0xe<<4)|(0<<8)));
 
-		/* raw mode & byte swap <<8 (3<<8=swap) */
-		cx_write(MO_COLOR_CTRL, ((0xe)|(0xe<<4)|(0<<8)));
+	/* capture 16 bit or 8 bit raw samples */
+	if (tenbit)
+		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5)));
+	else
+		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5)));
 
-		/* capture 16 bit or 8 bit raw samples */
-		if (tenbit)
-			cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5)));
-		else
-			cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5)));
+	/* power down audio and chroma DAC+ADC */
+	cx_write(MO_AFECFG_IO, 0x12);
 
-		/* power down audio and chroma DAC+ADC */
-		cx_write(MO_AFECFG_IO, 0x12);
-
-		/* run risc */
-		cx_write(MO_DEV_CNTRL2, 1<<5);
-		/* enable fifo and risc */
-		cx_write(MO_VID_DMACNTRL, ((1<<7)|(1<<3)));
-	}
+	/* run risc */
+	cx_write(MO_DEV_CNTRL2, 1<<5);
+	/* enable fifo and risc */
+	cx_write(MO_VID_DMACNTRL, ((1<<7)|(1<<3)));
 
 	rc = request_irq(ctd->irq, cxadc_irq, IRQF_SHARED, "cxadc", (void *)ctd);
 	if (rc < 0) {
