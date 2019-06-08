@@ -297,12 +297,6 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	/* control gain also bit 16 */
 	cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0));
 
-	/* set higher clock rate */
-	if (tenxfsc)
-		cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
-	else
-		cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
-
 	if (tenxfsc) {
 		cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
 		cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
@@ -631,8 +625,6 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		goto fail2;
 	}
 	cx_info("char dev register ok\n");
-
-	cx_write(MO_PLL_REG, 0x01000000); /* set PLL to 8xfsc */
 
 	if (tenxfsc) {
 		cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
