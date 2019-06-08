@@ -79,8 +79,8 @@ static int tenxfsc = 0;
 //+1 page for first sync and jmp instruction (we used 12 bytes of 4 kbytes only)
 
 struct risc_page {
-	struct risc_page * next;
-	char buffer [PAGE_SIZE-sizeof(struct risc_page*)];
+	struct risc_page *next;
+	char buffer[PAGE_SIZE - sizeof(struct risc_page *)];
 };
 struct cxadc {
 	/* linked list */
@@ -114,10 +114,10 @@ struct cxadc {
 	int initial_page;
 };
 
-static struct cxadc *cxadcs  = NULL;
-static unsigned int cxcount      = 0;
+static struct cxadc *cxadcs = NULL;
+static unsigned int cxcount = 0;
 #ifdef METHOD2
-static unsigned int risc_start_phy_addr=0;
+static unsigned int risc_start_phy_addr = 0;
 #endif
 /* -------------------------------------------------------------- */
 
@@ -133,16 +133,14 @@ static unsigned int risc_start_phy_addr=0;
 
 #define INTERRUPT_MASK 0x18888
 
-static struct pci_device_id cxadc_pci_tbl[] =
-{
+static struct pci_device_id cxadc_pci_tbl[] = {
 	{
 		.vendor       = 0x14f1, //conexant
 		.device       = 0x8800,
 		.subvendor    = PCI_ANY_ID,
 		.subdevice    = PCI_ANY_ID,
-	},
-	{
-
+	}, {
+		/* --- end of list --- */
 	}
 };
 
@@ -168,30 +166,32 @@ buffptr  - CX sram start addr for buffer e.g. 0x182000 as in example pg 2-62 of 
 cdtptr   - CX sram start addr for CDT    e.g. 0x181000 as in example pg 2-62 of CX23880/1/2/3 datasheet
 */
 
-static void create_cdt_table(struct cxadc *ctd,unsigned int numbuf,unsigned int buffsize,unsigned int buffptr,unsigned int cdtptr )
+static void create_cdt_table(struct cxadc *ctd,
+			     unsigned int numbuf, unsigned int buffsize,
+			     unsigned int buffptr, unsigned int cdtptr)
 {
 	int i;
-	unsigned int pp,qq;
-	pp=buffptr;
-	qq=cdtptr;
+	unsigned int pp, qq;
 
-	for (i=0;i<numbuf;i++)
-	{
-		//printk("cdtptr [%x]= %x\n",qq,pp);
+	pp = buffptr;
+	qq = cdtptr;
 
-		writel(pp,ctd->mmio+(qq>>2));
-		qq+=4;
+	for (i = 0; i < numbuf; i++) {
+		//printk("cdtptr [%x]= %x\n", qq, pp);
 
-		writel(0,ctd->mmio+(qq>>2)); /*not needed but we do it anyway*/
-		qq+=4;
+		writel(pp, ctd->mmio+(qq>>2));
+		qq += 4;
 
-		writel(0,ctd->mmio+(qq>>2)); /*not needed but we do it anyway*/
-		qq+=4;
+		writel(0, ctd->mmio+(qq>>2)); /*not needed but we do it anyway*/
+		qq += 4;
 
-		writel(0,ctd->mmio+(qq>>2)); /*not needed but we do it anyway*/
-		qq+=4;
+		writel(0, ctd->mmio+(qq>>2)); /*not needed but we do it anyway*/
+		qq += 4;
 
-		pp+=buffsize;
+		writel(0, ctd->mmio+(qq>>2)); /*not needed but we do it anyway*/
+		qq += 4;
+
+		pp += buffsize;
 	}
 
 }
@@ -199,11 +199,12 @@ static void create_cdt_table(struct cxadc *ctd,unsigned int numbuf,unsigned int 
 static void free_dma_buffer(struct cxadc *ctd)
 {
 	int i;
-	for(i=0;i<MAX_DMA_PAGE;i++)
-	{
-		if(ctd->pgvec_virt[i])
-		{
-			dma_free_coherent(&ctd->pci->dev, 4096, ctd->pgvec_virt[i],ctd->pgvec_phy[i]);
+
+	for (i = 0; i < MAX_DMA_PAGE; i++) {
+		if (ctd->pgvec_virt[i]) {
+			dma_free_coherent(&ctd->pci->dev, 4096,
+					  ctd->pgvec_virt[i],
+					  ctd->pgvec_phy[i]);
 		}
 	}
 }
@@ -211,22 +212,22 @@ static void free_dma_buffer(struct cxadc *ctd)
 static int alloc_risc_inst_buffer(struct cxadc *ctd) //used
 {
 	//unsigned int size=
-	ctd->risc_inst_buff_size=(VBI_DMA_BUFF_SIZE/CLUSTER_BUFFER_SIZE)*8+PAGE_SIZE; //add 1 page for sync instruct and jump
-	ctd->risc_inst_virt=pci_alloc_consistent(ctd->pci,ctd->risc_inst_buff_size,&ctd->risc_inst_phy);
-	if (ctd->risc_inst_virt==NULL)
+	ctd->risc_inst_buff_size = (VBI_DMA_BUFF_SIZE/CLUSTER_BUFFER_SIZE)*8+PAGE_SIZE; //add 1 page for sync instruct and jump
+	ctd->risc_inst_virt = pci_alloc_consistent(ctd->pci, ctd->risc_inst_buff_size, &ctd->risc_inst_phy);
+	if (ctd->risc_inst_virt == NULL)
 		return -ENOMEM;
-	memset(ctd->risc_inst_virt,0,ctd->risc_inst_buff_size);
+	memset(ctd->risc_inst_virt, 0, ctd->risc_inst_buff_size);
 
 	printk("cxadc: risc inst buff allocated at virt 0x%p phy 0x%lx size %d kbytes\n",
-	ctd->risc_inst_virt,(unsigned long)ctd->risc_inst_phy,ctd->risc_inst_buff_size/1024);
+		ctd->risc_inst_virt, (unsigned long)ctd->risc_inst_phy, ctd->risc_inst_buff_size/1024);
 
 	return 0;
 }
 
 static void free_risc_inst_buffer(struct cxadc *ctd) //used
 {
-	if(ctd->risc_inst_virt!=NULL)
-		pci_free_consistent(ctd->pci,ctd->risc_inst_buff_size,ctd->risc_inst_virt,ctd->risc_inst_phy);
+	if (ctd->risc_inst_virt != NULL)
+		pci_free_consistent(ctd->pci, ctd->risc_inst_buff_size, ctd->risc_inst_virt, ctd->risc_inst_phy);
 }
 
 static int make_risc_instructions(struct cxadc *ctd)//,unsigned int cl_size,unsigned int max_page) //used
@@ -235,48 +236,44 @@ static int make_risc_instructions(struct cxadc *ctd)//,unsigned int cl_size,unsi
 	int irqt;
 	unsigned int loop_addr;
 	unsigned int dma_addr;
-	unsigned int *pp=(unsigned int *)ctd->risc_inst_virt;
+	unsigned int *pp = (unsigned int *)ctd->risc_inst_virt;
 
-	loop_addr=ctd->risc_inst_phy+4;
+	loop_addr = ctd->risc_inst_phy+4;
 
-	*pp++=RISC_SYNC|(3<<16);
+	*pp++ = RISC_SYNC|(3<<16);
 
-	irqt=0;
-	for(i=0;i<MAX_DMA_PAGE;i++)
-	{
+	irqt = 0;
+	for (i = 0; i < MAX_DMA_PAGE; i++) {
 		irqt++;
-		irqt&=0x1ff;
-		*pp++=RISC_WRITE |CLUSTER_BUFFER_SIZE|(3<<26)|(0<<16);
+		irqt &= 0x1ff;
+		*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|(3<<26)|(0<<16);
 
-//		dma_addr=virt_to_bus(ctd->pgvec[i]);
-		dma_addr=ctd->pgvec_phy[i];
+//		dma_addr = virt_to_bus(ctd->pgvec[i]);
+		dma_addr = ctd->pgvec_phy[i];
 		//printk("dma addr %x pgvec %x\n",dma_addr,ctd->pgvec[i]);
-		*pp++=dma_addr;
-		if(i!=MAX_DMA_PAGE-1)
-		{
-			*pp++=RISC_WRITE |CLUSTER_BUFFER_SIZE|(((irqt==0)?1:0)<<24)|(3<<26)|(1<<16);
-			*pp++=dma_addr+CLUSTER_BUFFER_SIZE;
-		}
-		else
-		{
-			*pp++=RISC_WRITE |CLUSTER_BUFFER_SIZE|(((irqt==0)?1:0)<<24)|(3<<26)|(3<<16);	//reset cnt to 0
-			*pp++=dma_addr+CLUSTER_BUFFER_SIZE;
+		*pp++ = dma_addr;
+		if (i != MAX_DMA_PAGE - 1) {
+			*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|(((irqt == 0) ? 1 : 0)<<24)|(3<<26)|(1<<16);
+			*pp++ = dma_addr+CLUSTER_BUFFER_SIZE;
+		} else {
+			*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|(((irqt == 0) ? 1 : 0)<<24)|(3<<26)|(3<<16);	//reset cnt to 0
+			*pp++ = dma_addr+CLUSTER_BUFFER_SIZE;
 		}
 	}
 
 #if 0
 	//test stop FIFO and RISC
-	*pp++=RISC_WRITECR|1;
-	*pp++=MO_VID_DMACNTRL;
-	*pp++=0;
-	*pp++=0xffffffff;
+	*pp++ = RISC_WRITECR|1;
+	*pp++ = MO_VID_DMACNTRL;
+	*pp++ = 0;
+	*pp++ = 0xffffffff;
 	//test
 #endif
 	//1<<24 = irq , 11<<16 = cnt
-	*pp++=RISC_JUMP|(0<<24)|(0<<16); //interrupt and increment counter
-	*pp++=loop_addr;
+	*pp++ = RISC_JUMP|(0<<24)|(0<<16); //interrupt and increment counter
+	*pp++ = loop_addr;
 
-	printk("cxadc: end of risc inst 0x%p total size %ld kbyte\n",pp,((void *)pp-(void *)ctd->risc_inst_virt)/1024);
+	printk("cxadc: end of risc inst 0x%p total size %ld kbyte\n", pp, ((void *)pp-(void *)ctd->risc_inst_virt)/1024);
 	return 0;
 }
 
@@ -288,24 +285,26 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	for (ctd = cxadcs; ctd != NULL; ctd = ctd->next)
 		if (ctd->char_dev == minor)
 			break;
-	if (NULL == ctd)
+	if (ctd == NULL)
 		return -ENODEV;
 
 	if (debug)
-		printk("cxadc: open [%d] private_data %p\n",minor,ctd);
+		printk("cxadc: open [%d] private_data %p\n", minor, ctd);
 
 	// re-set the level, clock speed, and bit size
 
-	if (level < 0) level = 0;
-	if (level > 31) level = 31;
+	if (level < 0)
+		level = 0;
+	if (level > 31)
+		level = 31;
 	cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0)); //control gain also bit 16
 
 	// set higher clock rate
-	if (tenxfsc) {
+	if (tenxfsc)
 		cx_write(MO_SCONV_REG, 131072*4/5); //set SRC to 1.25x/10fsc
-	} else {
+	else
 		cx_write(MO_SCONV_REG, 131072); //set SRC to 8xfsc
-	}
+
 	if (tenxfsc) {
 		cx_write(MO_SCONV_REG, 131072*4/5); //set SRC to 1.25x/10fsc
 		cx_write(MO_PLL_REG, 0x01400000); //set PLL to 1.25x/10fsc
@@ -314,11 +313,10 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 		cx_write(MO_PLL_REG, 0x11000000); //set PLL to 1:1
 	}
 
-	if (tenbit) {
+	if (tenbit)
 		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5))); //capture 16 bit raw
-	} else {
+	else
 		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5))); //capture 8 bit raw
-	}
 
 	file->private_data = ctd;
 
@@ -340,7 +338,8 @@ static int cxadc_char_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count, loff_t *offset )
+static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count,
+			       loff_t *offset)
 {
 	struct cxadc *ctd = file->private_data;
 	unsigned int rv = 0;
@@ -358,15 +357,17 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 
 //	printk("read pos %ld cur %d len %d pnum %d gp_cnt %d\n", *offset, cx_read(MO_VBI_GPCNT), count, pnum, gp_cnt);
 
-	if ((pnum == gp_cnt) && (file->f_flags & O_NONBLOCK)) return rv;
+	if ((pnum == gp_cnt) && (file->f_flags & O_NONBLOCK))
+		return rv;
 
 	while (count) {
 		while ((count > 0) && (pnum != gp_cnt)) {
-			unsigned len;
+			unsigned int len;
 
 			// handle partial pages for either reason
 			len = (*offset % 4096) ? (4096 - (*offset % 4096)) : 4096;
-			if (len > count) len = count;
+			if (len > count)
+				len = count;
 
 		//	if (len != 4096) printk("do read rv %d count %d cur %d len %d pnum %d\n", rv, count, cx_read(MO_VBI_GPCNT), len, pnum);
 			if (copy_to_user(tgt, ctd->pgvec_virt[pnum] + (*offset % 4096), len))
@@ -381,13 +382,14 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 			pnum = (*offset % VBI_DMA_BUFF_SIZE) / PAGE_SIZE;
 			pnum += ctd->initial_page;
 			pnum %= MAX_DMA_PAGE;
-		};
+		}
 
 		if (count) {
-			if (file->f_flags & O_NONBLOCK) return rv;
+			if (file->f_flags & O_NONBLOCK)
+				return rv;
 
-			ctd->newpage=0;
-			wait_event_interruptible(ctd->readQ,ctd->newpage);
+			ctd->newpage = 0;
+			wait_event_interruptible(ctd->readQ, ctd->newpage);
 
 			gp_cnt = cx_read(MO_VBI_GPCNT);
 			gp_cnt = (!gp_cnt) ? (MAX_DMA_PAGE - 1) : (gp_cnt - 1);
@@ -401,20 +403,23 @@ static long cxadc_char_ioctl(struct file *file,
 			     unsigned int cmd, unsigned long arg)
 {
 	struct cxadc *ctd = file->private_data;
-	int ret=0;
+	int ret = 0;
 
 	if (cmd == 0x12345670) {
 		int gain = arg;
 
-		if (gain < 0) gain = 0;
-		if (gain > 31) gain = 31;
+		if (gain < 0)
+			gain = 0;
+		if (gain > 31)
+			gain = 31;
+
 		cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(gain<<16)|(0xff<<8)|(0x0<<0)); //control gain also bit 16
 	}
 
 	return ret;
 }
 
-static struct file_operations cxadc_char_fops = {
+static const struct file_operations cxadc_char_fops = {
 	.owner    = THIS_MODULE,
 	.llseek   = no_llseek,
 	.unlocked_ioctl = cxadc_char_ioctl,
@@ -426,37 +431,33 @@ static struct file_operations cxadc_char_fops = {
 static irqreturn_t cxadc_irq(int irq, void *dev_id)
 {
 	int count = 0;
-	u32 stat,astat,ostat,allstat;
 	struct cxadc *ctd = dev_id;
+	u32 allstat = cx_read(MO_VID_INTSTAT);
+	u32 stat  = cx_read(MO_VID_INTMSK);
+	u32 astat = stat & allstat;
+	u32 ostat = astat;
 
-	allstat = cx_read(MO_VID_INTSTAT);
-	stat  = cx_read(MO_VID_INTMSK);
-	astat = stat & allstat;
-	ostat = astat;
+	if (ostat != 8 && allstat != 0 && ostat != 0)
+		printk(KERN_INFO "cxadc : Interrupt stat 0x%x Masked 0x%x\n", allstat, ostat);
 
-	if (ostat!=8 && allstat!=0 && ostat!=0) {
-		printk(KERN_INFO "cxadc : Interrupt stat 0x%x Masked 0x%x\n",allstat,ostat);
-	}
-
-	if (!astat) {
+	if (!astat)
 		return IRQ_RETVAL(0); //if no interrupt bit set we return
-	}
 
 	for (count = 0; count < 20; count++) {
-		if (astat&1) {
-			if(count==3) {
+		if (astat & 1) {
+			if (count == 3) {
 //				unsigned int uu=cx_read(MO_AGC_GAIN_ADJ4);
 //				printk("%8.8x %x %x %x %x\n",
 //			uu,uu>>16,(uu>>16)&0x1f,(uu>>8)&0xff,uu&0xff);
 //			printk("gadj1 %x stip3 %x gadj3 %x gadj4 %x stat %x wc %x\n ",cx_read(MO_AGC_GAIN_ADJ1),cx_read(MO_AGC_SYNC_TIP3),cx_read(MO_AGC_GAIN_ADJ3),cx_read(MO_AGC_GAIN_ADJ4),cx_read(MO_DEVICE_STATUS),cx_read(MO_WHITE_CRUSH));
 //				printk("cxadc: wake up %x\n",cx_read(MO_VBI_GPCNT));
 //
-				ctd->newpage=1;
+				ctd->newpage = 1;
 				wake_up_interruptible(&ctd->readQ);
 			}
 //		printk("IRQ %s\n",irq_name[count]);
 		}
-		astat>>=1;
+		astat >>= 1;
 	}
 	cx_write(MO_VID_INTSTAT, ostat);
 
@@ -468,104 +469,99 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 #define CXADC_MAX 1
 
 static int latency = -1;
-static int audsel=2;
-static int vmux=2;
+static int audsel = 2;
+static int vmux = 2;
 
 static int cxadc_probe(struct pci_dev *pci_dev,
-				   const struct pci_device_id *pci_id)
+		       const struct pci_device_id *pci_id)
 {
 	u32 i;
 	struct cxadc *ctd;
-	unsigned char revision,lat;
+	unsigned char revision, lat;
 	int rc;
 	unsigned int total_size;
-	u64 startaddr,pcilen;
 	unsigned int pgsize;
 
-	if (PAGE_SIZE != 4096)
-	{
+	if (PAGE_SIZE != 4096) {
 		printk(KERN_ERR "cxadc: only page size of 4096 is supported\n");
 		return -EIO;
 	}
 
-	if (CXADC_MAX == cxcount)
-	{
+	if (cxcount == CXADC_MAX) {
 		printk(KERN_ERR "cxadc: only 1 card is supported\n");
 		return -EBUSY;
 	}
 
-	if (pci_enable_device(pci_dev))
-	{
+	if (pci_enable_device(pci_dev)) {
 		printk(KERN_ERR "cxadc: enable device failed\n");
 		return -EIO;
 	}
 
-	if (!request_mem_region(startaddr=pci_resource_start(pci_dev,0),
-				pcilen=pci_resource_len(pci_dev,0),
+	if (!request_mem_region(pci_resource_start(pci_dev, 0),
+				pci_resource_len(pci_dev, 0),
 				"cxadc")) {
 		printk(KERN_ERR "cxadc: request memory region failed\n");
 		return -EBUSY;
 	}
 
-	ctd = kmalloc(sizeof(*ctd),GFP_ATOMIC);
+	ctd = kmalloc(sizeof(*ctd), GFP_ATOMIC);
 	if (!ctd) {
 		rc = -ENOMEM;
 		printk(KERN_ERR "cxadc: kmalloc failed\n");
 		goto fail0;
 	}
-	memset(ctd,0,sizeof(*ctd));
+	memset(ctd, 0, sizeof(*ctd));
 
 	ctd->pci = pci_dev;
 	ctd->irq = pci_dev->irq;
 
-	if (alloc_risc_inst_buffer(ctd))
-	{
+	if (alloc_risc_inst_buffer(ctd)) {
 		printk(KERN_ERR "cxadc: cannot alloc risc buffer\n");
-		rc=-ENOMEM;
+		rc = -ENOMEM;
 		goto fail1;
 	}
 
 	for (i = 0; i < (MAX_DMA_PAGE+1); i++) {
-		ctd->pgvec_virt[i]=0;
-		ctd->pgvec_phy[i]=0;
+		ctd->pgvec_virt[i] = 0;
+		ctd->pgvec_phy[i] = 0;
 	}
 
-	total_size=0;
-	pgsize=4096;
+	total_size = 0;
+	pgsize = 4096;
 
-	for (i=0; i<MAX_DMA_PAGE; i++) {
+	for (i = 0; i < MAX_DMA_PAGE; i++) {
 		dma_addr_t dma_handle;
 
-		ctd->pgvec_virt[i]=(void*)dma_zalloc_coherent(&ctd->pci->dev,4096,&dma_handle,GFP_KERNEL);
-		if(ctd->pgvec_virt[i]!=0) {
-			ctd->pgvec_phy[i]=dma_handle;
-			total_size+=pgsize;
+		ctd->pgvec_virt[i] = (void *)dma_zalloc_coherent(&ctd->pci->dev, 4096, &dma_handle, GFP_KERNEL);
+		if (ctd->pgvec_virt[i] != 0) {
+			ctd->pgvec_phy[i] = dma_handle;
+			total_size += pgsize;
 		} else {
-			printk("cxadc: alloc dma buffer failed. index = %d\n",i);
+			printk("cxadc: alloc dma buffer failed. index = %d\n", i);
 
-			rc=-ENOMEM;
+			rc = -ENOMEM;
 			goto fail1x;
 		}
 
 	}
 
-	printk(KERN_INFO "cxadc: total DMA size allocated = %d kb\n",total_size/1024);
+	printk(KERN_INFO "cxadc: total DMA size allocated = %d kb\n", total_size/1024);
 
 	make_risc_instructions(ctd);
 
 //	printk("cxadc: IRQ used %d\n",ctd->irq);
-	ctd->mem  = pci_resource_start(pci_dev,0);
+	ctd->mem = pci_resource_start(pci_dev, 0);
 
-	ctd->mmio = ioremap(pci_resource_start(pci_dev,0),
-			    pci_resource_len(pci_dev,0));
-	printk("cxadc: MEM :%x MMIO :%p\n",ctd->mem,ctd->mmio);
+	ctd->mmio = ioremap(pci_resource_start(pci_dev, 0),
+			    pci_resource_len(pci_dev, 0));
+	printk("cxadc: MEM :%x MMIO :%p\n", ctd->mem, ctd->mmio);
 
 //	ctd->rate = rate[cxcount];
 
 	mutex_init(&ctd->lock);
 	init_waitqueue_head(&ctd->readQ);
 
-	if (-1 != latency) {
+	if (latency != -1) {
 		printk(KERN_INFO "cxadc: setting pci latency timer to %d\n",
 		       latency);
 		pci_write_config_byte(pci_dev, PCI_LATENCY_TIMER, latency);
@@ -576,8 +572,8 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	pci_read_config_byte(pci_dev, PCI_CLASS_REVISION, &revision);
 	pci_read_config_byte(pci_dev, PCI_LATENCY_TIMER, &lat);
 	printk("cxadc: dev 0x%X (rev %d) at %02x:%02x.%x, ",
-	       pci_dev->device,revision,pci_dev->bus->number,
-	       PCI_SLOT(pci_dev->devfn),PCI_FUNC(pci_dev->devfn));
+	       pci_dev->device, revision, pci_dev->bus->number,
+	       PCI_SLOT(pci_dev->devfn), PCI_FUNC(pci_dev->devfn));
 	printk("cxadc: irq: %d, latency: %d, mmio: 0x%x\n",
 	       ctd->irq, lat, ctd->mem);
 	//printk("cxadc: using card config \"%s\"\n", card->name);
@@ -587,17 +583,18 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	disable_card(ctd);
 
 	/* we use 16kbytes of FIFO buffer */
-	create_cdt_table( ctd, NUMBER_OF_CLUSTER_BUFFER,CLUSTER_BUFFER_SIZE,CLUSTER_BUFFER_BASE,CDT_BASE);
+	create_cdt_table(ctd, NUMBER_OF_CLUSTER_BUFFER, CLUSTER_BUFFER_SIZE, CLUSTER_BUFFER_BASE, CDT_BASE);
 	cx_write(MO_DMA24_CNT1, (CLUSTER_BUFFER_SIZE/8-1)); /* size of one buffer in qword -1 */
 //	printk("cnt1:%x\n",CLUSTER_BUFFER_SIZE/8-1);
 
 	cx_write(MO_DMA24_PTR2, CDT_BASE); /* ptr to cdt */
 	cx_write(MO_DMA24_CNT2, 2*NUMBER_OF_CLUSTER_BUFFER); /* size of cdt in qword */
 
-//	if(ctd->tbuf!=NULL)
+//	if (ctd->tbuf!=NULL)
 	{
 		unsigned int xxx;
-		xxx=cx_read(MO_VID_INTSTAT);
+
+		xxx = cx_read(MO_VID_INTSTAT);
 		cx_write(MO_VID_INTSTAT, xxx); //clear interrupt
 
 		cx_write(CHN24_CMDS_BASE, ctd->risc_inst_phy); //working
@@ -610,7 +607,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		//source select (see datasheet on how to change adc source)
 		//1<<14 - video in
 
-		vmux&=3;//default vmux=1
+		vmux &= 3;//default vmux=1
 //		cx_write(MO_INPUT_FORMAT, (vmux<<14)|0x01|0x10|(0x01<<12)); //pal-B, yadc =mux1 (<<14)
 //		cx_write(MO_INPUT_FORMAT, (vmux<<14)|(1<<13)|0x01|0x10|0x10000); //pal-B, yadc =mux1 (<<14)
 		cx_write(MO_INPUT_FORMAT, (vmux<<14)|(1<<13)|0x01|0x10|0x10000); //pal-B
@@ -627,11 +624,10 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		//raw mode & byte swap <<8 (3<<8=swap)
 		cx_write(MO_COLOR_CTRL, ((0xe)|(0xe<<4)|(0<<8)));
 
-		if (tenbit) {
+		if (tenbit)
 			cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5))); //capture 16 bit raw
-		} else {
+		else
 			cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5))); //capture 8 bit raw
-		}
 
 		// power down audio and chroma DAC+ADC
 		cx_write(MO_AFECFG_IO, 0x12);
@@ -646,37 +642,32 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		cx_write(MO_VID_DMACNTRL, ((1<<7)|(1<<3)));
 //		wmb();
 
-	//	for(i=0x4000;i<0x8000;i+=4)
+	//	for (i = 0x4000; i < 0x8000; i += 4)
 	//	{
 	//		cx_write((CX_SRAM_BASE+i), 0xaaaaaaaa);
 	//	}
 	}
 
-	if ((rc = request_irq(ctd->irq, cxadc_irq, IRQF_SHARED,
-			      "cxadc",(void *)ctd)) < 0) {
-		printk(KERN_WARNING
-		       "cxadc: can't request irq (rc=%d)\n",rc);
+	rc = request_irq(ctd->irq, cxadc_irq, IRQF_SHARED, "cxadc", (void *)ctd);
+	if (rc < 0) {
+		printk(KERN_WARNING "cxadc: can't request irq (rc=%d)\n", rc);
 		goto fail1x;
 	}
 
 #if 1
 	/* register devices */
 #define CX2388XADC_MAJOR  126
-	if (register_chrdev (CX2388XADC_MAJOR, "cxadc", &cxadc_char_fops))
-	{
-		printk (KERN_ERR "cxadc: failed to register device\n");
-		rc=-EIO;
+	if (register_chrdev(CX2388XADC_MAJOR, "cxadc", &cxadc_char_fops)) {
+		printk(KERN_ERR "cxadc: failed to register device\n");
+		rc = -EIO;
 		goto fail2;
 	}
-	else
-	{
-		printk("cxadc: char dev register ok\n");
-	}
+	printk("cxadc: char dev register ok\n");
 #endif
 
 //	cx_write(MO_PLL_ADJ_CTRL, 0x20000);
-//  cx_write(MO_PLL_REG, 0x11000000); //set PLL to 1:1
-//  cx_write(MO_PLL_REG, 0x01400000); //set PLL to 1.25x/10fsc
+//	cx_write(MO_PLL_REG, 0x11000000); //set PLL to 1:1
+//	cx_write(MO_PLL_REG, 0x01400000); //set PLL to 1.25x/10fsc
 	cx_write(MO_PLL_REG, 0x01000000); //set PLL to 8xfsc
 
 	if (tenxfsc) {
@@ -693,10 +684,12 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 //	cx_write(MO_AGC_SYNC_SLICER, (0<<21)|(0<<20)|(0<<19)|(4<<16)|(0x60<<8)|(0x1c<<0));
 	cx_write(MO_AGC_SYNC_SLICER, 0x0);
 
-	if (level < 0) level = 0;
-	if (level > 31) level = 31;
+	if (level < 0)
+		level = 0;
+	if (level > 31)
+		level = 31;
 
-	cx_write(MO_AGC_BACK_VBI, (0<<27)|(0<<26) |(1<<25)| (0x100<<16) |(0xfff<<0));
+	cx_write(MO_AGC_BACK_VBI, (0<<27)|(0<<26)|(1<<25)|(0x100<<16)|(0xfff<<0));
 	cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0)); //control gain also bit 16
 // for 'cooked' composite
 	cx_write(MO_AGC_SYNC_TIP1, (0x1c0<<17)|(0x0<<9)|(0<<7)|(0xf<<0));
@@ -711,7 +704,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	cx_write(MO_GP3_IO, 1<<25); //use as 24 bit GPIO/GPOE
 	cx_write(MO_GP1_IO, 0x0b); //bit 3 is to enable 4052 , bit 0-1 4052's AB
 	cx_write(MO_GP0_IO, audsel&3);
-	printk("cxadc: audsel = %d\n",audsel&3);
+	printk("cxadc: audsel = %d\n", audsel&3);
 	//=================================================
 
 	//i2c sda/scl set to high and use software control
@@ -724,10 +717,11 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	cxadcs = ctd;
 	cxcount++;
 
-	pci_set_drvdata(pci_dev,ctd);
+	pci_set_drvdata(pci_dev, ctd);
 	cx_write(MO_VID_INTMSK, INTERRUPT_MASK);
 	//cx_write(MO_PCI_INTMSK, 1); //enable interrupt
 //	printk("page size %d\n",PAGE_SIZE);
+
 	return 0;
 
 // fail4:
@@ -736,19 +730,16 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	//if (digital)
 	//	unregister_sound_dsp(ctd->dsp_digital);
 fail2:
-	free_irq(ctd->irq,ctd);
+	free_irq(ctd->irq, ctd);
 fail1x:
 	free_dma_buffer(ctd);
 	free_risc_inst_buffer(ctd);
 fail1:
-
 	kfree(ctd);
-
-//	if(ctd->mmio!=NULL) iounmap(ctd->mmio);
+//	if (ctd->mmio!=NULL) iounmap(ctd->mmio);
 fail0:
-
-	release_mem_region(pci_resource_start(pci_dev,0),
-			   pci_resource_len(pci_dev,0));
+	release_mem_region(pci_resource_start(pci_dev, 0),
+			   pci_resource_len(pci_dev, 0));
 	return rc;
 }
 
@@ -766,14 +757,14 @@ static void cxadc_remove(struct pci_dev *pci_dev)
 
 	/* free resources */
 	free_risc_inst_buffer(ctd);
-	free_irq(ctd->irq,ctd);
+	free_irq(ctd->irq, ctd);
 //	printk("cxadc: irq freed\n");
 	free_dma_buffer(ctd);
 //	printk("cxadc: dma page freed\n");
 //	printk("cxadc: try release mem region\n");
 	iounmap(ctd->mmio);
-	release_mem_region(pci_resource_start(pci_dev,0),
-			   pci_resource_len(pci_dev,0));
+	release_mem_region(pci_resource_start(pci_dev, 0),
+			   pci_resource_len(pci_dev, 0));
 //	printk("cxadc: release mem region ok\n");
 
 	/* remove from linked list */
@@ -804,9 +795,7 @@ static struct pci_driver cxadc_pci_driver = {
 
 static int __init cxadc_init_module(void)
 {
-	int rv = pci_register_driver(&cxadc_pci_driver);
-
-	return rv;
+	return pci_register_driver(&cxadc_pci_driver);
 }
 
 static void __exit cxadc_cleanup_module(void)
