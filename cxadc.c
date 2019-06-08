@@ -114,11 +114,7 @@ struct cxadc {
 	void *pgvec_virt[MAX_DMA_PAGE+1];
 	dma_addr_t pgvec_phy[MAX_DMA_PAGE+1];
 
-	unsigned int *pgrisc_virt[NUMBER_OF_RISC_PAGE];
-	unsigned int *pgrisc_phy[NUMBER_OF_RISC_PAGE];
-	struct risc_page *risc_ptr;
 	int newpage;
-
 	int initial_page;
 };
 
