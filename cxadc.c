@@ -38,7 +38,6 @@
 #define dma_zalloc_coherent dma_alloc_coherent
 #endif
 
-static int debug;
 static int level = 16;
 static int tenbit;
 static int tenxfsc;
@@ -274,9 +273,6 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	if (ctd == NULL)
 		return -ENODEV;
 
-	if (debug)
-		printk("cxadc: open [%d] private_data %p\n", minor, ctd);
-
 	/* re-set the level, clock speed, and bit size */
 
 	if (level < 0)
@@ -319,9 +315,6 @@ static int cxadc_char_release(struct inode *inode, struct file *file)
 	struct cxadc *ctd = file->private_data;
 
 	cx_write(MO_PCI_INTMSK, 0);
-
-	if (debug)
-		printk("cxadc: release\n");
 
 	return 0;
 }
