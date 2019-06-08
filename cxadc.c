@@ -39,7 +39,7 @@
 #endif
 
 static int latency = -1;
-static int audsel = 2;
+static int audsel = -1;
 static int vmux = 2;
 static int level = 16;
 static int tenbit;
@@ -661,15 +661,17 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	/* set gain of agc but not offset */
 	cx_write(MO_AGC_GAIN_ADJ3, (0x28<<16)|(0x28<<8)|(0x50<<0));
 
-	/*
-	 * Pixelview PlayTVPro Ultracard specific
-	 * select which output is redirected to audio output jack
-	 * GPIO bit 3 is to enable 4052 , bit 0-1 4052's AB
-	 */
-	cx_write(MO_GP3_IO, 1<<25); /* use as 24 bit GPIO/GPOE */
-	cx_write(MO_GP1_IO, 0x0b);
-	cx_write(MO_GP0_IO, audsel&3);
-	cx_info("audsel = %d\n", audsel&3);
+	if (audsel != -1) {
+		/*
+		 * Pixelview PlayTVPro Ultracard specific
+		 * select which output is redirected to audio output jack
+		 * GPIO bit 3 is to enable 4052 , bit 0-1 4052's AB
+		 */
+		cx_write(MO_GP3_IO, 1<<25); /* use as 24 bit GPIO/GPOE */
+		cx_write(MO_GP1_IO, 0x0b);
+		cx_write(MO_GP0_IO, audsel&3);
+		cx_info("audsel = %d\n", audsel&3);
+	}
 
 	/* i2c sda/scl set to high and use software control */
 	cx_write(MO_I2C, 3);
