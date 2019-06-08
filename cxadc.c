@@ -48,6 +48,11 @@ static int tenxfsc;
 #define cx_read(reg)         readl(ctd->mmio + ((reg) >> 2))
 #define cx_write(reg, value) writel((value), ctd->mmio + ((reg) >> 2))
 
+#define cx_err(fmt, ...) \
+	dev_err(&ctd->pci->dev, fmt, ##__VA_ARGS__)
+#define cx_info(fmt, ...) \
+	dev_info(&ctd->pci->dev, fmt, ##__VA_ARGS__)
+
 /* 64 Mbytes VBI DMA BUFF */
 #define VBI_DMA_BUFF_SIZE (1024*1024*64)
 /* corresponds to 8192 DMA pages of 4k bytes */
@@ -216,7 +221,7 @@ static int alloc_risc_inst_buffer(struct cxadc *ctd)
 		return -ENOMEM;
 	memset(ctd->risc_inst_virt, 0, ctd->risc_inst_buff_size);
 
-	printk("cxadc: risc inst buff allocated at virt 0x%p phy 0x%lx size %d kbytes\n",
+	cx_info("risc inst buff allocated at virt 0x%p phy 0x%lx size %d kbytes\n",
 		ctd->risc_inst_virt, (unsigned long)ctd->risc_inst_phy, ctd->risc_inst_buff_size/1024);
 
 	return 0;
@@ -263,7 +268,8 @@ static int make_risc_instructions(struct cxadc *ctd)
 	*pp++ = RISC_JUMP|(0<<24)|(0<<16); /* interrupt and increment counter */
 	*pp++ = loop_addr;
 
-	printk("cxadc: end of risc inst 0x%p total size %ld kbyte\n", pp, ((void *)pp-(void *)ctd->risc_inst_virt)/1024);
+	cx_info("end of risc inst 0x%p total size %ld kbyte\n",
+		pp, ((void *)pp-(void *)ctd->risc_inst_virt)/1024);
 	return 0;
 }
 
@@ -420,7 +426,7 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 	u32 ostat = astat;
 
 	if (ostat != 8 && allstat != 0 && ostat != 0)
-		printk(KERN_INFO "cxadc : Interrupt stat 0x%x Masked 0x%x\n", allstat, ostat);
+		cx_info("interrupt stat 0x%x masked 0x%x\n", allstat, ostat);
 
 	if (!astat)
 		return IRQ_RETVAL(0); /* if no interrupt bit set we return */
@@ -450,31 +456,31 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	unsigned int pgsize;
 
 	if (PAGE_SIZE != 4096) {
-		printk(KERN_ERR "cxadc: only page size of 4096 is supported\n");
+		dev_err(&pci_dev->dev, "cxadc: only page size of 4096 is supported\n");
 		return -EIO;
 	}
 
 	if (cxcount == CXCOUNT_MAX) {
-		printk(KERN_ERR "cxadc: only 1 card is supported\n");
+		dev_err(&pci_dev->dev, "cxadc: only 1 card is supported\n");
 		return -EBUSY;
 	}
 
 	if (pci_enable_device(pci_dev)) {
-		printk(KERN_ERR "cxadc: enable device failed\n");
+		dev_err(&pci_dev->dev, "cxadc: enable device failed\n");
 		return -EIO;
 	}
 
 	if (!request_mem_region(pci_resource_start(pci_dev, 0),
 				pci_resource_len(pci_dev, 0),
 				"cxadc")) {
-		printk(KERN_ERR "cxadc: request memory region failed\n");
+		dev_err(&pci_dev->dev, "cxadc: request memory region failed\n");
 		return -EBUSY;
 	}
 
 	ctd = kmalloc(sizeof(*ctd), GFP_ATOMIC);
 	if (!ctd) {
 		rc = -ENOMEM;
-		printk(KERN_ERR "cxadc: kmalloc failed\n");
+		dev_err(&pci_dev->dev, "cxadc: kmalloc failed\n");
 		goto fail0;
 	}
 	memset(ctd, 0, sizeof(*ctd));
@@ -482,8 +488,10 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	ctd->pci = pci_dev;
 	ctd->irq = pci_dev->irq;
 
+	/* We can use cx_err/cx_info from here, now ctd has been set up. */
+
 	if (alloc_risc_inst_buffer(ctd)) {
-		printk(KERN_ERR "cxadc: cannot alloc risc buffer\n");
+		cx_err("cannot alloc risc buffer\n");
 		rc = -ENOMEM;
 		goto fail1;
 	}
@@ -504,7 +512,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 			ctd->pgvec_phy[i] = dma_handle;
 			total_size += pgsize;
 		} else {
-			printk("cxadc: alloc dma buffer failed. index = %d\n", i);
+			cx_err("alloc dma buffer failed. index = %d\n", i);
 
 			rc = -ENOMEM;
 			goto fail1x;
@@ -512,7 +520,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 
 	}
 
-	printk(KERN_INFO "cxadc: total DMA size allocated = %d kb\n", total_size/1024);
+	cx_info("total DMA size allocated = %d kb\n", total_size/1024);
 
 	make_risc_instructions(ctd);
 
@@ -520,14 +528,13 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 
 	ctd->mmio = ioremap(pci_resource_start(pci_dev, 0),
 			    pci_resource_len(pci_dev, 0));
-	printk("cxadc: MEM :%x MMIO :%p\n", ctd->mem, ctd->mmio);
+	cx_info("MEM :%x MMIO :%p\n", ctd->mem, ctd->mmio);
 
 	mutex_init(&ctd->lock);
 	init_waitqueue_head(&ctd->readQ);
 
 	if (latency != -1) {
-		printk(KERN_INFO "cxadc: setting pci latency timer to %d\n",
-		       latency);
+		cx_info("setting pci latency timer to %d\n", latency);
 		pci_write_config_byte(pci_dev, PCI_LATENCY_TIMER, latency);
 	} else {
 		pci_write_config_byte(pci_dev, PCI_LATENCY_TIMER, 255);
@@ -535,11 +542,11 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 
 	pci_read_config_byte(pci_dev, PCI_CLASS_REVISION, &revision);
 	pci_read_config_byte(pci_dev, PCI_LATENCY_TIMER, &lat);
-	printk("cxadc: dev 0x%X (rev %d) at %02x:%02x.%x, ",
-	       pci_dev->device, revision, pci_dev->bus->number,
-	       PCI_SLOT(pci_dev->devfn), PCI_FUNC(pci_dev->devfn));
-	printk("cxadc: irq: %d, latency: %d, mmio: 0x%x\n",
-	       ctd->irq, lat, ctd->mem);
+	cx_info("dev 0x%X (rev %d) at %02x:%02x.%x, ",
+		pci_dev->device, revision, pci_dev->bus->number,
+		PCI_SLOT(pci_dev->devfn), PCI_FUNC(pci_dev->devfn));
+	cx_info("irq: %d, latency: %d, mmio: 0x%x\n",
+		ctd->irq, lat, ctd->mem);
 
 	/* init hw */
 	pci_set_master(pci_dev);
@@ -606,18 +613,18 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 
 	rc = request_irq(ctd->irq, cxadc_irq, IRQF_SHARED, "cxadc", (void *)ctd);
 	if (rc < 0) {
-		printk(KERN_WARNING "cxadc: can't request irq (rc=%d)\n", rc);
+		cx_err("can't request irq (rc=%d)\n", rc);
 		goto fail1x;
 	}
 
 	/* register devices */
 #define CX2388XADC_MAJOR  126
 	if (register_chrdev(CX2388XADC_MAJOR, "cxadc", &cxadc_char_fops)) {
-		printk(KERN_ERR "cxadc: failed to register device\n");
+		cx_err("failed to register device\n");
 		rc = -EIO;
 		goto fail2;
 	}
-	printk("cxadc: char dev register ok\n");
+	cx_info("char dev register ok\n");
 
 	cx_write(MO_PLL_REG, 0x01000000); /* set PLL to 8xfsc */
 
@@ -656,7 +663,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	cx_write(MO_GP3_IO, 1<<25); /* use as 24 bit GPIO/GPOE */
 	cx_write(MO_GP1_IO, 0x0b);
 	cx_write(MO_GP0_IO, audsel&3);
-	printk("cxadc: audsel = %d\n", audsel&3);
+	cx_info("audsel = %d\n", audsel&3);
 
 	/* i2c sda/scl set to high and use software control */
 	cx_write(MO_I2C, 3);
@@ -711,9 +718,9 @@ static void cxadc_remove(struct pci_dev *pci_dev)
 	}
 	cxcount--;
 
-	printk("cxadc: reset drv data\n");
+	cx_info("reset drv data\n");
 	pci_set_drvdata(pci_dev, NULL);
-	printk("cxadc: reset drv ok\n");
+	cx_info("reset drv ok\n");
 	kfree(ctd);
 }
 
