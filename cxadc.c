@@ -22,64 +22,6 @@
 
 */
 
-/*
-Make sure you log in as super user
-
-To compile     : make
-Output file    : cxadc.ko	
-Create node    : mknod /dev/cxadc c 126 0 
-Install driver : insmod ./cxadc.ko
-
-read /dev/cxadc to get data
-
-Reference      : btaudio driver, mc4020 driver , cxadc driver v0.3
-*/
-
-/* 'dmesg' log after insmod ./cxadc.ko   (Addresses/Numbers might be different)
-
-If it is not something like this, then there might be memory allocation error.
-
-cxadc: mem addr 0xfd000000 size 0x0
-cxadc: risc inst buff allocated at virt 0xd4f40000 phy 0x14f40000 size 132 kbytes
-cxadc: total DMA size allocated = 32768 kb
-cxadc: end of risc inst 0xd4f6000c total size 128 kbyte
-cxadc: IRQ used 11
-cxadc: MEM :fd000000 MMIO :d8f80000
-cxadc: dev 0x8800 (rev 5) at 02:0b.0, cxadc: irq: 11, latency: 255, mmio: 0xfd000000
-cxadc: char dev register ok
-cxadc: audsel = 2
-
-*/
-
-/* dmesg log after running cxcap to capture data 
-   note that once cxadc driver is loaded, DMA is always running
-   to stop driver use 'rmmod cxadc'
- 
-cxadc: open [0] private_data c7aa0000
-cxadc: vm end b7f8b000 vm start b5f8b000  size 2000000
-cxadc: vm pg off 0
-cxadc: mmap private data c7aa0000
-cxadc: enable interrupt
-cxadc: release
-*/
-
-
-/*
-  History
-
-  25 sep 2005 - added support for i2c, use i2c.c to tune
-              - set registers to lower gain
-              - set registers so that no signal is nearer to sample value 128
-              - added vmux and audsel as parms during driver loading
-                (for 2nd IF hardware modification, load driver using vmux=2 )
-                By default audsel=2 is to route tv tuner audio signal to
-                audio out of TV card, vmux=1 use the signal from video in of tv card
-                     
-  Feb-Mac 2007 - change code to compile and run in kernel 2.6.18		
-               - clean up mess in version 0.2 code
-               - it still a mess in this code
-*/
-
 #include <linux/version.h>
 #include <linux/cdev.h>
 #include <linux/debugfs.h>
@@ -808,10 +750,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	//
 	cx_write(1<<25,CX_GP3_IO); //use as 24 bit GPIO/GPOE 
 	cx_write(0x0b,CX_GPOE); //bit 3 is to enable 4052 , bit 0-1 4052's AB
-	cx_write(audsel&3,CX_GPIO); //3=audio in to audio out
-	                            //2=fm out?
-				    //1=silence ?
-				    //0=tuner tv audio out?
+	cx_write(audsel&3,CX_GPIO);
 	printk("cxadc: audsel = %d\n",audsel&3);
 	//=================================================
 	
@@ -927,10 +866,6 @@ module_param(vmux, int, 0644);
 module_param(level, int, 0644);
 module_param(tenbit, int, 0644);
 module_param(tenxfsc, int, 0644);
-
-//audsel=2 is taken from tuner stereo out ?
-//vmux=2 is taken from 2nd IF (after hardware mod)
-//vmux=1 is taken from video in
 
 MODULE_DESCRIPTION("cx2388xx adc driver");
 MODULE_AUTHOR("Hew How Chee");
