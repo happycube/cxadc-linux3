@@ -38,6 +38,9 @@
 #define dma_zalloc_coherent dma_alloc_coherent
 #endif
 
+static int latency = -1;
+static int audsel = 2;
+static int vmux = 2;
 static int level = 16;
 static int tenbit;
 static int tenxfsc;
@@ -435,10 +438,6 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 }
 
 #define CXADC_MAX 1
-
-static int latency = -1;
-static int audsel = 2;
-static int vmux = 2;
 
 static int cxadc_probe(struct pci_dev *pci_dev,
 		       const struct pci_device_id *pci_id)
