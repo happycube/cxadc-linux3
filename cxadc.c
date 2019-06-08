@@ -41,10 +41,10 @@
 #define dma_zalloc_coherent dma_alloc_coherent
 #endif
 
-static int debug = 0;
+static int debug;
 static int level = 16;
-static int tenbit = 0;
-static int tenxfsc = 0;
+static int tenbit;
+static int tenxfsc;
 
 #define cx_read(reg)         readl(ctd->mmio + ((reg) >> 2))
 #define cx_write(reg, value) writel((value), ctd->mmio + ((reg) >> 2))
@@ -117,8 +117,8 @@ struct cxadc {
 	int initial_page;
 };
 
-static struct cxadc *cxadcs = NULL;
-static unsigned int cxcount = 0;
+static struct cxadc *cxadcs;
+static unsigned int cxcount;
 
 #define NUMBER_OF_CLUSTER_BUFFER 8
 #define CX_SRAM_BASE 0x180000
