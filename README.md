@@ -1,171 +1,130 @@
-cxadc-linux3
-============
+# cxadc
 
-CX2388x direct ADC capture driver, updated for Linux 3.11
+cxadc is an alternative Linux driver for the Conexant CX2388x video
+capture chips used on many PCI TV cards. It configures the CX2388x to
+capture raw samples from the input ports, allowing these cards to be
+used as a low-cost 28Mhz ADC for SDR and similar applications.
 
-Notes for Linux 3.x version 0.2 (cxadc 0.4+) 18 Dec 2013
-========================================================
+The regular cx88 driver in Linux provides support for capturing composite
+video, digital video, audio and the other normal features of these
+chips. You shouldn't load both drivers at the same time.
 
-This version has been retargeted for ubuntu 13.10 Linux 3.11.
+## Getting started
+
+Build the out-of-tree module as usual:
+
+	make -C /lib/modules/$(uname -r)/build M=$PWD modules
+
+Load the module, adjusting parameters as needed:
+
+	insmod cxadc.ko vmux=2
+
+Create the device:
+
+	mknod /dev/cxadc c 126 0
+
+Build the level adjustment tool:
+
+	make leveladj
+
+Connect a signal to the input you've selected, and run `leveladj` to
+adjust the gain automatically:
+
+	./leveladj
+
+Open `/dev/cxadc` and read samples. For example, to capture 10 seconds
+of samples:
+
+	sox -r 28636363 -b 8 -c 1 -e unsigned -t raw /dev/cxadc capture.wav trim 0 10
+
+## Module parameters
+
+Most of these parameters (except `latency`) can be changed using sysfs
+after the module has been loaded. Re-opening the device will update the
+CX2388x's registers.
+
+### `audsel` (0 to 3, default none)
+
+Some TV cards (e.g. the PixelView PlayTV Pro Ultra) have an external
+multiplexer attached to the CX2388x's GPIO pins to select an audio
+channel. If your card has one, you can select an input using this
+parameter.
+
+On the PlayTV Pro Ultra:
+- `audsel=0`: tuner tv audio out?
+- `audsel=1`: silence?
+- `audsel=2`: fm stereo tuner out?
+- `audsel=3`: audio in to audio out
+
+### `latency` (0 to 255, default 255)
+
+The PCI latency timer value for the device.
+
+### `level` (0 to 31, default 16)
+
+The fixed digital gain to be applied by the CX2388x (`INT_VGA_VAL` in
+the datasheet). Adjust to minimise clipping; `leveladj` will do this
+for you automatically.
+
+### `tenbit` (0 or 1, default 0)
+
+By default, cxadc captures unsigned 8-bit samples. Set this to 1 to
+capture 10-bit samples, which will be returned as unsigned 16-bit
+values. In 10-bit mode, the sample rate is halved.
+
+### `tenxfsc` (0 or 1, default 0)
+
+By default, cxadc captures at a rate of 8 x fSc (8 * 315 / 88 Mhz,
+approximately 28.6 MHz). Set this to 1 to capture at 10 x fSc
+(approximately 35.8 MHz).
+
+### `vmux` (0 to 3, default 2)
+
+Select the CX2388x input to capture. A typical TV card has the tuner,
+composite input and S-Video inputs tied to three of these inputs; you
+may need to experiment (or look at the cx88 source) to work out which
+input you need.
+
+## History
+
+### 2005-09-25 - v0.2
+
+cxadc was originally written by Hew How Chee (<how_chee@yahoo.com>).
+See [SDR using a CX2388x TV+FM card](http://web.archive.org/web/20091027150612/http://geocities.com/how_chee/cx23881fc6.htm) for more details.
+
+- added support for i2c, use `i2c.c` to tune
+- set registers to lower gain
+- set registers so that no signal is nearer to sample value 128
+- added `vmux` and `audsel` as params during driver loading
+  (for 2nd IF hardware modification, load driver using `vmux=2`).
+  By default `audsel=2` is to route tv tuner audio signal to
+  audio out of TV card, `vmux=1` to use the signal from video in of tv card.
+
+### 2007-03-24 - v0.3
+
+- change code to compile and run in kernel 2.6.18 (Fedora Core 6)
+  for Intel 32 bit single processor only
+- clean up mess in version 0.2 code
+
+### 2013-12-18 - v0.4
+
+This version has been retargeted for Ubuntu 13.10 Linux 3.11 by
+Chad Page (<Chad.Page@gmail.com>).
 
 While still a mess, the driver has been simplified a bit.  Data is now read
-using standard read() semantics, so no capture program is needed like the original
+using standard `read()` semantics, so no capture program is needed like the original
 version.
 
 For the first time, it also runs on 64-bit Linux, and *seems* to be OK under
 SMP.
 
-Caveats:
+### 2019-06-09 - v0.5
 
-- Still need to mknod
-- Does not support runtime parameters yet
-
-- generally nowhere near linux coding standards
-
-- Chad Page
-Chad.Page@gmail.com
-
-/*
-  History
-
-  25 sep 2005 - added support for i2c, use i2c.c to tune
-              - set registers to lower gain
-              - set registers so that no signal is nearer to sample value 128
-              - added vmux and audsel as parms during driver loading
-                (for 2nd IF hardware modification, load driver using vmux=2 )
-                By default audsel=2 is to route tv tuner audio signal to
-                audio out of TV card, vmux=1 use the signal from video in of tv card
-
-  Feb-Mac 2007 - change code to compile and run in kernel 2.6.18
-               - clean up mess in version 0.2 code
-               - it still a mess in this code
-*/
-
-
-----
-Notes for cxadc.c and cxcap.c  24 Mac 2007
-==========================================
-
-The purpose of these program is to get continuous  8 bit ADC raw data from
-the CX2388x based TV cards. TV tuner functions are not supported. Register to
-initialized sampling rate is not used. By default, after reset, sampling rate is
-27 Mhz.
-
-These program are developed on Fedora Core 6. (kernel 2.6.18)
-
-
-cxadc.c is the driver for CX2388x TV card
-cxcap.c is the program and get the raw data from the driver and store it into file.
-
-These codes are a bit messy since I have no time to clean up. It might contain bugs
-but at least it runs (on my machine).
-
-Quick procedure to get it running (capture from video in of card)
-=================================================================
-
-Instruction may be specific to PixelView PlayTV Pro Ultra TV card
-
-WARNING : Before trying, make sure you have backup your important data
-just in case.
-
-a) copy cxadc.c and cxcap.c to a new folder on the hard disk (mounted r/w)
-
-b) run 'make' to compile cxadc.c
-
-c) to compile cxcap, type in
-
-       gcc cxcap.c -o cxcap
-
-d) create device node with the following command. (make sure you are super user)
-
-       mknod /dev/cxadc c 126 0
-
-e) install driver
-
-       insmod ./cxadc.ko
-
-f) check 'dmesg' output to see whether it is similiar to the one
-   shown in the cxadc.c source code
-
-g) If it is ok, run cxcap to capture 8Mbyte of raw data. The signal source is feed into the
-   video input of the CX2388x tv card.
-
-        ./cxcap
-
-h) Check 'dmesg' output to see the result similiar to one shown in cxadc.c
-
-i) The output is saved in raw.pcm as 8 bit unsigned.
-
-j) stop the driver by using the command
-
-	rmmod cxadc
-
-k) to get another capture , repeat e), g), and j).
-   (note this step might not be necessary but for the mean time, we'll
-    just stop and start the driver again to be safe).
-
-   note : after installing driver, DMA is always running. To stop DMA, you need to remove driver
-          if you don't stop, you can run cxcap to capture again.
-
-
-These codes runs are meant for Intel 32 bit single processor only. My machine is a Dell Pentium III
-800 MHz PC.
-
-/*
-Make sure you log in as super user
-
-To compile     : make
-Output file    : cxadc.ko
-Create node    : mknod /dev/cxadc c 126 0
-Install driver : insmod ./cxadc.ko
-
-read /dev/cxadc to get data
-
-Reference      : btaudio driver, mc4020 driver , cxadc driver v0.3
-*/
-
-/* 'dmesg' log after insmod ./cxadc.ko   (Addresses/Numbers might be different)
-
-If it is not something like this, then there might be memory allocation error.
-
-cxadc: mem addr 0xfd000000 size 0x0
-cxadc: risc inst buff allocated at virt 0xd4f40000 phy 0x14f40000 size 132 kbytes
-cxadc: total DMA size allocated = 32768 kb
-cxadc: end of risc inst 0xd4f6000c total size 128 kbyte
-cxadc: IRQ used 11
-cxadc: MEM :fd000000 MMIO :d8f80000
-cxadc: dev 0x8800 (rev 5) at 02:0b.0, cxadc: irq: 11, latency: 255, mmio: 0xfd000000
-cxadc: char dev register ok
-cxadc: audsel = 2
-
-*/
-
-/* dmesg log after running cxcap to capture data
-   note that once cxadc driver is loaded, DMA is always running
-   to stop driver use 'rmmod cxadc'
-
-cxadc: open [0] private_data c7aa0000
-cxadc: vm end b7f8b000 vm start b5f8b000  size 2000000
-cxadc: vm pg off 0
-cxadc: mmap private data c7aa0000
-cxadc: enable interrupt
-cxadc: release
-*/
-
-
-
-Version 0.2 or higher of the driver let you set the ADC input source during driver loading. Use "vmux=X"  to do this,
-X=0 to 3
-
-//vmux=2 is taken from 2nd IF (after hardware mod)
-//vmux=1 is taken from video in
-
-On the Pixelview PlayTVPro Ultracard:
-audsel:
-	3=audio in to audio out
-	2=fm stereo tuner out?
-	1=silence ?
-	0=tuner tv audio out?
-
-Hew How Chee
-how_chee@yahoo.com
+- Update to work with Linux 5.1; older versions should still work.
+- Tidy up the code to get rid of most of the warnings from checkpatch,
+  and bring it closer in style to the normal cx88 driver.
+- Make `audsel` optional.
+- Don't allow `/dev/cxadc` to be opened multiple times.
+- When unloading cxadc, reset the AGC registers to their default values.
+  as cx88 expects. This lets you switch between cxadc and cx88 without
+  rebooting.
