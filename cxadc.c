@@ -291,6 +291,17 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	ctd->in_use = true;
 	mutex_unlock(&ctd->lock);
 
+	/* source select (see datasheet on how to change adc source) */
+	vmux &= 3;/* default vmux=1 */
+	/* pal-B */
+	cx_write(MO_INPUT_FORMAT, (vmux<<14)|(1<<13)|0x01|0x10|0x10000);
+
+	/* capture 16 bit or 8 bit raw samples */
+	if (tenbit)
+		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5)));
+	else
+		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5)));
+
 	/* re-set the level, clock speed, and bit size */
 
 	if (level < 0)
