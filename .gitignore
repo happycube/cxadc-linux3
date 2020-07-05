@@ -1,0 +1,9 @@
+.idea/
+*.cmd
+*.o
+*.ko
+*.mod
+*.mod.c
+modules.order
+Module.symvers
+built-in.a

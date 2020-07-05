@@ -1,0 +1,9 @@
+[Unit]
+Description=CXADC over netcat
+
+[Service]
+ExecStart=/bin/sh -c 'cat /dev/cxadc0 | netcat -l -k 4444'
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

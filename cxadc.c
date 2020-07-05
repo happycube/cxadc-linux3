@@ -95,7 +95,7 @@ struct cxadc {
 	struct cxadc *next;
 
 	/* device info */
-	int            char_dev;
+	struct cdev cdev;
 	struct pci_dev *pci;
 	unsigned int   irq;
 	unsigned int  mem;
@@ -121,6 +121,9 @@ struct cxadc {
 static struct cxadc *cxadcs;
 static unsigned int cxcount;
 #define CXCOUNT_MAX 1
+
+static struct class *cxadc_class;
+static int cxadc_major;
 
 #define NUMBER_OF_CLUSTER_BUFFER 8
 #define CX_SRAM_BASE 0x180000
@@ -275,7 +278,7 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	struct cxadc *ctd;
 
 	for (ctd = cxadcs; ctd != NULL; ctd = ctd->next)
-		if (ctd->char_dev == minor)
+		if (MINOR(ctd->cdev.dev) == minor)
 			break;
 	if (ctd == NULL)
 		return -ENODEV;
@@ -287,6 +290,17 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	}
 	ctd->in_use = true;
 	mutex_unlock(&ctd->lock);
+
+	/* source select (see datasheet on how to change adc source) */
+	vmux &= 3;/* default vmux=1 */
+	/* pal-B */
+	cx_write(MO_INPUT_FORMAT, (vmux<<14)|(1<<13)|0x01|0x10|0x10000);
+
+	/* capture 16 bit or 8 bit raw samples */
+	if (tenbit)
+		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5)));
+	else
+		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5)));
 
 	/* re-set the level, clock speed, and bit size */
 
@@ -618,12 +632,18 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	}
 
 	/* register devices */
-#define CX2388XADC_MAJOR  126
-	if (register_chrdev(CX2388XADC_MAJOR, "cxadc", &cxadc_char_fops)) {
+	cdev_init(&ctd->cdev, &cxadc_char_fops);
+	if (cdev_add(&ctd->cdev, MKDEV(cxadc_major, cxcount), 1)) {
 		cx_err("failed to register device\n");
 		rc = -EIO;
 		goto fail2;
 	}
+
+	if (IS_ERR(device_create(cxadc_class, &pci_dev->dev,
+			 MKDEV(cxadc_major, cxcount), NULL,
+			 "cxadc%u", cxcount)))
+		dev_err(&pci_dev->dev, "can't create device\n");
+
 	cx_info("char dev register ok\n");
 
 	if (tenxfsc) {
@@ -671,7 +691,6 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	/* hook into linked list */
 	ctd->next = cxadcs;
 	cxadcs = ctd;
-	ctd->char_dev = cxcount;
 	cxcount++;
 
 	pci_set_drvdata(pci_dev, ctd);
@@ -723,7 +742,8 @@ static void cxadc_remove(struct pci_dev *pci_dev)
 	cx_write(MO_AGC_GAIN_ADJ4,
 		 (1<<22)|(1<<21)|(0xa<<16)|(0x2c<<8)|0x34);
 
-	unregister_chrdev(CX2388XADC_MAJOR, "cxadc");
+	device_destroy(cxadc_class, MKDEV(cxadc_major, ctd->cdev.dev));
+	cdev_del(&ctd->cdev);
 
 	/* free resources */
 	free_risc_inst_buffer(ctd);
@@ -760,12 +780,48 @@ static struct pci_driver cxadc_pci_driver = {
 
 static int __init cxadc_init_module(void)
 {
-	return pci_register_driver(&cxadc_pci_driver);
+	int retval;
+	dev_t dev;
+
+	cxadc_class = class_create(THIS_MODULE, "cxadc");
+	if (IS_ERR(cxadc_class)) {
+		retval = PTR_ERR(cxadc_class);
+		printk(KERN_ERR "cxadc: can't register cxadc class\n");
+		goto err;
+	}
+
+	retval = alloc_chrdev_region(&dev, 0, CXCOUNT_MAX, "cxadc");
+	if (retval) {
+		printk(KERN_ERR "cxadc: can't register character device\n");
+		goto err_class;
+	}
+	cxadc_major = MAJOR(dev);
+
+	retval = pci_register_driver(&cxadc_pci_driver);
+	if (retval) {
+		printk(KERN_ERR "cxadc: can't register pci driver\n");
+		goto err_unchr;
+	}
+
+	printk(KERN_INFO "cxadc driver loaded\n");
+
+	return 0;
+
+err_unchr:
+	unregister_chrdev_region(dev, CXCOUNT_MAX);
+err_class:
+	class_destroy(cxadc_class);
+err:
+	return retval;
 }
 
 static void __exit cxadc_cleanup_module(void)
 {
 	pci_unregister_driver(&cxadc_pci_driver);
+
+	unregister_chrdev_region(MKDEV(cxadc_major, 0), CXCOUNT_MAX);
+
+	class_destroy(cxadc_class);
 }
 
 module_init(cxadc_init_module);
