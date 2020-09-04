@@ -30,9 +30,9 @@ int main(int argc, char *argv[])
 	int level = 20;
 	int go_on = 1; // 2 after going over
 
-	fd = open("/dev/cxadc", O_RDWR);
+	fd = open("/dev/cxadc0", O_RDWR);
 	if (fd <= 0) {
-		fprintf(stderr, "/dev/cxadc not found\n");
+		fprintf(stderr, "/dev/cxadc0 not found\n");
 		return -1;
 	}
 	close(fd);
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 		unsigned int low = tenbit ? 65535 : 255, high = 0;
 		set("level", level);
 	
-		fd = open("/dev/cxadc", O_RDWR);
+		fd = open("/dev/cxadc0", O_RDWR);
 
 		printf("testing level %d\n", level);
 
