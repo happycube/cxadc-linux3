@@ -11,21 +11,22 @@ chips. You shouldn't load both drivers at the same time.
 
 ## Getting started
 
-Build the out-of-tree module as usual:
+Build and install the out-of-tree module:
 
-	make -C /lib/modules/$(uname -r)/build M=$PWD modules
+	make && sudo make modules_install
 
-Load the module, adjusting parameters as needed:
+Install configuration files::
 
-	insmod cxadc.ko vmux=2
+	sudo cp cxadc.rules /etc/udev/rules.d
+	sudo cp cxadc.conf /etc/modprobe.d
 
-Create the device:
-
-	mknod /dev/cxadc c 126 0
+Now reboot and the modules will be loaded automatically. The device node will
+be called /dev/cxadc0. The default cx88 driver will be blacklisted by cxadc.conf.
+Module parameters can also be configured in that file.
 
 Build the level adjustment tool:
 
-	make leveladj
+	gcc -o leveladj leveladj.c
 
 Connect a signal to the input you've selected, and run `leveladj` to
 adjust the gain automatically:
@@ -35,7 +36,7 @@ adjust the gain automatically:
 Open `/dev/cxadc` and read samples. For example, to capture 10 seconds
 of samples:
 
-	sox -r 28636363 -b 8 -c 1 -e unsigned -t raw /dev/cxadc capture.wav trim 0 10
+	sox -r 28636363 -b 8 -c 1 -e unsigned -t raw /dev/cxadc0 capture.wav trim 0 10
 
 ## Module parameters
 
