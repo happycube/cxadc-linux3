@@ -311,12 +311,32 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	/* control gain also bit 16 */
 	cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0));
 
-	if (tenxfsc) {
-		cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
-		cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
-	} else {
-		cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
-		cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+	switch (tenxfsc) {
+		case 0 :
+			/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+	                cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+        	        cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+                        break;
+                case 1 :
+			/* clock speed equal to 1.25 x crystal speed, unmodified card = 35.8 mhz */
+			cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
+			cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
+                        break;
+		case 2 : 	
+			/* clock speed equal to ~1.4 x crystal speed, unmodified card = 40 mhz */
+	                cx_write(MO_SCONV_REG, 131072*0.715909088391848);
+                        cx_write(MO_PLL_REG, 0x0165965A); /* 40000000.1406459 */
+                        break;
+		case 3 :
+			/* RESERVED: will be 40msps with 64mhz crystal */
+			/* clock speed equal to .625 x crystal speed, unmodified card = 17.875 mhz */
+			/* under development */
+                        break;
+		default :
+			/* if someone sets value out of range, default to crystal speed */
+                        /* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+                        cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+                        cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
 	}
 
 	/* capture 16 bit or 8 bit raw samples */
@@ -353,7 +373,7 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 	unsigned int rv = 0;
 	unsigned int pnum;
 	int gp_cnt;
-
+        
 	pnum = (*offset % VBI_DMA_BUFF_SIZE) / PAGE_SIZE;
 	pnum += ctd->initial_page;
 	pnum %= MAX_DMA_PAGE;
@@ -386,6 +406,14 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 			pnum += ctd->initial_page;
 			pnum %= MAX_DMA_PAGE;
 		}
+		/* adding code to allow level change during read, have tested, works with CAV capture 
+		 * script i have been working on */
+                     if (level < 0)
+                        level = 0;
+	             if (level > 31)
+                        level = 31;
+	             cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0));
+
 
 		if (count) {
 			if (file->f_flags & O_NONBLOCK)
@@ -646,13 +674,33 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 
 	cx_info("char dev register ok\n");
 
-	if (tenxfsc) {
-		cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
-		cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
-	} else {
-		cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
-		cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
-	}
+        switch (tenxfsc) {
+                case 0 :
+                        /* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+                        cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+                        cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+                        break;
+                case 1 :
+                        /* clock speed equal to 1.25 x crystal speed, unmodified card = 35.8 mhz */
+                        cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
+                        cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
+                        break;  
+                case 2 :        
+                        /* clock speed equal to ~1.4 x crystal speed, unmodified card = 40 mhz */
+                        cx_write(MO_SCONV_REG, 131072*0.715909088391848);
+                        cx_write(MO_PLL_REG, 0x0165965A);  /* set PLL to 40000000.1406459 */
+                        break;
+                case 3 :
+                        /* RESERVED: will be 40msps with 64mhz crystal */
+                        /* clock speed equal to .625 x crystal speed, unmodified card = 17.875 mhz */
+                        /* under development */
+                        break;
+                default :
+                        /* if someone sets value out of range, default to crystal speed */
+                        /* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+                        cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+                        cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+        }
 
 	/* set vbi agc */
 	cx_write(MO_AGC_SYNC_SLICER, 0x0);
