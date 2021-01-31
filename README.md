@@ -78,7 +78,7 @@ values. In 10-bit mode, the sample rate is halved.
 By default, cxadc captures at a rate of 8 x fSc (8 * 315 / 88 Mhz,
 approximately 28.6 MHz). Set this to 1 to capture at 10 x fSc
 (approximately 35.8 MHz). Set this to 2 to capture at 40 Mhz. Set
-this to 3 when using a 64 Mhz crsytal to capture at 40 Mhz.
+this to 3 when using a 64 Mhz crystal to capture at 40 Mhz.
 
 ### `vmux` (0 to 3, default 2)
 
