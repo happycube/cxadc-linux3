@@ -13,7 +13,17 @@ chips. You shouldn't load both drivers at the same time.
 
 Build and install the out-of-tree module:
 
-	make && sudo make modules_install
+	make && sudo make modules_install && sudo depmod -a
+
+If you see the following error, ignore it:
+
+        At main.c:160:
+        - SSL error:02001002:system library:fopen:No such file or directory: ../crypto/bio/bss_file.c:69
+        - SSL error:2006D080:BIO routines:BIO_new_file:no such file: ../crypto/bio/bss_file.c:76
+        sign-file: certs/signing_key.pem: No such file or directory
+        Warning: modules_install: missing 'System.map' file. Skipping depmod.
+
+This error just means the module could not be signed. It will still be installed.
 
 Install configuration files::
 
@@ -21,7 +31,7 @@ Install configuration files::
 	sudo cp cxadc.conf /etc/modprobe.d
 
 Now reboot and the modules will be loaded automatically. The device node will
-be called /dev/cxadc0. The default cx88 driver will be blacklisted by cxadc.conf.
+be called `/dev/cxadc0`. The default cx88 driver will be blacklisted by cxadc.conf.
 Module parameters can also be configured in that file.
 
 Build the level adjustment tool:
@@ -33,7 +43,7 @@ adjust the gain automatically:
 
 	./leveladj
 
-Open `/dev/cxadc` and read samples. For example, to capture 10 seconds
+Open `/dev/cxadc0` and read samples. For example, to capture 10 seconds
 of samples:
 
 	sox -r 28636363 -b 8 -c 1 -e unsigned -t raw /dev/cxadc0 capture.wav trim 0 10
