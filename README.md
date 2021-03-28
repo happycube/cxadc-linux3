@@ -13,7 +13,17 @@ chips. You shouldn't load both drivers at the same time.
 
 Build and install the out-of-tree module:
 
-	make && sudo make modules_install
+	make && sudo make modules_install && sudo depmod -a
+
+If you see the following error, ignore it:
+
+        At main.c:160:
+        - SSL error:02001002:system library:fopen:No such file or directory: ../crypto/bio/bss_file.c:69
+        - SSL error:2006D080:BIO routines:BIO_new_file:no such file: ../crypto/bio/bss_file.c:76
+        sign-file: certs/signing_key.pem: No such file or directory
+        Warning: modules_install: missing 'System.map' file. Skipping depmod.
+
+This error just means the module could not be signed. It will still be installed.
 
 Install configuration files::
 
@@ -21,7 +31,7 @@ Install configuration files::
 	sudo cp cxadc.conf /etc/modprobe.d
 
 Now reboot and the modules will be loaded automatically. The device node will
-be called /dev/cxadc0. The default cx88 driver will be blacklisted by cxadc.conf.
+be called `/dev/cxadc0`. The default cx88 driver will be blacklisted by cxadc.conf.
 Module parameters can also be configured in that file.
 
 Build the level adjustment tool:
@@ -33,7 +43,7 @@ adjust the gain automatically:
 
 	./leveladj
 
-Open `/dev/cxadc` and read samples. For example, to capture 10 seconds
+Open `/dev/cxadc0` and read samples. For example, to capture 10 seconds
 of samples:
 
 	sox -r 28636363 -b 8 -c 1 -e unsigned -t raw /dev/cxadc0 capture.wav trim 0 10
@@ -86,6 +96,44 @@ Select the CX2388x input to capture. A typical TV card has the tuner,
 composite input and S-Video inputs tied to three of these inputs; you
 may need to experiment (or look at the cx88 source) to work out which
 input you need.
+
+## Other Tips
+
+### Accessing registers directly from userspace
+
+This can be done with the pcimem tool. Get it from here:
+
+    https://github.com/billfarrow/pcimem
+
+Build it with `make`. To use, consult `lspci` for the PCI address of
+your card. This will be different depending on motherboard and slot.
+Example output:
+
+    03:00.0 Multimedia video controller: Conexant Systems, Inc. CX23880/1/2/3 PCI Video and Audio Decoder (rev 05)
+    03:00.4 Multimedia controller: Conexant Systems, Inc. CX23880/1/2/3 PCI Video and Audio Decoder [IR Port] (rev 05)
+
+Here we want the video controller at address `03:00.0` - not the
+IR port. Next you need to find that device in sysfs. Due to topology
+it can be nested under other devices. The quickest way to find it:
+
+    find /sys/devices -iname '*03:00.0'
+
+Output:
+
+    /sys/devices/pci0000:00/0000:00:1c.5/0000:02:00.0/0000:03:00.0
+
+To use pcimem we take that filename and add "/resource0" to the end.
+Then to read a register we do this:
+
+    ./pcimem /sys/devices/pci0000:00/0000:00:1c.5/0000:02:00.0/0000:03:00.0/resource0 0x2f0000
+
+0x2f0000 is the device ID register and it should begin with 0x88.
+Output:
+
+    0x2F0000: 0x880014F1
+
+To write to a register, specify a value after the address.
+
 
 ## History
 
