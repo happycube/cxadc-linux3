@@ -97,6 +97,44 @@ composite input and S-Video inputs tied to three of these inputs; you
 may need to experiment (or look at the cx88 source) to work out which
 input you need.
 
+## Other Tips
+
+### Accessing registers directly from userspace
+
+This can be done with the pcimem tool. Get it from here:
+
+    https://github.com/billfarrow/pcimem
+
+Build it with `make`. To use, consult `lspci` for the PCI address of
+your card. This will be different depending on motherboard and slot.
+Example output:
+
+    03:00.0 Multimedia video controller: Conexant Systems, Inc. CX23880/1/2/3 PCI Video and Audio Decoder (rev 05)
+    03:00.4 Multimedia controller: Conexant Systems, Inc. CX23880/1/2/3 PCI Video and Audio Decoder [IR Port] (rev 05)
+
+Here we want the video controller at address `03:00.0` - not the
+IR port. Next you need to find that device in sysfs. Due to topology
+it can be nested under other devices. The quickest way to find it:
+
+    find /sys/devices -iname '*03:00.0'
+
+Output:
+
+    /sys/devices/pci0000:00/0000:00:1c.5/0000:02:00.0/0000:03:00.0
+
+To use pcimem we take that filename and add "/resource0" to the end.
+Then to read a register we do this:
+
+    ./pcimem /sys/devices/pci0000:00/0000:00:1c.5/0000:02:00.0/0000:03:00.0/resource0 0x2f0000
+
+0x2f0000 is the device ID register and it should begin with 0x88.
+Output:
+
+    0x2F0000: 0x880014F1
+
+To write to a register, specify a value after the address.
+
+
 ## History
 
 ### 2005-09-25 - v0.2
