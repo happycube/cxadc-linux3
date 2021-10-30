@@ -83,12 +83,12 @@ By default, cxadc captures unsigned 8-bit samples. Set this to 1 to
 capture 10-bit samples, which will be returned as unsigned 16-bit
 values. In 10-bit mode, the sample rate is halved.
 
-### `tenxfsc` (0 to 3, default 0)
+### `tenxfsc` (0 to 2, default 0)
 
 By default, cxadc captures at a rate of 8 x fSc (8 * 315 / 88 Mhz,
 approximately 28.6 MHz). Set this to 1 to capture at 10 x fSc
-(approximately 35.8 MHz). Set this to 2 to capture at 40 Mhz. Set
-this to 3 when using a 64 Mhz crystal to capture at 40 Mhz.
+(approximately 35.8 MHz). Set this to 2 to capture at 40 Mhz 
+(NOTE: 40mhz only works on a select few cards, mostly none).
 
 ### `vmux` (0 to 3, default 2)
 
