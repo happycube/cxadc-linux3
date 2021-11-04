@@ -327,13 +327,6 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	                cx_write(MO_SCONV_REG, 131072*0.715909072483);
                         cx_write(MO_PLL_REG, 0x0165965A); /* 40000000.1406459 */
                         break;
-		case 3 :
-		        /* RESERVED: will be 40msps with 64mhz crystal */
-                        /* clock speed equal to .625 x crystal speed, unmodified card = 17.875 mhz */
-                        /* under development 0x0CF00000 */
-                        cx_write(MO_SCONV_REG, 131072*1.6);
-                        cx_write(MO_PLL_REG, 0x0CF00000);  /* set PLL to 40 Mhz with 64 Mhz crystal */
-                        break;
 		default :
 			/* if someone sets value out of range, default to crystal speed */
                         /* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
@@ -691,13 +684,6 @@ static int cxadc_probe(struct pci_dev *pci_dev,
                         /* clock speed equal to ~1.4 x crystal speed, unmodified card = 40 mhz */
                         cx_write(MO_SCONV_REG, 131072*0.715909072483);
                         cx_write(MO_PLL_REG, 0x0165965A);  /* set PLL to 40000000.1406459 */
-                        break;
-                case 3 :
-                        /* RESERVED: will be 40msps with 64mhz crystal */
-                        /* clock speed equal to .625 x crystal speed, unmodified card = 17.875 mhz */
-                        /* under development 0x0CF00000 */
-                        cx_write(MO_SCONV_REG, 131072*1.6);
-                        cx_write(MO_PLL_REG, 0x0CF00000);  /* set PLL to 40 Mhz with 64 Mhz crystal */
                         break;
                 default :
                         /* if someone sets value out of range, default to crystal speed */
