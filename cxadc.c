@@ -44,6 +44,7 @@ static int vmux = 2;
 static int level = 16;
 static int tenbit;
 static int tenxfsc;
+static int sixdb = 1;
 
 #define cx_read(reg)         readl(ctd->mmio + ((reg) >> 2))
 #define cx_write(reg, value) writel((value), ctd->mmio + ((reg) >> 2))
@@ -309,7 +310,7 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	if (level > 31)
 		level = 31;
 	/* control gain also bit 16 */
-	cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0));
+	cx_write(MO_AGC_GAIN_ADJ4, (sixdb<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0));
 
 	switch (tenxfsc) {
 		case 0 :
@@ -407,7 +408,7 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
                         level = 0;
 	             if (level > 31)
                         level = 31;
-	             cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0));
+	             cx_write(MO_AGC_GAIN_ADJ4, (sixdb<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0));
 
 
 		if (count) {
@@ -440,7 +441,7 @@ static long cxadc_char_ioctl(struct file *file,
 			gain = 31;
 
 		/* control gain also bit 16 */
-		cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(gain<<16)|(0xff<<8)|(0x0<<0));
+		cx_write(MO_AGC_GAIN_ADJ4, (sixdb<<23)|(0<<22)|(0<<21)|(gain<<16)|(0xff<<8)|(0x0<<0));
 	}
 
 	return ret;
@@ -702,7 +703,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 
 	cx_write(MO_AGC_BACK_VBI, (0<<27)|(0<<26)|(1<<25)|(0x100<<16)|(0xfff<<0));
 	/* control gain also bit 16 */
-	cx_write(MO_AGC_GAIN_ADJ4, (1<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0));
+	cx_write(MO_AGC_GAIN_ADJ4, (sixdb<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0));
 	/* for 'cooked' composite */
 	cx_write(MO_AGC_SYNC_TIP1, (0x1c0<<17)|(0x0<<9)|(0<<7)|(0xf<<0));
 	cx_write(MO_AGC_SYNC_TIP2, (0x20<<17)|(0x0<<9)|(0<<7)|(0xf<<0));
@@ -865,12 +866,13 @@ static void __exit cxadc_cleanup_module(void)
 module_init(cxadc_init_module);
 module_exit(cxadc_cleanup_module);
 
-module_param(latency, int, 0644);
-module_param(audsel, int, 0644);
-module_param(vmux, int, 0644);
-module_param(level, int, 0644);
-module_param(tenbit, int, 0644);
-module_param(tenxfsc, int, 0644);
+module_param(latency, int, 0664);
+module_param(audsel, int, 0664);
+module_param(vmux, int, 0664);
+module_param(level, int, 0664);
+module_param(tenbit, int, 0664);
+module_param(tenxfsc, int, 0664);
+module_param(sixdb, int, 0664);
 
 MODULE_DESCRIPTION("cx2388xx adc driver");
 MODULE_AUTHOR("Hew How Chee");
