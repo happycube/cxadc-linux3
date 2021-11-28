@@ -52,16 +52,15 @@ adjust the gain automatically:
 
 	./leveladj
 
-Open `/dev/cxadc0` and read samples. For example, to capture 10 seconds
-of samples:
+Open your write to directory and use this to capture 10 seconds of test samples
 
 	cat -r 28636363 -b 8 -c 1 -e unsigned -t raw /dev/cxadc0 capture.wav trim 0 10
 
 Install PV This allows monitoring of the runtime & datarate.
 
-`sudo apt install pv`
+    sudo apt install pv
 
-To use PV modify command with `/dev/cxadc0 |pv >`
+To use PV modify command with `/dev/cxadc0 |pv >` it will look like this when in use:
 
      cat /dev/cxadc0 |pv > /dev/null
      0:00:04 [38.1MiB/s] [        <=>  
