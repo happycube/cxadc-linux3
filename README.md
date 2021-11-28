@@ -1,8 +1,8 @@
 # cxadc
 
 cxadc is an alternative Linux driver for the Conexant CX2388x video
-capture chips used on many PCI TV cards. It configures the CX2388x to
-capture raw samples from the input ports, allowing these cards to be
+capture chips used on many PCI TV cards and cheep PCIE (with 1x bridige chip) capture cards It configures the CX2388x to
+capture raw 8bit or 16bit unsigned samples from the input ports, allowing these cards to be
 used as a low-cost 28-40Mhz 10bit ADC for SDR and similar applications.
 
 The regular cx88 driver in Linux provides support for capturing composite
@@ -11,7 +11,7 @@ chips. You shouldn't load both drivers at the same time.
 
 ## Getting started
 
-Pull down and extract files to directory you wish to use then upen a terminal in said directory
+Click code then download zip and extract files to directory you wish to use CXADC in then open a terminal in said directory
 
     sudo -s 
 	
@@ -56,8 +56,6 @@ Build the level adjustment tool:
 Install PV to allow real-time monitoring of the runtime & datarate. (may have droped samples on lower end setups) 
 
     sudo apt install pv
-
-You have hopefully installed CXADC!
 
 ## Configiration and Capturing
 
@@ -106,7 +104,6 @@ Select the physical input to capture.
 A typical TV card has a tuner,
 composite input with RCA/BNC ports and S-Video inputs tied to three of these inputs; you
 may need to experiment quickest way is to attach a video signal and run 
-
 
 ### `audsel` (0 to 3, default none)
 
