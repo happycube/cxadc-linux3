@@ -53,25 +53,31 @@ Build the level adjustment tool:
 
 	gcc -o leveladj leveladj.c
 
+Install PV to allow real-time monitoring of the runtime & datarate. (may have droped samples on lower end setups) 
+
+    sudo apt install pv
+
+You have hopefully installed CXADC!
+
+## Configiration and Capturing
+
 Connect a signal to the input you've selected, and run `leveladj` to
 adjust the gain automatically:
 
 	./leveladj
 
-Open your directory you wish to write the data to and use this to capture 10 seconds of test samples:
+Open Terminal in the directory you wish to write the data this to capture 10 seconds of test samples:
 
 	sox -r 28636363 -b 8 -c 1 -e unsigned -t raw /dev/cxadc0 capture.wav trim 0 10
-
-Install PV This allows monitoring of the runtime & datarate.
-
-    sudo apt install pv
 
 To use PV modify command with `/dev/cxadc0 |pv >` it will look like this when in use:
 
      cat /dev/cxadc0 |pv > output.wav
      0:00:04 [38.1MiB/s] [        <=>  
 
-`dd` and `cat` can also be used to trigger capture
+`dd` and `cat` can also be used to trigger captures for example:
+
+     timeout 10s dd if=/dev/cxadc0 |pv > of=out.wav
 
 Use CTRL+C to manualy stop capture.
 
@@ -91,7 +97,16 @@ Y = Parameter seting i.e `vmux` `level` etc
 
 sudo echo X >/sys/module/cxadc/parameters/Y
 
-Example `sudo echo 1 >/sys/module/cxadc/parameters/vmux`
+Example: `sudo echo 1 >/sys/module/cxadc/parameters/vmux`
+
+### `vmux` (0 to 3, default 2)
+
+Select the physical input to capture. 
+
+A typical TV card has a tuner,
+composite input with RCA/BNC ports and S-Video inputs tied to three of these inputs; you
+may need to experiment quickest way is to attach a video signal and run 
+
 
 ### `audsel` (0 to 3, default none)
 
@@ -114,6 +129,7 @@ The PCI latency timer value for the device.
 Enables or disabled a defualt 6db gain applied to input signal
 
 `1` = On 
+
 `0` = Off 
 
 ### `level` (0 to 31, default 16)
@@ -150,15 +166,6 @@ When in 16bit sample modes change to the following:
 17.9 MHz 16-bit
 
 20.0 MHz 16-bit with ABLS2-40.000MHZ-D4YF-T crystal via tap de/solder (stock cards have rare chance of working)
-
-### `vmux` (0 to 3, default 2)
-
-Select the CX2388x input to capture. 
-
-A typical TV card has a tuner,
-composite input with RCA/BNC ports and S-Video inputs tied to three of these inputs; you
-may need to experiment (or look at the cx88 source) to work out which
-input you need.
 
 ## Other Tips
 
