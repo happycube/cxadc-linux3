@@ -98,13 +98,13 @@ On the PlayTV Pro Ultra:
 
 ### `latency` (0 to 255, default 255)
 
+The PCI latency timer value for the device.
+
 ### `sixdb` (0 or 1, default 1)
 Enables or disabled a defualt 6db gain applied to input signal
 
 `1` = On 
 `0` = Off 
-
-The PCI latency timer value for the device.
 
 ### `level` (0 to 31, default 16)
 
@@ -126,7 +126,8 @@ By default, cxadc captures unsigned 8-bit samples.
 
 In mode 1 unsigned 16-bit mode, the sample rate is halved.
 
-`0` = 8xFsc 8-bit data mode (Raw Data) 
+`0` = 8xFsc 8-bit data mode (Raw Data)
+ 
 `1` = 4xFsc 16-bit data mode (Filtered VBI data)
 
 When in 16bit sample modes change to the following:
