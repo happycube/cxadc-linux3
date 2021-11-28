@@ -55,19 +55,22 @@ adjust the gain automatically:
 Open `/dev/cxadc0` and read samples. For example, to capture 10 seconds
 of samples:
 
-	sox -r 28636363 -b 8 -c 1 -e unsigned -t raw /dev/cxadc0 capture.wav trim 0 10
+	cat -r 28636363 -b 8 -c 1 -e unsigned -t raw /dev/cxadc0 capture.wav trim 0 10
 
-Install PV This allows monitoring of the runtime & datarate
+Install PV This allows monitoring of the runtime & datarate.
 
 `sudo apt install pv`
 
 To use PV modify command with `/dev/cxadc0 |pv >`
 
-`cat` and `dd` can also be used to trigger capture
+     cat /dev/cxadc0 |pv > /dev/null
+     0:00:04 [38.1MiB/s] [        <=>  
 
-Use CTRL+C to manualy stop capture
+`dd` and `sox` can also be used to trigger capture
 
-`timeout 30s` at the start of the command will run capture for 30seconds for example
+Use CTRL+C to manualy stop capture.
+
+`timeout 30s` at the start of the command will run capture for 30seconds for example.
 
 ## Module parameters
 
@@ -116,8 +119,11 @@ for you automatically.
 
 By default, cxadc captures at a rate of 8 x fSc (8 * 315 / 88 Mhz
 tenxfsc - sets the sample rate
+
 `0` = 28.6 MHz 8bit 
+
 `1` = 35.8 MHz 8bit
+
 `2` = 40.0 Mhz 8bit with ABLS2-40.000MHZ-D4YF-T crystal via tap de/solder (stock cards have rare chance of working)
 
 ### `tenbit` (0 or 1, default 0)
@@ -133,7 +139,9 @@ In mode 1 unsigned 16-bit mode, the sample rate is halved.
 When in 16bit sample modes change to the following:
 
 14.3 MHz 16-bit
+
 17.9 MHz 16-bit
+
 20.0 MHz 16-bit with ABLS2-40.000MHZ-D4YF-T crystal via tap de/solder (stock cards have rare chance of working)
 
 ### `vmux` (0 to 3, default 2)
@@ -235,7 +243,7 @@ SMP.
 
 ### 2021-11-28 - Updated Documentaton
 
-- Change 10bit to the correct 16bit as thats whats stated in RAW16 under the datasheet and thats what the smamples are in format wise.
+- Change 10bit to the correct 16bit as thats whats stated in RAW16 under the datasheet and thats what the actual samples are in format wise.
 - Cleaned up and added examples for ajusting module parameters and basic real time readout information.
-- Added notations of ABLS2-40.000MHZ-D4YF-T a drop in repalcement crystal that adds 40mhz 8bit and 20mhz 16bit abbility for low cost for current market PCIE cards.
-- Added doumentation for sixdb mode selection
+- Added notations of ABLS2-40.000MHZ-D4YF-T a drop in repalcement crystal that adds 40mhz abbility at low cost for current market PCIE cards.
+- Added doumentation for sixdb mode selection.
