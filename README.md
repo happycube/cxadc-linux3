@@ -47,7 +47,7 @@ make
 make modules_install
 depmod -a`
 
-`depmod -a` makes it auto load on startup
+`depmod -a` enables auto load on startup
 
 Build the level adjustment tool:
 
@@ -123,7 +123,7 @@ On the PlayTV Pro Ultra:
 The PCI latency timer value for the device.
 
 ### `sixdb` (0 or 1, default 1)
-Enables or disabled a defualt 6db gain applied to input signal
+Enables or disabled a defualt 6db gain applied to input signal (can result in cleaner capture)
 
 `1` = On 
 
@@ -131,14 +131,18 @@ Enables or disabled a defualt 6db gain applied to input signal
 
 ### `level` (0 to 31, default 16)
 
-The fixed digital gain to be applied by the CX2388x (`INT_VGA_VAL` in
-the datasheet). Adjust to minimise clipping; `leveladj` will do this
+The fixed digital gain to be applied by the CX2388x 
+
+(`INT_VGA_VAL` in the datasheet). 
+
+Adjust to minimise clipping; `./leveladj` will do this
 for you automatically.
 
 ### `tenxfsc` (0 to 2, default 0)
 
-By default, cxadc captures at a rate of 8 x fSc (8 * 315 / 88 Mhz
-tenxfsc - sets the sample rate
+By default, cxadc captures at a rate of 8 x fSc (8 * 315 / 88 Mhz, approximately 28.6 MHz)
+
+tenxfsc - sets the samplerate
 
 `0` = 28.6 MHz 8bit 
 
