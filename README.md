@@ -11,6 +11,12 @@ chips. You shouldn't load both drivers at the same time.
 
 ## Getting started
 
+Pull down and extract files to directory you wish to use then upen a terminal in said directory
+
+    sudo -s 
+	
+After inputing your password this terminal will be in root mode this saves typing in your password sevral times.
+	
 Build and install the out-of-tree module:
 
 	make && sudo make modules_install && sudo depmod -a
@@ -52,9 +58,9 @@ adjust the gain automatically:
 
 	./leveladj
 
-Open your write to directory and use this to capture 10 seconds of test samples
+Open your directory you wish to write the data to and use this to capture 10 seconds of test samples:
 
-	cat -r 28636363 -b 8 -c 1 -e unsigned -t raw /dev/cxadc0 capture.wav trim 0 10
+	sox -r 28636363 -b 8 -c 1 -e unsigned -t raw /dev/cxadc0 capture.wav trim 0 10
 
 Install PV This allows monitoring of the runtime & datarate.
 
@@ -62,10 +68,10 @@ Install PV This allows monitoring of the runtime & datarate.
 
 To use PV modify command with `/dev/cxadc0 |pv >` it will look like this when in use:
 
-     cat /dev/cxadc0 |pv > /dev/null
+     cat /dev/cxadc0 |pv > output.wav
      0:00:04 [38.1MiB/s] [        <=>  
 
-`dd` and `sox` can also be used to trigger capture
+`dd` and `cat` can also be used to trigger capture
 
 Use CTRL+C to manualy stop capture.
 
@@ -78,7 +84,8 @@ after the module has been loaded. Re-opening the device will update the
 CX2388x's registers.
 
 To change configirtation open the terminal and use the following command to change driver config settings.
-X = Number Setting i.e `0` `1` `2` `3` etc
+
+X = Number Setting i.e  `0`  `1`  `2`  `3`  etc
 Y = Parameter seting i.e `vmux` `level` etc
 
 sudo echo X >/sys/module/cxadc/parameters/Y
