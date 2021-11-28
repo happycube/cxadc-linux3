@@ -86,6 +86,7 @@ CX2388x's registers.
 To change configirtation open the terminal and use the following command to change driver config settings.
 
 X = Number Setting i.e  `0`  `1`  `2`  `3`  etc
+
 Y = Parameter seting i.e `vmux` `level` etc
 
 sudo echo X >/sys/module/cxadc/parameters/Y
