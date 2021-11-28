@@ -11,12 +11,12 @@ chips. You shouldn't load both drivers at the same time.
 
 ## Getting started
 
+Open directory that you wish to install into git pull to pull down the driver into a directory of your choise and use `git clone https://github.com/happycube/cxadc-linux` use `git pull` to update later
+
+or
+
 Click code then download zip and extract files to directory you wish to use CXADC in then open a terminal in said directory
 
-    sudo -s 
-	
-After inputing your password this terminal will be in root mode this saves typing in your password sevral times.
-	
 Build and install the out-of-tree module:
 
 	make && sudo make modules_install && sudo depmod -a
@@ -87,7 +87,7 @@ Most of these parameters (except `latency`) can be changed using sysfs
 after the module has been loaded. Re-opening the device will update the
 CX2388x's registers.
 
-To change configirtation open the terminal and use the following command to change driver config settings.
+To change configuraton open the terminal and use the following command to change driver config settings.
 
 X = Number Setting i.e  `0`  `1`  `2`  `3`  etc
 
@@ -123,7 +123,7 @@ On the PlayTV Pro Ultra:
 The PCI latency timer value for the device.
 
 ### `sixdb` (0 or 1, default 1)
-Enables or disabled a defualt 6db gain applied to input signal (can result in cleaner capture)
+Enables or disables a default 6db gain applied to input signal (can result in cleaner capture)
 
 `1` = On 
 
@@ -260,5 +260,5 @@ SMP.
 
 - Change 10bit to the correct 16bit as thats whats stated in RAW16 under the datasheet and thats what the actual samples are in format wise.
 - Cleaned up and added examples for ajusting module parameters and basic real time readout information.
-- Added notations of ABLS2-40.000MHZ-D4YF-T a drop in repalcement crystal that adds 40mhz abbility at low cost for current market PCIE cards.
+- Added notations of ABLS2-40.000MHZ-D4YF-T a drop in repalcement crystal that adds 40mhz ability at low cost for current market PCIE cards.
 - Added doumentation for sixdb mode selection.
