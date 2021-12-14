@@ -1,15 +1,40 @@
-# cxadc
+# cxadc (CX - Analogue Digital Converter )
 
 cxadc is an alternative Linux driver for the Conexant CX2388x video
-capture chips used on many PCI TV cards. It configures the CX2388x to
-capture raw samples from the input ports, allowing these cards to be
-used as a low-cost 28Mhz ADC for SDR and similar applications.
+capture chips used on many PCI TV cards and cheep PCIE (with 1x bridge chip) capture cards It configures the CX2388x to
+capture raw 8bit or 16bit unsigned samples from the video input ports, allowing these cards to be
+used as a low-cost 28-54Mhz 10bit ADC for SDR and similar applications.
 
 The regular cx88 driver in Linux provides support for capturing composite
 video, digital video, audio and the other normal features of these
 chips. You shouldn't load both drivers at the same time.
 
+### Ware to find current PCIE CX CX23881 cards and notes
+https://www.aliexpress.com/item/1005003461248897.html?spm - White Variation
+https://www.aliexpress.com/item/1005003133382186.html?spm - Green Variation
+https://www.aliexpress.com/item/4001286595482.html?spm    - Blue Variation
+
+Note 01: Asmedia PCI to PCIE 1x bridge chips may have support issues on some older PCH chipsets intel 3rd gen for example, white cards use ITE chips which might not have said issue.
+
+Note 02: Added cooling can provide stability more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware but currently only 40mhz mods have been broadly viable in testing.
+
+Note 03: For crystals over 54mhz it might be possible to use higher crystals with a self regulated temperature chambered models.
+
+
+
 ## Getting started
+
+Open directory that you wish to install into git pull to pull down the driver into a directory of your choice and use the following:
+
+`git clone https://github.com/happycube/cxadc-linux`
+
+You can then use `git pull` to update later
+
+or
+
+Click code then download zip and extract files to directory you wish to use CXADC in then open a terminal in said directory
+
+Once files have been acquired then proceed to do the following:
 
 Build and install the out-of-tree module:
 
@@ -34,25 +59,70 @@ Now reboot and the modules will be loaded automatically. The device node will
 be called `/dev/cxadc0`. The default cx88 driver will be blacklisted by cxadc.conf.
 Module parameters can also be configured in that file.
 
+If there is an issue just re-load the CXADC module from the install directory via terminal
+
+`sudo rmmod cxadc
+make
+make modules_install
+depmod -a`
+
+`depmod -a` enables auto load on start-up
+
 Build the level adjustment tool:
 
 	gcc -o leveladj leveladj.c
+
+Install PV to allow real-time monitoring of the runtime & datarate. (may have dropped samples on lower end setups)
+
+    sudo apt install pv
+
+## Configiration and Capturing
 
 Connect a signal to the input you've selected, and run `leveladj` to
 adjust the gain automatically:
 
 	./leveladj
 
-Open `/dev/cxadc0` and read samples. For example, to capture 10 seconds
-of samples:
+Open Terminal in the directory you wish to write the data this to capture 10 seconds of test samples:
 
 	sox -r 28636363 -b 8 -c 1 -e unsigned -t raw /dev/cxadc0 capture.wav trim 0 10
+
+To use PV modify command with `/dev/cxadc0 |pv >` it will look like this when in use:
+
+     cat /dev/cxadc0 |pv > output.wav
+     0:00:04 [38.1MiB/s] [        <=>  
+
+`dd` and `cat` can also be used to trigger captures for example:
+
+     timeout 10s dd if=/dev/cxadc0 |pv > of=out.wav
+
+Use CTRL+C to manualy stop capture.
+
+`timeout 30s` at the start of the command will run capture for 30seconds for example.
 
 ## Module parameters
 
 Most of these parameters (except `latency`) can be changed using sysfs
 after the module has been loaded. Re-opening the device will update the
 CX2388x's registers.
+
+To change configuraton open the terminal and use the following command to change driver config settings.
+
+X = Number Setting i.e  `0`  `1`  `2`  `3`  etc
+
+Y = Parameter seting i.e `vmux` `level` etc
+
+sudo echo X >/sys/module/cxadc/parameters/Y
+
+Example: `sudo echo 1 >/sys/module/cxadc/parameters/vmux`
+
+### `vmux` (0 to 3, default 2)
+
+Select the physical input to capture.
+
+A typical TV card has a tuner,
+composite input with RCA/BNC ports and S-Video inputs tied to three of these inputs; you
+may need to experiment quickest way is to attach a video signal and run
 
 ### `audsel` (0 to 3, default none)
 
@@ -71,31 +141,51 @@ On the PlayTV Pro Ultra:
 
 The PCI latency timer value for the device.
 
+### `sixdb` (0 or 1, default 1)
+Enables or disables a default 6db gain applied to input signal (can result in cleaner capture)
+
+`1` = On
+
+`0` = Off
+
 ### `level` (0 to 31, default 16)
 
-The fixed digital gain to be applied by the CX2388x (`INT_VGA_VAL` in
-the datasheet). Adjust to minimise clipping; `leveladj` will do this
+The fixed digital gain to be applied by the CX2388x
+
+(`INT_VGA_VAL` in the datasheet).
+
+Adjust to minimise clipping; `./leveladj` will do this
 for you automatically.
-
-### `tenbit` (0 or 1, default 0)
-
-By default, cxadc captures unsigned 8-bit samples. Set this to 1 to
-capture 10-bit samples, which will be returned as unsigned 16-bit
-values. In 10-bit mode, the sample rate is halved.
 
 ### `tenxfsc` (0 to 2, default 0)
 
-By default, cxadc captures at a rate of 8 x fSc (8 * 315 / 88 Mhz,
-approximately 28.6 MHz). Set this to 1 to capture at 10 x fSc
-(approximately 35.8 MHz). Set this to 2 to capture at 40 Mhz 
-(NOTE: 40mhz only works on a select few cards, mostly none).
+By default, cxadc captures at a rate of 8 x fSc (8 * 315 / 88 Mhz, approximately 28.6 MHz)
 
-### `vmux` (0 to 3, default 2)
+tenxfsc - sets the samplerate
 
-Select the CX2388x input to capture. A typical TV card has the tuner,
-composite input and S-Video inputs tied to three of these inputs; you
-may need to experiment (or look at the cx88 source) to work out which
-input you need.
+`0` = 28.6 MHz 8bit
+
+`1` = 35.8 MHz 8bit
+
+`2` = 40.0 Mhz 8bit with ABLS2-40.000MHZ-D4YF-T crystal via tap de/solder (stock cards have rare chance of working)
+
+### `tenbit` (0 or 1, default 0)
+
+By default, cxadc captures unsigned 8-bit samples.
+
+In mode 1 unsigned 16-bit mode, the sample rate is halved.
+
+`0` = 8xFsc 8-bit data mode (Raw Data)
+
+`1` = 4xFsc 16-bit data mode (Filtered VBI data)
+
+When in 16bit sample modes change to the following:
+
+`14.3 MHz 16-bit` - Stock Card
+
+`17.9 MHz 16-bit` - Stock Card
+
+`20.0 MHz 16-bit` - With ABLS2-40.000MHZ-D4YF-T crystal via tap de/solder (stock cards have rare chance of working)
 
 ## Other Tips
 
@@ -133,7 +223,6 @@ Output:
     0x2F0000: 0x880014F1
 
 To write to a register, specify a value after the address.
-
 
 ## History
 
@@ -178,3 +267,12 @@ SMP.
 - When unloading cxadc, reset the AGC registers to their default values.
   as cx88 expects. This lets you switch between cxadc and cx88 without
   rebooting.
+
+### 2021-12-14 - Updated Documentation
+
+- Change 10bit to the correct 16bit as that's what's stated in RAW16 under the datasheet and that's what the actual samples are in format wise.
+- Cleaned up and added examples for adjusting module parameters and basic real time readout information.
+- Added notations of ABLS2-40.000MHZ-D4YF-T a drop in replacement crystal that adds 40mhz ability at low cost for current market PCIE cards.
+- Added documentation for sixdb mode selection.
+- Added links to find current CX cards
+- Added issues that have been found
