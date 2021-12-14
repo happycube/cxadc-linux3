@@ -1,21 +1,40 @@
-# cxadc
+# cxadc (CX - Analogue Digital Converter )
 
 cxadc is an alternative Linux driver for the Conexant CX2388x video
 capture chips used on many PCI TV cards and cheep PCIE (with 1x bridige chip) capture cards It configures the CX2388x to
-capture raw 8bit or 16bit unsigned samples from the input ports, allowing these cards to be
-used as a low-cost 28-40Mhz 10bit ADC for SDR and similar applications.
+capture raw 8bit or 16bit unsigned samples from the video input ports, allowing these cards to be
+used as a low-cost 28-54Mhz 10bit ADC for SDR and similar applications.
 
 The regular cx88 driver in Linux provides support for capturing composite
 video, digital video, audio and the other normal features of these
 chips. You shouldn't load both drivers at the same time.
 
+### Ware to find current PCIE CX CX23881 cards and notes
+https://www.aliexpress.com/item/1005003461248897.html?spm - White Variation
+https://www.aliexpress.com/item/1005003133382186.html?spm - Green Variation
+https://www.aliexpress.com/item/4001286595482.html?spm    - Blue Variation
+
+Note 01: Asmedia PCI to PCIE 1x bridge chips may have support issues on some older PCH chipsets intel 3rd gen for example, white cards use ITE chips which might not have said issue.
+
+Note 02: Added cooling can provide stability more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware.
+
+Note 03: For crystals over 54mhz it might be possible to use higher crystals with a self regulated temperature chambered models.
+
+
+
 ## Getting started
 
-Open directory that you wish to install into git pull to pull down the driver into a directory of your choise and use `git clone https://github.com/happycube/cxadc-linux` use `git pull` to update later
+Open directory that you wish to install into git pull to pull down the driver into a directory of your choise and use
+
+`git clone https://github.com/happycube/cxadc-linux`
+
+You can then use `git pull` to update later
 
 or
 
 Click code then download zip and extract files to directory you wish to use CXADC in then open a terminal in said directory
+
+Once files have been acquired then proceed to do the following:
 
 Build and install the out-of-tree module:
 
@@ -47,13 +66,13 @@ make
 make modules_install
 depmod -a`
 
-`depmod -a` enables auto load on startup
+`depmod -a` enables auto load on start-up
 
 Build the level adjustment tool:
 
 	gcc -o leveladj leveladj.c
 
-Install PV to allow real-time monitoring of the runtime & datarate. (may have droped samples on lower end setups) 
+Install PV to allow real-time monitoring of the runtime & datarate. (may have dropped samples on lower end setups)
 
     sudo apt install pv
 
@@ -99,11 +118,11 @@ Example: `sudo echo 1 >/sys/module/cxadc/parameters/vmux`
 
 ### `vmux` (0 to 3, default 2)
 
-Select the physical input to capture. 
+Select the physical input to capture.
 
 A typical TV card has a tuner,
 composite input with RCA/BNC ports and S-Video inputs tied to three of these inputs; you
-may need to experiment quickest way is to attach a video signal and run 
+may need to experiment quickest way is to attach a video signal and run
 
 ### `audsel` (0 to 3, default none)
 
@@ -125,15 +144,15 @@ The PCI latency timer value for the device.
 ### `sixdb` (0 or 1, default 1)
 Enables or disables a default 6db gain applied to input signal (can result in cleaner capture)
 
-`1` = On 
+`1` = On
 
-`0` = Off 
+`0` = Off
 
 ### `level` (0 to 31, default 16)
 
-The fixed digital gain to be applied by the CX2388x 
+The fixed digital gain to be applied by the CX2388x
 
-(`INT_VGA_VAL` in the datasheet). 
+(`INT_VGA_VAL` in the datasheet).
 
 Adjust to minimise clipping; `./leveladj` will do this
 for you automatically.
@@ -144,7 +163,7 @@ By default, cxadc captures at a rate of 8 x fSc (8 * 315 / 88 Mhz, approximately
 
 tenxfsc - sets the samplerate
 
-`0` = 28.6 MHz 8bit 
+`0` = 28.6 MHz 8bit
 
 `1` = 35.8 MHz 8bit
 
@@ -157,7 +176,7 @@ By default, cxadc captures unsigned 8-bit samples.
 In mode 1 unsigned 16-bit mode, the sample rate is halved.
 
 `0` = 8xFsc 8-bit data mode (Raw Data)
- 
+
 `1` = 4xFsc 16-bit data mode (Filtered VBI data)
 
 When in 16bit sample modes change to the following:
@@ -169,13 +188,6 @@ When in 16bit sample modes change to the following:
 20.0 MHz 16-bit with ABLS2-40.000MHZ-D4YF-T crystal via tap de/solder (stock cards have rare chance of working)
 
 ## Other Tips
-
-### Ware to find current PCIE CX CX23881 cards 
-https://www.aliexpress.com/item/1005003461248897.html?spm - White Veriation
-https://www.aliexpress.com/item/1005003133382186.html?spm - Green Veriation
-https://www.aliexpress.com/item/4001286595482.html?spm    - Blue Veriation
-
-Note: Asmedia PCI to PCIE 1x bridge chips may have drivers issues on some older PCH chipsets.
 
 ### Accessing registers directly from userspace
 
@@ -259,6 +271,6 @@ SMP.
 ### 2021-11-28 - Updated Documentaton
 
 - Change 10bit to the correct 16bit as thats whats stated in RAW16 under the datasheet and thats what the actual samples are in format wise.
-- Cleaned up and added examples for ajusting module parameters and basic real time readout information.
-- Added notations of ABLS2-40.000MHZ-D4YF-T a drop in repalcement crystal that adds 40mhz ability at low cost for current market PCIE cards.
+- Cleaned up and added examples for adjusting module parameters and basic real time readout information.
+- Added notations of ABLS2-40.000MHZ-D4YF-T a drop in replacement crystal that adds 40mhz ability at low cost for current market PCIE cards.
 - Added doumentation for sixdb mode selection.
