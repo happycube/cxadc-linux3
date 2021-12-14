@@ -1,7 +1,7 @@
 # cxadc (CX - Analogue Digital Converter )
 
 cxadc is an alternative Linux driver for the Conexant CX2388x video
-capture chips used on many PCI TV cards and cheep PCIE (with 1x bridige chip) capture cards It configures the CX2388x to
+capture chips used on many PCI TV cards and cheep PCIE (with 1x bridge chip) capture cards It configures the CX2388x to
 capture raw 8bit or 16bit unsigned samples from the video input ports, allowing these cards to be
 used as a low-cost 28-54Mhz 10bit ADC for SDR and similar applications.
 
@@ -16,7 +16,7 @@ https://www.aliexpress.com/item/4001286595482.html?spm    - Blue Variation
 
 Note 01: Asmedia PCI to PCIE 1x bridge chips may have support issues on some older PCH chipsets intel 3rd gen for example, white cards use ITE chips which might not have said issue.
 
-Note 02: Added cooling can provide stability more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware.
+Note 02: Added cooling can provide stability more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware but currently only 40mhz mods have been broadly viable in testing.
 
 Note 03: For crystals over 54mhz it might be possible to use higher crystals with a self regulated temperature chambered models.
 
@@ -24,7 +24,7 @@ Note 03: For crystals over 54mhz it might be possible to use higher crystals wit
 
 ## Getting started
 
-Open directory that you wish to install into git pull to pull down the driver into a directory of your choise and use
+Open directory that you wish to install into git pull to pull down the driver into a directory of your choice and use the following:
 
 `git clone https://github.com/happycube/cxadc-linux`
 
@@ -181,11 +181,11 @@ In mode 1 unsigned 16-bit mode, the sample rate is halved.
 
 When in 16bit sample modes change to the following:
 
-14.3 MHz 16-bit
+`14.3 MHz 16-bit` - Stock Card
 
-17.9 MHz 16-bit
+`17.9 MHz 16-bit` - Stock Card
 
-20.0 MHz 16-bit with ABLS2-40.000MHZ-D4YF-T crystal via tap de/solder (stock cards have rare chance of working)
+`20.0 MHz 16-bit` - With ABLS2-40.000MHZ-D4YF-T crystal via tap de/solder (stock cards have rare chance of working)
 
 ## Other Tips
 
@@ -268,9 +268,11 @@ SMP.
   as cx88 expects. This lets you switch between cxadc and cx88 without
   rebooting.
 
-### 2021-11-28 - Updated Documentaton
+### 2021-12-14 - Updated Documentation
 
-- Change 10bit to the correct 16bit as thats whats stated in RAW16 under the datasheet and thats what the actual samples are in format wise.
+- Change 10bit to the correct 16bit as that's what's stated in RAW16 under the datasheet and that's what the actual samples are in format wise.
 - Cleaned up and added examples for adjusting module parameters and basic real time readout information.
 - Added notations of ABLS2-40.000MHZ-D4YF-T a drop in replacement crystal that adds 40mhz ability at low cost for current market PCIE cards.
-- Added doumentation for sixdb mode selection.
+- Added documentation for sixdb mode selection.
+- Added links to find current CX cards
+- Added issues that have been found
