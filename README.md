@@ -14,13 +14,25 @@ https://www.aliexpress.com/item/1005003461248897.html?spm - White Variation
 https://www.aliexpress.com/item/1005003133382186.html?spm - Green Variation
 https://www.aliexpress.com/item/4001286595482.html?spm    - Blue Variation
 
-Note 01: Asmedia PCI to PCIE 1x bridge chips may have support issues on some older PCH chipsets intel 3rd gen for example, white cards use ITE chips which might not have said issue.
+Note 01: For getting reliable 40Mhz 8bit and 20mhz 16bit the recommended crystal is the `ABLS2-40.000MHZ-D4YF-T`.
 
-Note 02: Added cooling can provide stability more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware but currently only 40mhz mods have been broadly viable in testing.
+Note 02: Asmedia PCI to PCIE 1x bridge chips may have support issues on some older PCH chipsets intel 3rd gen for example, white cards use ITE chips which might not have said issue.
 
-Note 03: For crystals over 54mhz it might be possible to use higher crystals with a self regulated temperature chambered models.
+Note 03: Added cooling can provide stability more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware but currently only 40mhz mods have been broadly viable in testing.
 
+Note 04: For crystals over 54mhz it might be possible to use higher crystals with a self regulated temperature chambered models but this is still to have proper testing.
 
+Note 05: List of tested working crystals: Native SMD crystal is a `HC-49/US` type
+
+`40MHz` - ABRACON ABLS2-40.000MHZ-D4YF-T 18pF 30ppm `HC-49/US`
+
+`40MHz` - Diodes Incorporated FL400WFQA1 7pF 10ppm `SMD Package`
+
+`48MHz` - ECS ECS-480-18-33-AGM-TR 18pF 25ppm  `SMD Package`
+
+`50MHz` - ECS ECS-500-18-33-AGM-TR 18pF 30ppm  `SMD Package`
+
+`54MHz` - ECS ECS-540-8-33-JTN-TR 8pF 20ppm `SMD Package`
 
 ## Getting started
 
@@ -83,22 +95,23 @@ adjust the gain automatically:
 
 	./leveladj
 
-Open Terminal in the directory you wish to write the data this to capture 10 seconds of test samples:
-
-	sox -r 28636363 -b 8 -c 1 -e unsigned -t raw /dev/cxadc0 capture.wav trim 0 10
 
 To use PV modify command with `/dev/cxadc0 |pv >` it will look like this when in use:
 
-     cat /dev/cxadc0 |pv > output.wav
-     0:00:04 [38.1MiB/s] [        <=>  
+    cat /dev/cxadc0 |pv > output.wav
+    0:00:04 [38.1MiB/s] [        <=>  
+
+Open Terminal in the directory you wish to write the data this to capture 10 seconds of test samples:
+
+    timeout 10s dd if=/dev/cxadc0 |pv > of=out.wav
 
 `dd` and `cat` can also be used to trigger captures for example:
-
-     timeout 10s dd if=/dev/cxadc0 |pv > of=out.wav
 
 Use CTRL+C to manualy stop capture.
 
 `timeout 30s` at the start of the command will run capture for 30seconds for example.
+
+`sox -r 28636363` etc can be used to resample to the sample rate specified ware as cat/dd will just do whatever has been pre-defined by parameters set bellow.
 
 ## Module parameters
 
@@ -161,19 +174,27 @@ for you automatically.
 
 By default, cxadc captures at a rate of 8 x fSc (8 * 315 / 88 Mhz, approximately 28.6 MHz)
 
-tenxfsc - sets the samplerate
+tenxfsc - sets the sampling rate based off the crystal used
+
+`0` = Native crystal frequency i.e 28 (default), 40, 50, 54, etc
+
+`1` = Native crystal frequency times 1.25
+
+`2` = Native crystal frequency times 1.4
+
+With the Stock 28Mhz Crystal the modes are the following:
 
 `0` = 28.6 MHz 8bit
 
 `1` = 35.8 MHz 8bit
 
-`2` = 40.0 Mhz 8bit with ABLS2-40.000MHZ-D4YF-T crystal via tap de/solder (stock cards have rare chance of working)
+`2` = 40.04 Mhz 8bit
 
 ### `tenbit` (0 or 1, default 0)
 
 By default, cxadc captures unsigned 8-bit samples.
 
-In mode 1 unsigned 16-bit mode, the sample rate is halved.
+In mode 1, unsigned 16-bit mode, the date is resampled (down converted) by 50%
 
 `0` = 8xFsc 8-bit data mode (Raw Data)
 
@@ -185,7 +206,11 @@ When in 16bit sample modes change to the following:
 
 `17.9 MHz 16-bit` - Stock Card
 
-`20.0 MHz 16-bit` - With ABLS2-40.000MHZ-D4YF-T crystal via tap de/solder (stock cards have rare chance of working)
+`20.02 MHz 16-bit` - Stock Card
+
+Note!
+
+`40/20mhz modes` have a rare chance of working on stock cards its recommended to just replace the stock crystal with ABLS2-40.000MHZ-D4YF-T for more reliable results.
 
 ## Other Tips
 
@@ -276,3 +301,4 @@ SMP.
 - Added documentation for sixdb mode selection.
 - Added links to find current CX cards
 - Added issues that have been found
+- Added crystal list of working replacements
