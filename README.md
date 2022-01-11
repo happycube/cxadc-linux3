@@ -14,15 +14,17 @@ https://www.aliexpress.com/item/1005003461248897.html?spm - White Variation
 https://www.aliexpress.com/item/1005003133382186.html?spm - Green Variation
 https://www.aliexpress.com/item/4001286595482.html?spm    - Blue Variation
 
-Note 01: For getting reliable 40Mhz 8bit and 20mhz 16bit the recommended crystal is the `ABLS2-40.000MHZ-D4YF-T`.
+Note 01: For reliable 40Mhz 8bit and 20mhz 16bit samples the recommended crystal is the `ABLS2-40.000MHZ-D4YF-T`.
 
-Note 02: Asmedia PCI to PCIE 1x bridge chips may have support issues on some older PCH chipsets intel 3rd gen for example, white cards use ITE chips which might not have said issue.
+Note 02: Asmedia PCI to PCIE 1x bridge chips may have support issues on some older PCH chipsets intel 3rd gen, for example, white cards use ITE chips which might not have said issue.
 
 Note 03: Added cooling can provide stability more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware but currently only 40mhz mods have been broadly viable in testing.
 
-Note 04: For crystals over 54mhz it might be possible to use higher crystals with a self regulated temperature chambered models but this is still to have proper testing.
+Note 04: For crystals over 54mhz it might be possible to use higher crystals with self temperature regulated isolated chamber models but this is still to have proper testing.
 
-Note 05: List of tested working crystals: Native SMD crystal is a `HC-49/US` type
+Note 05: List of tested working crystals: Native SMD crystal on current PCIE 1x cards is a `HC-49/US` type
+
+Note 06: The CX chip verient with the least self-noise is the cx23883 mostly found on the White Variation card with most clean captures at the 6dB off and Digital Gain at 0-10.
 
 `40MHz` - ABRACON ABLS2-40.000MHZ-D4YF-T 18pF 30ppm `HC-49/US`
 
@@ -36,7 +38,7 @@ Note 05: List of tested working crystals: Native SMD crystal is a `HC-49/US` typ
 
 ## Getting started
 
-Open directory that you wish to install into git pull to pull down the driver into a directory of your choice and use the following:
+Open the directory that you wish to install into git pull to pull down the driver into a directory of your choice and use the following:
 
 `git clone https://github.com/happycube/cxadc-linux`
 
@@ -44,7 +46,7 @@ You can then use `git pull` to update later
 
 or
 
-Click code then download zip and extract files to directory you wish to use CXADC in then open a terminal in said directory
+Click code then download zip and extract files to the directory you wish to use CXADC in then open a terminal in said directory
 
 Once files have been acquired then proceed to do the following:
 
@@ -88,13 +90,12 @@ Install PV to allow real-time monitoring of the runtime & datarate. (may have dr
 
     sudo apt install pv
 
-## Configiration and Capturing
+## Configuration and Capturing
 
 Connect a signal to the input you've selected, and run `leveladj` to
 adjust the gain automatically:
 
 	./leveladj
-
 
 To use PV modify command with `/dev/cxadc0 |pv >` it will look like this when in use:
 
@@ -107,23 +108,23 @@ Open Terminal in the directory you wish to write the data this to capture 10 sec
 
 `dd` and `cat` can also be used to trigger captures for example:
 
-Use CTRL+C to manualy stop capture.
+Use CTRL+C to manually stop capture.
 
 `timeout 30s` at the start of the command will run capture for 30seconds for example.
 
 `sox -r 28636363` etc can be used to resample to the sample rate specified ware as cat/dd will just do whatever has been pre-defined by parameters set bellow.
 
-## Module parameters
+## Module Parameters
 
 Most of these parameters (except `latency`) can be changed using sysfs
 after the module has been loaded. Re-opening the device will update the
 CX2388x's registers.
 
-To change configuraton open the terminal and use the following command to change driver config settings.
+To change configuration open the terminal and use the following command to change driver config settings.
 
 X = Number Setting i.e  `0`  `1`  `2`  `3`  etc
 
-Y = Parameter seting i.e `vmux` `level` etc
+Y = Parameter setting i.e `vmux` `level` etc
 
 sudo echo X >/sys/module/cxadc/parameters/Y
 
@@ -131,11 +132,17 @@ Example: `sudo echo 1 >/sys/module/cxadc/parameters/vmux`
 
 ### `vmux` (0 to 3, default 2)
 
-Select the physical input to capture.
+### How to select the physical input to capture.
 
 A typical TV card has a tuner,
-composite input with RCA/BNC ports and S-Video inputs tied to three of these inputs; you
-may need to experiment quickest way is to attach a video signal and run
+a composite input with RCA/BNC ports and S-Video inputs tied to three of these inputs; you
+may need to experiment the quickest way is to attach a video signal and see a white flash on signal hook-up and change vmux until you get something.
+
+PAL:
+`sudo ffplay -hide_banner -async 1 -f rawvideo -pixel_format gray8 -video_size 2291x625 -i /dev/cxadc0 -vf scale=1135x625,eq=gamma=0.5:contrast=1.5`
+
+NTSC:
+`ffplay -hide_banner -async 1 -f rawvideo -pix_fmt gray8 -video_size 2275x525 -i /dev/cxadc0 -vf scale=910x525,eq=gamma=0.5:contrast=1.5`
 
 ### `audsel` (0 to 3, default none)
 
@@ -147,7 +154,7 @@ parameter.
 On the PlayTV Pro Ultra:
 - `audsel=0`: tuner tv audio out?
 - `audsel=1`: silence?
-- `audsel=2`: fm stereo tuner out?
+- `audsel=2`: FM stereo tuner out?
 - `audsel=3`: audio in to audio out
 
 ### `latency` (0 to 255, default 255)
@@ -174,7 +181,7 @@ for you automatically.
 
 By default, cxadc captures at a rate of 8 x fSc (8 * 315 / 88 Mhz, approximately 28.6 MHz)
 
-tenxfsc - sets the sampling rate based off the crystal used
+tenxfsc - Sets sampling rate of the ADC based off the crystal's frequency
 
 `0` = Native crystal frequency i.e 28 (default), 40, 50, 54, etc
 
@@ -188,7 +195,7 @@ With the Stock 28Mhz Crystal the modes are the following:
 
 `1` = 35.8 MHz 8bit
 
-`2` = 40.04 Mhz 8bit
+`2` = 40.04 MHz 8bit
 
 ### `tenbit` (0 or 1, default 0)
 
@@ -196,9 +203,9 @@ By default, cxadc captures unsigned 8-bit samples.
 
 In mode 1, unsigned 16-bit mode, the data is resampled (down converted) by 50%
 
-`0` = 8xFsc 8-bit data mode (Raw Data)
+`0` = 8xFsc 8-bit data mode (Raw Unsigned Data)
 
-`1` = 4xFsc 16-bit data mode (Filtered VBI data)
+`1` = 4xFsc 16-bit data mode (Filtered Vertical Blanking Interval Data)
 
 When in 16bit sample modes change to the following:
 
@@ -295,9 +302,9 @@ SMP.
 
 ### 2021-12-14 - Updated Documentation
 
-- Change 10bit to the correct 16bit as that's what's stated in RAW16 under the datasheet and that's what the actual samples are in format wise.
-- Cleaned up and added examples for adjusting module parameters and basic real time readout information.
-- Added notations of ABLS2-40.000MHZ-D4YF-T a drop in replacement crystal that adds 40mhz ability at low cost for current market PCIE cards.
+- Change 10bit to the correct 16bit as that's what's stated in RAW16 under the datasheet and that's what the actual samples are in format-wise.
+- Cleaned up and added examples for adjusting module parameters and basic real-time readout information.
+- Added notations of ABLS2-40.000MHZ-D4YF-T a drop-in replacement crystal that adds 40mhz ability at low cost for current market PCIE cards.
 - Added documentation for sixdb mode selection.
 - Added links to find current CX cards
 - Added issues that have been found
