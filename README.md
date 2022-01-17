@@ -8,7 +8,7 @@ The regular cx88 driver in Linux provides support for capturing composite
 video, digital video, audio and the other normal features of these
 chips. You shouldn't load both drivers at the same time.
 
-## Ware to find current PCIE CX CX23881 cards and notes
+## Where to find current PCIE CX CX23881 cards and notes
 
 https://www.aliexpress.com/item/1005003461248897.html - White Variation
 
@@ -18,7 +18,7 @@ https://www.aliexpress.com/item/4001286595482.html    - Blue Variation
 
 Note 01: For reliable 40Mhz 8-bit and 20mhz 16-bit samples the recommended crystal is the `ABLS2-40.000MHZ-D4YF-T`.
 
-Note 02: Asmedia PCI to PCIE 1x bridge chips may have support issues on some older PCH chipsets intel 3rd gen, for example, white cards use ITE chips which might not have said issue.
+Note 02: Asmedia PCI to PCIE 1x bridge chips may have support issues on some older PCH chipsets Intel 3rd gen, for example, white cards use ITE chips which might not have said issue.
 
 Note 03: Added cooling can provide stability more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware but currently only 40mhz mods have been broadly viable in testing.
 
@@ -88,9 +88,11 @@ Build the level adjustment tool:
 
 	gcc -o leveladj leveladj.c
 
-Install PV to allow real-time monitoring of the runtime & datarate. (may have dropped samples on lower-end setups)
+Install PV to allow real-time monitoring of the runtime & datarate.
 
     sudo apt install pv
+
+Note: When using a lower end system, if there is not enough system resorces you may have dropped samples!
 
 ## Configuration and Capturing
 
@@ -99,26 +101,28 @@ adjust the gain automatically:
 
 	./leveladj
 
-To use PV argument that enables datarate/runtime readout modify command with `|pv >` it will look like this when in use:
-
-    cat /dev/cxadc0 |pv > output.raw
-    0:00:04 [38.1MiB/s] [        <=>  
-
 Open Terminal in the directory you wish to write the data and use the following example command capture 10 seconds of test samples:
 
     timeout 10s dd if=/dev/cxadc0 |pv > of=out.raw
 
 `dd` and `cat` can also be used to trigger captures.
 
+To use PV argument that enables datarate/runtime readout modify command with `|pv >` it will look like this when in use:
+
+    cat /dev/cxadc0 |pv > output.raw
+    0:00:04 [38.1MiB/s] [        <=>  
+
 Use CTRL+C to manually stop capture.
+
+`dd` and `cat` can also be used to trigger captures for example:
 
 `timeout 30s` at the start of the command will end the capture after 30 seconds; this can be adjusted to whatever the user wishes.
 
 `sox -r 28636363` etc can be used to resample to the sample rate specified ware as cat/dd will just do whatever has been pre-defined by parameters set below.
 
-Note: For use with (S)VHS & LD-Decode projects .8u for 8-bit & .u16 for 16-bit samples instead of .raw extention this allows the software to detect the data and use it before flac compression to .vhs/.svhs & .ldf and so on.
+Note: For use with (S)VHS & LD-Decode projects .u8 for 8-bit & .u16 for 16-bit samples instead of .raw extention this allows the software to detect the data and use it before flac compression to .vhs/.svhs & .ldf and so on.
 
-## Module Parameters
+## Module parameters
 
 Most of these parameters (except `latency`) can be changed using sysfs
 after the module has been loaded. Re-opening the device will update the
@@ -187,7 +191,7 @@ By default, cxadc captures at a rate of 8 x fsc (8 * 315 / 88 Mhz, approximately
 
 tenxfsc - Sets sampling rate of the ADC based on the crystal's native frequency
 
-`0` = Native crystal frequency i.e 28MHz (default), 40, 50, 54, etc
+`0` = Native crystal frequency i.e 28MHz (default), 40, 50, 54, (Modifyed etc)
 
 `1` = Native crystal frequency times 1.25
 
