@@ -9,12 +9,13 @@ The regular cx88 driver in Linux provides support for capturing composite
 video, digital video, audio and the other normal features of these
 chips. You shouldn't load both drivers at the same time.
 
-### Ware to find current PCIE CX CX23881 cards and notes
-https://www.aliexpress.com/item/1005003461248897.html?spm - White Variation
-https://www.aliexpress.com/item/1005003133382186.html?spm - Green Variation
-https://www.aliexpress.com/item/4001286595482.html?spm    - Blue Variation
+## Ware to find current PCIE CX CX23881 cards and notes
 
-Note 01: For reliable 40Mhz 8bit and 20mhz 16bit samples the recommended crystal is the `ABLS2-40.000MHZ-D4YF-T`.
+https://www.aliexpress.com/item/1005003461248897.html - White Variation
+https://www.aliexpress.com/item/1005003092946304.html - Green Variation
+https://www.aliexpress.com/item/4001286595482.html    - Blue Variation
+
+Note 01: For reliable 40Mhz 8-bit and 20mhz 16-bit samples the recommended crystal is the `ABLS2-40.000MHZ-D4YF-T`.
 
 Note 02: Asmedia PCI to PCIE 1x bridge chips may have support issues on some older PCH chipsets intel 3rd gen, for example, white cards use ITE chips which might not have said issue.
 
@@ -99,20 +100,22 @@ adjust the gain automatically:
 
 To use PV modify command with `/dev/cxadc0 |pv >` it will look like this when in use:
 
-    cat /dev/cxadc0 |pv > output.wav
+    cat /dev/cxadc0 |pv > output.raw
     0:00:04 [38.1MiB/s] [        <=>  
 
 Open Terminal in the directory you wish to write the data this to capture 10 seconds of test samples:
 
-    timeout 10s dd if=/dev/cxadc0 |pv > of=out.wav
+    timeout 10s dd if=/dev/cxadc0 |pv > of=out.raw
 
-`dd` and `cat` can also be used to trigger captures for example:
+`dd` and `cat` can also be used to trigger captures and the `|pv >` argument enables data readout.
 
 Use CTRL+C to manually stop capture.
 
-`timeout 30s` at the start of the command will run capture for 30seconds for example.
+`timeout 30s` at the start of the command will run capture for 30 seconds for example.
 
 `sox -r 28636363` etc can be used to resample to the sample rate specified ware as cat/dd will just do whatever has been pre-defined by parameters set bellow.
+
+Note: Use with (S)VHS & LD-Decode projects .u16 for 16-bit samples and .8u for 8-bit samples should replace .raw extention this allows the software to detect the data and use it before flac compression to .vhs/.svhs & .ldf and so on.
 
 ## Module Parameters
 
