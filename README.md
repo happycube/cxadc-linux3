@@ -12,7 +12,9 @@ chips. You shouldn't load both drivers at the same time.
 ## Ware to find current PCIE CX CX23881 cards and notes
 
 https://www.aliexpress.com/item/1005003461248897.html - White Variation
+
 https://www.aliexpress.com/item/1005003092946304.html - Green Variation
+
 https://www.aliexpress.com/item/4001286595482.html    - Blue Variation
 
 Note 01: For reliable 40Mhz 8-bit and 20mhz 16-bit samples the recommended crystal is the `ABLS2-40.000MHZ-D4YF-T`.
