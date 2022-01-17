@@ -2,8 +2,7 @@
 
 cxadc is an alternative Linux driver for the Conexant CX2388x video
 capture chips used on many PCI TV cards and cheep PCIE (with 1x bridge chip) capture cards It configures the CX2388x to
-capture raw 8bit or 16bit unsigned samples from the video input ports, allowing these cards to be
-used as a low-cost 28-54Mhz 10bit ADC for SDR and similar applications.
+capture raw 8-bit or 16-bit unsigned samples from the video input ports, allowing these cards to be used as a low-cost 28-54Mhz 10bit ADC for SDR and similar applications.
 
 The regular cx88 driver in Linux provides support for capturing composite
 video, digital video, audio and the other normal features of these
@@ -27,7 +26,7 @@ Note 04: For crystals over 54mhz it might be possible to use higher crystals wit
 
 Note 05: List of tested working crystals: Native SMD crystal on current PCIE 1x cards is a `HC-49/US` type
 
-Note 06: The CX chip verient with the least self-noise is the cx23883 mostly found on the White Variation card with most clean captures at the 6dB off and Digital Gain at 0-10.
+Note 06: The CX chip variant with the least self-noise is the cx23883 mostly found on the White Variation card with most clean captures at the 6dB off and Digital Gain at 0-10.
 
 `40MHz` - ABRACON ABLS2-40.000MHZ-D4YF-T 18pF 30ppm `HC-49/US`
 
@@ -89,7 +88,7 @@ Build the level adjustment tool:
 
 	gcc -o leveladj leveladj.c
 
-Install PV to allow real-time monitoring of the runtime & datarate. (may have dropped samples on lower end setups)
+Install PV to allow real-time monitoring of the runtime & datarate. (may have dropped samples on lower-end setups)
 
     sudo apt install pv
 
@@ -100,24 +99,24 @@ adjust the gain automatically:
 
 	./leveladj
 
-To use PV modify command with `/dev/cxadc0 |pv >` it will look like this when in use:
+To use PV argument that enables datarate/runtime readout modify command with `|pv >` it will look like this when in use:
 
     cat /dev/cxadc0 |pv > output.raw
     0:00:04 [38.1MiB/s] [        <=>  
 
-Open Terminal in the directory you wish to write the data this to capture 10 seconds of test samples:
+Open Terminal in the directory you wish to write the data and use the following example command capture 10 seconds of test samples:
 
     timeout 10s dd if=/dev/cxadc0 |pv > of=out.raw
 
-`dd` and `cat` can also be used to trigger captures and the `|pv >` argument enables data readout.
+`dd` and `cat` can also be used to trigger captures.
 
 Use CTRL+C to manually stop capture.
 
-`timeout 30s` at the start of the command will run capture for 30 seconds for example.
+`timeout 30s` at the start of the command will end the capture after 30 seconds; this can be adjusted to whatever the user wishes.
 
-`sox -r 28636363` etc can be used to resample to the sample rate specified ware as cat/dd will just do whatever has been pre-defined by parameters set bellow.
+`sox -r 28636363` etc can be used to resample to the sample rate specified ware as cat/dd will just do whatever has been pre-defined by parameters set below.
 
-Note: Use with (S)VHS & LD-Decode projects .u16 for 16-bit samples and .8u for 8-bit samples should replace .raw extention this allows the software to detect the data and use it before flac compression to .vhs/.svhs & .ldf and so on.
+Note: For use with (S)VHS & LD-Decode projects .8u for 8-bit & .u16 for 16-bit samples instead of .raw extention this allows the software to detect the data and use it before flac compression to .vhs/.svhs & .ldf and so on.
 
 ## Module Parameters
 
@@ -147,13 +146,13 @@ PAL:
 `sudo ffplay -hide_banner -async 1 -f rawvideo -pixel_format gray8 -video_size 2291x625 -i /dev/cxadc0 -vf scale=1135x625,eq=gamma=0.5:contrast=1.5`
 
 NTSC:
-`ffplay -hide_banner -async 1 -f rawvideo -pix_fmt gray8 -video_size 2275x525 -i /dev/cxadc0 -vf scale=910x525,eq=gamma=0.5:contrast=1.5`
+`sudo ffplay -hide_banner -async 1 -f rawvideo -pix_fmt gray8 -video_size 2275x525 -i /dev/cxadc0 -vf scale=910x525,eq=gamma=0.5:contrast=1.5`
 
 ### `audsel` (0 to 3, default none)
 
 Some TV cards (e.g. the PixelView PlayTV Pro Ultra) have an external
 multiplexer attached to the CX2388x's GPIO pins to select an audio
-channel. If your card has one, you can select an input using this
+channel. If your card has one, you can select the input using this
 parameter.
 
 On the PlayTV Pro Ultra:
@@ -167,7 +166,7 @@ On the PlayTV Pro Ultra:
 The PCI latency timer value for the device.
 
 ### `sixdb` (0 or 1, default 1)
-Enables or disables a default 6db gain applied to input signal (can result in cleaner capture)
+Enables or disables a default 6db gain applied to the input signal (can result in cleaner capture)
 
 `1` = On
 
@@ -184,11 +183,11 @@ for you automatically.
 
 ### `tenxfsc` (0 to 2, default 0)
 
-By default, cxadc captures at a rate of 8 x fSc (8 * 315 / 88 Mhz, approximately 28.6 MHz)
+By default, cxadc captures at a rate of 8 x fsc (8 * 315 / 88 Mhz, approximately 28.6 MHz)
 
-tenxfsc - Sets sampling rate of the ADC based off the crystal's frequency
+tenxfsc - Sets sampling rate of the ADC based on the crystal's native frequency
 
-`0` = Native crystal frequency i.e 28 (default), 40, 50, 54, etc
+`0` = Native crystal frequency i.e 28MHz (default), 40, 50, 54, etc
 
 `1` = Native crystal frequency times 1.25
 
@@ -206,7 +205,7 @@ With the Stock 28Mhz Crystal the modes are the following:
 
 By default, cxadc captures unsigned 8-bit samples.
 
-In mode 1, unsigned 16-bit mode, the data is resampled (down converted) by 50%
+In mode 1, unsigned 16-bit mode, the data is resampled (down-converted) by 50%
 
 `0` = 8xFsc 8-bit data mode (Raw Unsigned Data)
 
