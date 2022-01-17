@@ -92,7 +92,7 @@ Install PV to allow real-time monitoring of the runtime & datarate.
 
     sudo apt install pv
 
-Note: When using a lower end system, if there is not enough system resorces you may have dropped samples!
+Note: When using a lower end system, if there is not enough system resources you may have dropped samples!
 
 ## Configuration and Capturing
 
