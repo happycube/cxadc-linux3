@@ -16,7 +16,7 @@ https://www.aliexpress.com/item/1005003092946304.html - Green Variation
 
 https://www.aliexpress.com/item/4001286595482.html    - Blue Variation
 
-Note 01: For reliable 40Mhz 8-bit and 20mhz 16-bit samples the recommended crystal is the `ABLS2-40.000MHZ-D4YF-T`.
+Note 01: For reliable 40Mhz 8-bit & 20mhz 16-bit samples the recommended crystal is the `ABLS2-40.000MHZ-D4YF-T`.
 
 Note 02: Asmedia PCI to PCIE 1x bridge chips may have support issues on some older PCH chipsets Intel 3rd gen, for example, white cards use ITE chips which might not have said issue.
 
@@ -96,6 +96,10 @@ Note: When using a lower end system, if there is not enough system resources you
 
 ## Configuration and Capturing
 
+Use module parameter `vmux` (0 to 3, default 2) to select physical input.
+
+`sudo echo 1 >/sys/module/cxadc/parameters/vmux`
+
 Connect a signal to the input you've selected, and run `leveladj` to
 adjust the gain automatically:
 
@@ -103,7 +107,7 @@ adjust the gain automatically:
 
 Open Terminal in the directory you wish to write the data and use the following example command capture 10 seconds of test samples:
 
-    timeout 10s dd if=/dev/cxadc0 |pv > of=out.raw
+    timeout 10s dd if=/dev/cxadc0 |pv > output.raw
 
 `dd` and `cat` can also be used to trigger captures.
 
@@ -122,7 +126,7 @@ Use CTRL+C to manually stop capture.
 
 Note: For use with (S)VHS & LD-Decode projects .u8 for 8-bit & .u16 for 16-bit samples instead of .raw extention this allows the software to detect the data and use it before flac compression to .vhs/.svhs & .ldf and so on.
 
-## Module parameters
+## Module Parameters
 
 Most of these parameters (except `latency`) can be changed using sysfs
 after the module has been loaded. Re-opening the device will update the
