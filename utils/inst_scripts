@@ -1,0 +1,1 @@
+ls|grep cx |xargs -I % bash -c 'ln -s `pwd`/% /usr/bin/%'

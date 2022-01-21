@@ -1,0 +1,2 @@
+echo 0 > /sys/module/cxadc/parameters/tenxfsc
+cxvalues
