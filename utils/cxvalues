@@ -1,0 +1,2 @@
+#!/bin/bash
+ls /sys/module/cxadc/parameters |xargs -I % bash -c 'echo -n "/sys/module/cxadc/parameters/% "  && cat /sys/module/cxadc/parameters/%'
