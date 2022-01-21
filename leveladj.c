@@ -26,6 +26,8 @@ void set(char *name, int level)
 
 int main(int argc, char *argv[])
 {
+
+        FILE *syssfys;
 	int fd;
 	int level = 20;
 	int go_on = 1; // 2 after going over
@@ -42,18 +44,37 @@ int main(int argc, char *argv[])
 
 	int c;
         opterr = 0;
+        
+        if (argc > 1) {
+        	while ((c = getopt(argc, argv, "bx")) != -1) {
+			switch (c) {
+				case 'b':
+					tenbit = 1;
+					break;	
+				case 'x':
+					tenxfsc = 1;
+					break;	
+			}; 
+	   	}
+        } else {
+		syssfys = fopen ("/sys/module/cxadc/parameters/tenbit", "r");
+	        if (syssfys == NULL) {
+	                fprintf(stderr, "no sysfs paramerters\n");
+	                return -1;
+	        }
+        	fscanf(syssfys, "%d", &tenbit);
+		fclose(syssfys);
+	        syssfys = fopen ("/sys/module/cxadc/parameters/tenxfsc", "r");
+        	if (syssfys == NULL) {
+                	fprintf(stderr, "no sysfs paramerters\n");
+	               return -1;
+        	}
+	        fscanf(syssfys, "%d", &tenxfsc);
+		fclose(syssfys);
+        }
 
-        while ((c = getopt(argc, argv, "bx")) != -1) {
-		switch (c) {
-			case 'b':
-				tenbit = 1;
-				break;	
-			case 'x':
-				tenxfsc = 1;
-				break;	
-		}; 
-	}
-		
+
+	
 	set("tenbit", tenbit);
 	set("tenxfsc", tenxfsc);
 
