@@ -1,0 +1,2 @@
+echo 2 > /sys/module/cxadc/parameters/vmux
+cxvalues
