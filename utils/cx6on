@@ -1,0 +1,2 @@
+echo 1 > /sys/module/cxadc/parameters/sixdb
+cxvalues

@@ -8,3 +8,17 @@ To install:
 sudo ./inst_scripts 
 
 while in the 'utils' folder
+
+
+cx10fsc = set 10fsc sample rate mode. 1.25x crystal speed (only recommended when aslo using 16bit mode).
+cx16bit = set cxadc to return unsigned 16 bit samples.
+cx6off = set sixdb to off. This is a 6db gain setting for the AFE. Kind of like a "loud" button on your stereo.
+cx6on = set sixdb to on.  (see above).
+cx8bit = set cxadc to return unsigned 8 bit samples.
+cx8fsc = set 8fsc sample rate mode.  1x crystal speed.
+cxvx0 = set cxadc to work off vmux0
+cxvx1 = set cxadc to work off vmux1
+cxvx2 = set cxadc to work off vmux2
+cxlvlcavdd.py = A capture script to use instead of `dd` that adjust the gain down automatically if clipping is detected during capture. 
+inst_scripts = create simlinks to these scripts in /usr/bin. Requires sudo to install.
+
