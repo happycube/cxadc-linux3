@@ -1,4 +1,4 @@
-# cxadc (CX - Analogue Digital Converter )
+cxadc (CX - Analogue Digital Converter )
 
 cxadc is an alternative Linux driver for the Conexant CX2388x video
 capture chips used on many PCI TV cards and cheep PCIE (with 1x bridge chip) capture cards It configures the CX2388x to
@@ -8,7 +8,7 @@ The regular cx88 driver in Linux provides support for capturing composite
 video, digital video, audio and the other normal features of these
 chips. You shouldn't load both drivers at the same time.
 
-## Where to find current PCIE CX CX23881 cards and notes
+## Where to find current PCIE 1x CX23881 cards and notes
 
 https://www.aliexpress.com/item/1005003461248897.html - White Variation
 
@@ -24,9 +24,11 @@ Note 03: Added cooling can provide stability more so with 40-54mhz crystal mods,
 
 Note 04: For crystals over 54mhz it might be possible to use higher crystals with self temperature regulated isolated chamber models but this is still to have proper testing.
 
-Note 05: List of tested working crystals: Native SMD crystal on current PCIE 1x cards is a `HC-49/US` type
+Note 05: The CX chip variant with the least self-noise is the cx23883 mostly found on the White Variation card with most clean captures at the 6dB off and Digital Gain at 0-10.
 
-Note 06: The CX chip variant with the least self-noise is the cx23883 mostly found on the White Variation card with most clean captures at the 6dB off and Digital Gain at 0-10.
+## List of tested working crystals:
+
+Native SMD crystal on current PCIE 1x cards is a `HC-49/US` type
 
 `40MHz` - ABRACON ABLS2-40.000MHZ-D4YF-T 18pF 30ppm `HC-49/US`
 
@@ -37,6 +39,10 @@ Note 06: The CX chip variant with the least self-noise is the cx23883 mostly fou
 `50MHz` - ECS ECS-500-18-33-AGM-TR 18pF 30ppm  `SMD Package`
 
 `54MHz` - ECS ECS-540-8-33-JTN-TR 8pF 20ppm `SMD Package`
+
+## Scripted Commands
+
+Check the utils folder and the associated readme for quicker and more simplified commands.
 
 ## Getting started
 
@@ -94,37 +100,7 @@ Install PV to allow real-time monitoring of the runtime & datarate.
 
 Note: When using a lower end system, if there is not enough system resources you may have dropped samples!
 
-## Configuration and Capturing
-
-Use module parameter `vmux` (0 to 3, default 2) to select physical input.
-
-`sudo echo 1 >/sys/module/cxadc/parameters/vmux`
-
-Connect a signal to the input you've selected, and run `leveladj` to
-adjust the gain automatically:
-
-	./leveladj
-
-Open Terminal in the directory you wish to write the data and use the following example command capture 10 seconds of test samples:
-
-    timeout 10s dd if=/dev/cxadc0 |pv > output.raw
-
-`dd` and `cat` can also be used to trigger captures.
-
-To use PV argument that enables datarate/runtime readout modify command with `|pv >` it will look like this when in use:
-
-    cat /dev/cxadc0 |pv > output.raw
-    0:00:04 [38.1MiB/s] [        <=>  
-
-Use CTRL+C to manually stop capture.
-
-`dd` and `cat` can also be used to trigger captures for example:
-
-`timeout 30s` at the start of the command will end the capture after 30 seconds; this can be adjusted to whatever the user wishes.
-
-`sox -r 28636363` etc can be used to resample to the sample rate specified ware as cat/dd will just do whatever has been pre-defined by parameters set below.
-
-Note: For use with (S)VHS & LD-Decode projects .u8 for 8-bit & .u16 for 16-bit samples instead of .raw extention this allows the software to detect the data and use it before flac compression to .vhs/.svhs & .ldf and so on.
+# Configuration
 
 ## Module Parameters
 
@@ -142,9 +118,7 @@ sudo echo X >/sys/module/cxadc/parameters/Y
 
 Example: `sudo echo 1 >/sys/module/cxadc/parameters/vmux`
 
-### `vmux` (0 to 3, default 2)
-
-### How to select the physical input to capture.
+### `vmux` (0 to 3, default 2) select physical input to capture.
 
 A typical TV card has a tuner,
 a composite input with RCA/BNC ports and S-Video inputs tied to three of these inputs; you
@@ -174,7 +148,7 @@ On the PlayTV Pro Ultra:
 The PCI latency timer value for the device.
 
 ### `sixdb` (0 or 1, default 1)
-Enables or disables a default 6db gain applied to the input signal (can result in cleaner capture)
+Enables or disables a default 6db gain applied to the input signal (Disabling this can result in cleaner capture but may require an external amplifier)
 
 `1` = On
 
@@ -209,7 +183,7 @@ With the Stock 28Mhz Crystal the modes are the following:
 
 `2` = 40.04 MHz 8bit
 
-### `tenbit` (0 or 1, default 0)
+### `tenbit`  (0 or 1, default 0)
 
 By default, cxadc captures unsigned 8-bit samples.
 
@@ -230,6 +204,34 @@ When in 16bit sample modes change to the following:
 Note!
 
 `40/20mhz modes` have a rare chance of working on stock cards its recommended to just replace the stock crystal with ABLS2-40.000MHZ-D4YF-T for more reliable results.
+
+## Capture
+
+Connect a signal to the input you've selected, and run `leveladj` to
+adjust the gain automatically:
+
+	./leveladj
+
+Open Terminal in the directory you wish to write the data and use the following example command capture 10 seconds of test samples:
+
+    timeout 10s dd if=/dev/cxadc0 |pv > output.raw
+
+`dd` and `cat` can both be used to trigger captures.
+
+To use PV argument that enables datarate/runtime readout modify command with `|pv >` it will look like this when in use:
+
+    cat /dev/cxadc0 |pv > output.raw
+    0:00:04 [38.1MiB/s] [        <=>  
+
+Use CTRL+C to manually stop capture.
+
+`timeout 30s` at the start of the command will end the capture after 30 seconds; this can be adjusted to whatever the user wishes.
+
+`sox -r 28636363` etc can be used to resample to the sample rate specified ware as cat/dd will just do whatever has been pre-defined by parameters set below.
+
+Note: For use with (S)VHS & LD-Decode projects .u8 for 8-bit & .u16 for 16-bit samples instead of .raw extension this allows the software to correctly detect the data and use it for decoding or flac compression to .vhs/.svhs & .ldf and so on.
+
+
 
 ## Other Tips
 
@@ -321,3 +323,12 @@ SMP.
 - Added links to find current CX cards
 - Added issues that have been found
 - Added crystal list of working replacements
+
+### 2022-12-14 - v0.6 - Usability Improvements
+
+New additions by Tony Anderson (tandersn@uw.edu)
+
+- Fixed ./leveladj script from re-setting module parameters
+- Added new command scripts
+- Added new level adjustment tool cxlvlcavdd.py
+- Added dedicated readme for new scripts and future tools
