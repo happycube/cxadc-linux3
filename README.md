@@ -124,6 +124,10 @@ A typical TV card has a tuner,
 a composite input with RCA/BNC ports and S-Video inputs tied to three of these inputs; you
 may need to experiment the quickest way is to attach a video signal and see a white flash on signal hook-up and change vmux until you get something.
 
+### Commands to Check for Signal Burst
+
+Creates a video preview of signal depending on RF type you will get an unstable video or just a white flash.
+
 PAL:
 `sudo ffplay -hide_banner -async 1 -f rawvideo -pixel_format gray8 -video_size 2291x625 -i /dev/cxadc0 -vf scale=1135x625,eq=gamma=0.5:contrast=1.5`
 
@@ -231,9 +235,30 @@ Use CTRL+C to manually stop capture.
 
 Note: For use with (S)VHS & LD-Decode projects .u8 for 8-bit & .u16 for 16-bit samples instead of .raw extension this allows the software to correctly detect the data and use it for decoding or flac compression to .vhs/.svhs & .ldf and so on.
 
-
-
 ## Other Tips
+
+### Change CXADC defaults
+
+Defaults cxadc3-linux/cxadc.c file to have the defaults you like. at stock, it will look like this:
+
+static int latency = -1; (leave this alone)
+static int audsel = -1;  (leave this alone)
+static int vmux = 2;
+static int level = 16;
+static int tenbit;
+static int tenxfsc;
+static int sixdb = 1;
+
+But you could change it to:
+static int latency = -1; (leave this alone)
+static int audsel = -1; (leave this alone)
+static int vmux = 1;
+static int level = 0;
+static int tenbit = 1;
+static int tenxfsc = 1;
+static int sixdb = 0;
+
+Then redo the make and sudo make modules_install commands. Then next reboot, it will come up with those settings as the default.
 
 ### Accessing registers directly from userspace
 

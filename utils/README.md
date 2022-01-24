@@ -34,3 +34,26 @@ cxvx1 = set cxadc to work off vmux1
 cxvx2 = set cxadc to work off vmux2
 
 cxlvlcavdd.py = A capture script to use instead of `dd` that adjust the gain down automatically if clipping is detected during capture.
+
+# Change CXADC defaults
+
+Defaults cxadc3-linux/cxadc.c file to have the defaults you like. at stock, it will look like this:
+
+static int latency = -1; (leave this alone)
+static int audsel = -1;  (leave this alone)
+static int vmux = 2;
+static int level = 16;
+static int tenbit;
+static int tenxfsc;
+static int sixdb = 1;
+
+But you could change it to:
+static int latency = -1; (leave this alone)
+static int audsel = -1; (leave this alone)
+static int vmux = 1;
+static int level = 0;
+static int tenbit = 1;
+static int tenxfsc = 1;
+static int sixdb = 0;
+
+Then redo the make and sudo make modules_install commands. Then next reboot, it will come up with those settings as the default
