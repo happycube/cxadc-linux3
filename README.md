@@ -214,13 +214,13 @@ Note!
 Connect a signal to the input you've selected, and run `leveladj` to
 adjust the gain automatically:
 
-	./leveladj
+	  ./leveladj
 
 Open Terminal in the directory you wish to write the data and use the following example command capture 10 seconds of test samples:
 
-    timeout 10s dd if=/dev/cxadc0 |pv > output.raw
+    timeout 10s cat /dev/cxadc0 |pv > output.raw
 
-`dd` and `cat` can both be used to trigger captures.
+`cat` is the defualt due to user issues with `dd`
 
 To use PV argument that enables datarate/runtime readout modify command with `|pv >` it will look like this when in use:
 
@@ -241,22 +241,36 @@ Note: For use with (S)VHS & LD-Decode projects .u8 for 8-bit & .u16 for 16-bit s
 
 Defaults cxadc3-linux/cxadc.c file to have the defaults you like. at stock, it will look like this:
 
-static int latency = -1; (leave this alone)
-static int audsel = -1;  (leave this alone)
-static int vmux = 2;
-static int level = 16;
-static int tenbit;
-static int tenxfsc;
-static int sixdb = 1;
+`static int latency = -1;` (leave this alone)
+
+`static int audsel = -1;`
+
+`static int vmux = 2;`
+
+`static int level = 16;`
+
+`static int tenbit;`
+
+`static int tenxfsc;`
+
+`static int sixdb = 1;`
 
 But you could change it to:
-static int latency = -1; (leave this alone)
-static int audsel = -1; (leave this alone)
-static int vmux = 1;
-static int level = 0;
-static int tenbit = 1;
-static int tenxfsc = 1;
-static int sixdb = 0;
+
+`static int latency = -1;` (leave this alone)
+
+`static int audsel = -1;`
+
+`static int vmux = 1;`
+
+`static int level = 0;`
+
+`static int tenbit = 1;`
+
+`static int tenxfsc = 1;`
+
+`static int sixdb = 0;`
+
 
 Then redo the make and sudo make modules_install commands. Then next reboot, it will come up with those settings as the default.
 
