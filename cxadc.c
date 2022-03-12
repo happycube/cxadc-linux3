@@ -45,6 +45,7 @@ static int level = 16;
 static int tenbit;
 static int tenxfsc;
 static int sixdb = 1;
+static int fortycryst = 0;
 
 #define cx_read(reg)         readl(ctd->mmio + ((reg) >> 2))
 #define cx_write(reg, value) writel((value), ctd->mmio + ((reg) >> 2))
@@ -311,29 +312,226 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 		level = 31;
 	/* control gain also bit 16 */
 	cx_write(MO_AGC_GAIN_ADJ4, (sixdb<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0));
-
-	switch (tenxfsc) {
-		case 0 :
-			/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
-	                cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
-        	        cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
-                        break;
-                case 1 :
-			/* clock speed equal to 1.25 x crystal speed, unmodified card = 35.8 mhz */
-			cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
-			cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
-                        break;
-		case 2 : 	
-			/* clock speed equal to ~1.4 x crystal speed, unmodified card = 40 mhz */
-	                cx_write(MO_SCONV_REG, 131072*0.715909072483);
-                        cx_write(MO_PLL_REG, 0x0165965A); /* 40000000.1406459 */
-                        break;
-		default :
-			/* if someone sets value out of range, default to crystal speed */
+       if (fortycryst == 1) {
+        switch (tenxfsc) {
+                case 0 :
                         /* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
                         cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
                         cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
-	}
+                        break;
+                case 1 :
+                        /* clock speed equal to 1.25 x crystal speed, unmodified card = 35.8 mhz */
+                        cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
+                        cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
+                        break;
+                case 2 :
+                        /* clock speed equal to ~1.4 x crystal speed, unmodified card = 40 mhz */
+                        cx_write(MO_SCONV_REG, 131072*0.715909072483);
+                        cx_write(MO_PLL_REG, 0x0165965A); /* 40000000.1406459 */
+                        break;
+
+		case 11 : 
+			 /* 11 msps  */
+			cx_write(MO_PLL_REG, 0x04E00000);
+			cx_write(MO_SCONV_REG,131072*2.85714285714286);
+			break;
+		case 12 : 
+			 /* 12 msps  */
+			cx_write(MO_PLL_REG, 0x04E00000);
+			cx_write(MO_SCONV_REG,131072*2.85714285714286);
+			break;
+		case 13 : 
+			 /* 13 msps  */
+			cx_write(MO_PLL_REG, 0x04E00000);
+			cx_write(MO_SCONV_REG,131072*2.85714285714286);
+			break;
+		case 14 : 
+			 /* 14 msps  */
+			cx_write(MO_PLL_REG, 0x04E00000);
+			cx_write(MO_SCONV_REG,131072*2.85714285714286);
+			break;
+		case 15 : 
+			 /* 15 msps  */
+			cx_write(MO_PLL_REG, 0x04F00000);
+			cx_write(MO_SCONV_REG,131072*2.66666666666667);
+			break;
+		case 16 : 
+			 /* 16 msps  */
+			cx_write(MO_PLL_REG, 0x05000000);
+			cx_write(MO_SCONV_REG,131072*2.5);
+			break;
+		case 17 : 
+			 /* 17 msps  */
+			cx_write(MO_PLL_REG, 0x05100000);
+			cx_write(MO_SCONV_REG,131072*2.35294117647059);
+			break;
+		case 18 : 
+			 /* 18 msps  */
+			cx_write(MO_PLL_REG, 0x05200000);
+			cx_write(MO_SCONV_REG,131072*2.22222222222222);
+			break;
+		case 19 : 
+			 /* 19 msps  */
+			cx_write(MO_PLL_REG, 0x05300000);
+			cx_write(MO_SCONV_REG,131072*2.10526315789474);
+			break;
+		case 20 : 
+			 /* 20 msps  */
+			cx_write(MO_PLL_REG, 0x05400000);
+			cx_write(MO_SCONV_REG,131072*2);
+			break;
+		case 21 : 
+			 /* 21 msps  */
+			cx_write(MO_PLL_REG, 0x05500000);
+			cx_write(MO_SCONV_REG,131072*1.9047619047619);
+			break;
+		case 22 : 
+			 /* 22 msps  */
+			cx_write(MO_PLL_REG, 0x05600000);
+			cx_write(MO_SCONV_REG,131072*1.81818181818182);
+			break;
+		case 23 : 
+			 /* 23 msps  */
+			cx_write(MO_PLL_REG, 0x05700000);
+			cx_write(MO_SCONV_REG,131072*1.73913043478261);
+			break;
+		case 24 : 
+			 /* 24 msps  */
+			cx_write(MO_PLL_REG, 0x05800000);
+			cx_write(MO_SCONV_REG,131072*1.66666666666667);
+			break;
+		case 25 : 
+			 /* 25 msps  */
+			cx_write(MO_PLL_REG, 0x05900000);
+			cx_write(MO_SCONV_REG,131072*1.6);
+			break;
+		case 26 : 
+			 /* 26 msps  */
+			cx_write(MO_PLL_REG, 0x05A00000);
+			cx_write(MO_SCONV_REG,131072*1.53846153846154);
+			break;
+		case 27 : 
+			 /* 27 msps  */
+			cx_write(MO_PLL_REG, 0x05B00000);
+			cx_write(MO_SCONV_REG,131072*1.48148148148148);
+			break;
+                default :
+                        /* if someone sets value out of range, default to crystal speed */
+                        /* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+                        cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+                        cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+        }
+      } else {
+        switch (tenxfsc) {
+                case 0 :
+                        /* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+                        cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+                        cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+                        break;
+                case 1 :
+                        /* clock speed equal to 1.25 x crystal speed, unmodified card = 35.8 mhz */
+                        cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
+                        cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
+                        break;
+                case 2 :
+                        /* clock speed equal to ~1.4 x crystal speed, unmodified card = 40 mhz */
+                        cx_write(MO_SCONV_REG, 131072*0.715909072483);
+                        cx_write(MO_PLL_REG, 0x0165965A); /* 40000000.1406459 */
+                        break;
+		case 11 : 
+			 /* 11 msps  */
+			cx_write(MO_PLL_REG, 0x04F5D75E);
+			cx_write(MO_SCONV_REG,131072*2.60330569792149);
+			break;
+		case 12 : 
+			 /* 12 msps  */
+			cx_write(MO_PLL_REG, 0x050C30C4);
+			cx_write(MO_SCONV_REG,131072*2.38636350705605);
+			break;
+		case 13 : 
+			 /* 13 msps  */
+			cx_write(MO_PLL_REG, 0x05228A2A);
+			cx_write(MO_SCONV_REG,131072*2.20279704487362);
+			break;
+		case 14 : 
+			 /* 14 msps  */
+			cx_write(MO_PLL_REG, 0x0538E38F);
+			cx_write(MO_SCONV_REG,131072*2.04545446786999);
+			break;
+		case 15 : 
+			 /* 15 msps  */
+			cx_write(MO_PLL_REG, 0x054F3CF5);
+			cx_write(MO_SCONV_REG,131072*1.90909080564484);
+			break;
+		case 16 : 
+			 /* 16 msps  */
+			cx_write(MO_PLL_REG, 0x0565965A);
+			cx_write(MO_SCONV_REG,131072*1.7897726812069);
+			break;
+		case 17 : 
+			 /* 17 msps  */
+			cx_write(MO_PLL_REG, 0x057BEFC0);
+			cx_write(MO_SCONV_REG,131072*1.68449190988421);
+			break;
+		case 18 : 
+			 /* 18 msps  */
+			cx_write(MO_PLL_REG, 0x0941D41E);
+			cx_write(MO_SCONV_REG,131072*1.5909090348758);
+			break;
+		case 19 : 
+			 /* 19 msps  */
+			cx_write(MO_PLL_REG, 0x0CFEC7ED);
+			cx_write(MO_SCONV_REG,131072*1.5071769879307);
+			break;
+		case 20 : 
+			 /* 20 msps  */
+			cx_write(MO_PLL_REG, 0x0D0C30C4);
+			cx_write(MO_SCONV_REG,131072*1.43181810423363);
+			break;
+		case 21 : 
+			 /* 21 msps  */
+			cx_write(MO_PLL_REG, 0x0D19999A);
+			cx_write(MO_SCONV_REG,131072*1.36363633408034);
+			break;
+		case 22 : 
+			 /* 22 msps  */
+			cx_write(MO_PLL_REG, 0x0D270271);
+			cx_write(MO_SCONV_REG,131072*1.30165283549566);
+			break;
+		case 23 : 
+			 /* 23 msps  */
+			cx_write(MO_PLL_REG, 0x0D346B48);
+			cx_write(MO_SCONV_REG,131072*1.24505920875306);
+			break;
+		case 24 : 
+			 /* 24 msps  */
+			cx_write(MO_PLL_REG, 0x0D41D41E);
+			cx_write(MO_SCONV_REG,131072*1.19318177615685);
+			break;
+		case 25 : 
+			 /* 25 msps  */
+			cx_write(MO_PLL_REG, 0x0D4F3CF5);
+			cx_write(MO_SCONV_REG,131072*1.1454544833869);
+			break;
+		case 26 : 
+			 /* 26 msps  */
+			cx_write(MO_PLL_REG, 0x0D5CA5CB);
+			cx_write(MO_SCONV_REG,131072*1.10139857064023);
+			break;
+		case 27 : 
+			 /* 27 msps  */
+			cx_write(MO_PLL_REG, 0x00F15F17);
+			cx_write(MO_SCONV_REG,131072*1.06060598972635);
+			break;
+                default :
+                        /* if someone sets value out of range, default to crystal speed */
+                        /* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+                        cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+                        cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+        }
+
+       }
+
 
 	/* capture 16 bit or 8 bit raw samples */
 	if (tenbit)
@@ -670,6 +868,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 
 	cx_info("char dev register ok\n");
 
+       if (fortycryst == 1) {
         switch (tenxfsc) {
                 case 0 :
                         /* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
@@ -680,18 +879,214 @@ static int cxadc_probe(struct pci_dev *pci_dev,
                         /* clock speed equal to 1.25 x crystal speed, unmodified card = 35.8 mhz */
                         cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
                         cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
-                        break;  
-                case 2 :        
+                        break;
+                case 2 :
                         /* clock speed equal to ~1.4 x crystal speed, unmodified card = 40 mhz */
                         cx_write(MO_SCONV_REG, 131072*0.715909072483);
-                        cx_write(MO_PLL_REG, 0x0165965A);  /* set PLL to 40000000.1406459 */
+                        cx_write(MO_PLL_REG, 0x0165965A); /* 40000000.1406459 */
                         break;
+
+		case 11 : 
+			 /* 11 msps  */
+			cx_write(MO_PLL_REG, 0x04E00000);
+			cx_write(MO_SCONV_REG,131072*2.85714285714286);
+			break;
+		case 12 : 
+			 /* 12 msps  */
+			cx_write(MO_PLL_REG, 0x04E00000);
+			cx_write(MO_SCONV_REG,131072*2.85714285714286);
+			break;
+		case 13 : 
+			 /* 13 msps  */
+			cx_write(MO_PLL_REG, 0x04E00000);
+			cx_write(MO_SCONV_REG,131072*2.85714285714286);
+			break;
+		case 14 : 
+			 /* 14 msps  */
+			cx_write(MO_PLL_REG, 0x04E00000);
+			cx_write(MO_SCONV_REG,131072*2.85714285714286);
+			break;
+		case 15 : 
+			 /* 15 msps  */
+			cx_write(MO_PLL_REG, 0x04F00000);
+			cx_write(MO_SCONV_REG,131072*2.66666666666667);
+			break;
+		case 16 : 
+			 /* 16 msps  */
+			cx_write(MO_PLL_REG, 0x05000000);
+			cx_write(MO_SCONV_REG,131072*2.5);
+			break;
+		case 17 : 
+			 /* 17 msps  */
+			cx_write(MO_PLL_REG, 0x05100000);
+			cx_write(MO_SCONV_REG,131072*2.35294117647059);
+			break;
+		case 18 : 
+			 /* 18 msps  */
+			cx_write(MO_PLL_REG, 0x05200000);
+			cx_write(MO_SCONV_REG,131072*2.22222222222222);
+			break;
+		case 19 : 
+			 /* 19 msps  */
+			cx_write(MO_PLL_REG, 0x05300000);
+			cx_write(MO_SCONV_REG,131072*2.10526315789474);
+			break;
+		case 20 : 
+			 /* 20 msps  */
+			cx_write(MO_PLL_REG, 0x05400000);
+			cx_write(MO_SCONV_REG,131072*2);
+			break;
+		case 21 : 
+			 /* 21 msps  */
+			cx_write(MO_PLL_REG, 0x05500000);
+			cx_write(MO_SCONV_REG,131072*1.9047619047619);
+			break;
+		case 22 : 
+			 /* 22 msps  */
+			cx_write(MO_PLL_REG, 0x05600000);
+			cx_write(MO_SCONV_REG,131072*1.81818181818182);
+			break;
+		case 23 : 
+			 /* 23 msps  */
+			cx_write(MO_PLL_REG, 0x05700000);
+			cx_write(MO_SCONV_REG,131072*1.73913043478261);
+			break;
+		case 24 : 
+			 /* 24 msps  */
+			cx_write(MO_PLL_REG, 0x05800000);
+			cx_write(MO_SCONV_REG,131072*1.66666666666667);
+			break;
+		case 25 : 
+			 /* 25 msps  */
+			cx_write(MO_PLL_REG, 0x05900000);
+			cx_write(MO_SCONV_REG,131072*1.6);
+			break;
+		case 26 : 
+			 /* 26 msps  */
+			cx_write(MO_PLL_REG, 0x05A00000);
+			cx_write(MO_SCONV_REG,131072*1.53846153846154);
+			break;
+		case 27 : 
+			 /* 27 msps  */
+			cx_write(MO_PLL_REG, 0x05B00000);
+			cx_write(MO_SCONV_REG,131072*1.48148148148148);
+			break;
                 default :
                         /* if someone sets value out of range, default to crystal speed */
                         /* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
                         cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
                         cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
         }
+      } else {
+        switch (tenxfsc) {
+                case 0 :
+                        /* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+                        cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+                        cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+                        break;
+                case 1 :
+                        /* clock speed equal to 1.25 x crystal speed, unmodified card = 35.8 mhz */
+                        cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
+                        cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
+                        break;
+                case 2 :
+                        /* clock speed equal to ~1.4 x crystal speed, unmodified card = 40 mhz */
+                        cx_write(MO_SCONV_REG, 131072*0.715909072483);
+                        cx_write(MO_PLL_REG, 0x0165965A); /* 40000000.1406459 */
+                        break;
+		case 11 : 
+			 /* 11 msps  */
+			cx_write(MO_PLL_REG, 0x04F5D75E);
+			cx_write(MO_SCONV_REG,131072*2.60330569792149);
+			break;
+		case 12 : 
+			 /* 12 msps  */
+			cx_write(MO_PLL_REG, 0x050C30C4);
+			cx_write(MO_SCONV_REG,131072*2.38636350705605);
+			break;
+		case 13 : 
+			 /* 13 msps  */
+			cx_write(MO_PLL_REG, 0x05228A2A);
+			cx_write(MO_SCONV_REG,131072*2.20279704487362);
+			break;
+		case 14 : 
+			 /* 14 msps  */
+			cx_write(MO_PLL_REG, 0x0538E38F);
+			cx_write(MO_SCONV_REG,131072*2.04545446786999);
+			break;
+		case 15 : 
+			 /* 15 msps  */
+			cx_write(MO_PLL_REG, 0x054F3CF5);
+			cx_write(MO_SCONV_REG,131072*1.90909080564484);
+			break;
+		case 16 : 
+			 /* 16 msps  */
+			cx_write(MO_PLL_REG, 0x0565965A);
+			cx_write(MO_SCONV_REG,131072*1.7897726812069);
+			break;
+		case 17 : 
+			 /* 17 msps  */
+			cx_write(MO_PLL_REG, 0x057BEFC0);
+			cx_write(MO_SCONV_REG,131072*1.68449190988421);
+			break;
+		case 18 : 
+			 /* 18 msps  */
+			cx_write(MO_PLL_REG, 0x0941D41E);
+			cx_write(MO_SCONV_REG,131072*1.5909090348758);
+			break;
+		case 19 : 
+			 /* 19 msps  */
+			cx_write(MO_PLL_REG, 0x0CFEC7ED);
+			cx_write(MO_SCONV_REG,131072*1.5071769879307);
+			break;
+		case 20 : 
+			 /* 20 msps  */
+			cx_write(MO_PLL_REG, 0x0D0C30C4);
+			cx_write(MO_SCONV_REG,131072*1.43181810423363);
+			break;
+		case 21 : 
+			 /* 21 msps  */
+			cx_write(MO_PLL_REG, 0x0D19999A);
+			cx_write(MO_SCONV_REG,131072*1.36363633408034);
+			break;
+		case 22 : 
+			 /* 22 msps  */
+			cx_write(MO_PLL_REG, 0x0D270271);
+			cx_write(MO_SCONV_REG,131072*1.30165283549566);
+			break;
+		case 23 : 
+			 /* 23 msps  */
+			cx_write(MO_PLL_REG, 0x0D346B48);
+			cx_write(MO_SCONV_REG,131072*1.24505920875306);
+			break;
+		case 24 : 
+			 /* 24 msps  */
+			cx_write(MO_PLL_REG, 0x0D41D41E);
+			cx_write(MO_SCONV_REG,131072*1.19318177615685);
+			break;
+		case 25 : 
+			 /* 25 msps  */
+			cx_write(MO_PLL_REG, 0x0D4F3CF5);
+			cx_write(MO_SCONV_REG,131072*1.1454544833869);
+			break;
+		case 26 : 
+			 /* 26 msps  */
+			cx_write(MO_PLL_REG, 0x0D5CA5CB);
+			cx_write(MO_SCONV_REG,131072*1.10139857064023);
+			break;
+		case 27 : 
+			 /* 27 msps  */
+			cx_write(MO_PLL_REG, 0x00F15F17);
+			cx_write(MO_SCONV_REG,131072*1.06060598972635);
+			break;
+                default :
+                        /* if someone sets value out of range, default to crystal speed */
+                        /* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+                        cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+                        cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+        }
+
+       }
 
 	/* set vbi agc */
 	cx_write(MO_AGC_SYNC_SLICER, 0x0);
@@ -873,6 +1268,7 @@ module_param(level, int, 0664);
 module_param(tenbit, int, 0664);
 module_param(tenxfsc, int, 0664);
 module_param(sixdb, int, 0664);
+module_param(fortycryst, int, 0664);
 
 MODULE_DESCRIPTION("cx2388xx adc driver");
 MODULE_AUTHOR("Hew How Chee");
