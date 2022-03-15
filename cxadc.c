@@ -356,6 +356,8 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
              PLLfin = 119537664 ; //133169152 is highest possible value with PLL_PRE = 5 but above 119537664 may crash  
            }
            cx_write(MO_PLL_REG,  PLLfin); 
+           cx_write(MO_SCONV_REG, 131072 * crystal / tenxfsc); 
+           
       }
 
 
@@ -737,6 +739,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
              PLLfin = 119537664 ; //133169152 is highest possible value with PLL_PRE = 5 but above 119537664 may crash  
            }
            cx_write(MO_PLL_REG,  PLLfin); 
+           cx_write(MO_SCONV_REG, 131072 * crystal / tenxfsc); 
       }
 
  
