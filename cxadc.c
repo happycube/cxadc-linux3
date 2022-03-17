@@ -278,8 +278,8 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 {
 	int minor = iminor(inode);
 	struct cxadc *ctd;
-        unsigned long longtenxfsc, PLLboth, PLLintlong;
-        int PLLint, PLLfrac, PLLfin;
+        unsigned long longtenxfsc, longPLLboth, longPLLint;
+        int PLLint, PLLfrac, PLLfin, SConv;
   
 	for (ctd = cxadcs; ctd != NULL; ctd = ctd->next)
 		if (MINOR(ctd->cdev.dev) == minor)
@@ -345,9 +345,9 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
            }
 	   PLLint = tenxfsc/(crystal/40);  //always use PLL_PRE of 5 (=64)
 	   longtenxfsc = (long)tenxfsc * 1000000; 
-           PLLboth = (long)(longtenxfsc/(long)(crystal/40));
-	   PLLintlong = (long)PLLint * 1000000;
-	   PLLfrac = ((PLLboth-PLLintlong)*1048576)/1000000;
+           longPLLboth = (long)(longtenxfsc/(long)(crystal/40));
+	   longPLLint = (long)PLLint * 1000000;
+	   PLLfrac = ((longPLLboth-longPLLint)*1048576)/1000000;
            PLLfin =  ((PLLint+64)*1048576)+PLLfrac;
            if (PLLfin < 81788928) {
              PLLfin = 81788928; // 81788928 lowest possible value
@@ -356,7 +356,9 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
              PLLfin = 119537664 ; //133169152 is highest possible value with PLL_PRE = 5 but above 119537664 may crash  
            }
            cx_write(MO_PLL_REG,  PLLfin); 
-           cx_write(MO_SCONV_REG, 131072 * crystal / tenxfsc); 
+           //cx_write(MO_SCONV_REG, 131072 * (crystal / tenxfsc));
+           SConv = (long)(131072 * (long)crystal) / (long)tenxfsc;
+           cx_write(MO_SCONV_REG, SConv ); 
            
       }
 
@@ -520,8 +522,8 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	int rc;
 	unsigned int total_size;
 	unsigned int pgsize;
-        unsigned long longtenxfsc, PLLboth, PLLintlong;
-        int PLLint, PLLfrac, PLLfin;
+        unsigned long longtenxfsc, longPLLboth, longPLLint;
+        int PLLint, PLLfrac, PLLfin, SConv;
 
 	if (PAGE_SIZE != 4096) {
 		dev_err(&pci_dev->dev, "cxadc: only page size of 4096 is supported\n");
@@ -728,9 +730,9 @@ static int cxadc_probe(struct pci_dev *pci_dev,
            }
            PLLint = tenxfsc/(crystal/40);  //always use PLL_PRE of 5 (=64)
            longtenxfsc = (long)tenxfsc * 1000000;
-           PLLboth = (long)(longtenxfsc/(long)(crystal/40));
-           PLLintlong = (long)PLLint * 1000000;
-           PLLfrac = ((PLLboth-PLLintlong)*1048576)/1000000;
+           longPLLboth = (long)(longtenxfsc/(long)(crystal/40));
+           longPLLint = (long)PLLint * 1000000;
+           PLLfrac = ((longPLLboth-longPLLint)*1048576)/1000000;
            PLLfin =  ((PLLint+64)*1048576)+PLLfrac;
            if (PLLfin < 81788928) {
              PLLfin = 81788928; // 81788928 lowest possible value
@@ -739,7 +741,8 @@ static int cxadc_probe(struct pci_dev *pci_dev,
              PLLfin = 119537664 ; //133169152 is highest possible value with PLL_PRE = 5 but above 119537664 may crash  
            }
            cx_write(MO_PLL_REG,  PLLfin); 
-           cx_write(MO_SCONV_REG, 131072 * crystal / tenxfsc); 
+           SConv = (long)(131072 * (long)crystal) / (long)tenxfsc;
+           cx_write(MO_SCONV_REG, SConv ); 
       }
 
  
