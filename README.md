@@ -99,11 +99,11 @@ approximately 28.6 MHz). Set this to 1 to capture at 10 x fSc
 (NOTE: 40mhz only works on a select few cards, mostly none).
 
 Alternately, enter 2 digit values (like 20), that will then be 
-multiplied by 1,000,000 (so 20 = 20,000,000msps), with the caveat 
+multiplied by 1,000,000 (so 20 = 20,000,000sps), with the caveat 
 that the lowest possible rate is a little more than 1/3 the actual
 `HW Crystal` rate (HW crystal / 40 * 14). For stock 28.6mhz crystal, 
-this is about 10,022,728msps. For a 40mhz crystal card, the lowest
-rate will be 14,000,000msps. The highest rate is capped at the 
+this is about 10,022,728sps. For a 40mhz crystal card, the lowest
+rate will be 14,000,000sps. The highest rate is capped at the 
 10fsc rate, or:  HW crystal / 8 * 10. 
 
 Full range sample values are now also allowed: 14318181 for intance.
