@@ -52,7 +52,15 @@ of samples:
 
 Most of these parameters (except `latency`) can be changed using sysfs
 after the module has been loaded. Re-opening the device will update the
-CX2388x's registers.
+CX2388x's registers. If you wish to be able to change module parameters 
+as a regular users (e.g. without `sudo`), you need to run the command:
+
+	sudo usermod -a -G root YourUbuntuUseranme
+	
+NOTE: the above command adds your local user account to the `root` group,
+and as such, elevates your general permissions level. If you don't like
+the idea of this, you will need to use `sudo` to change mudule sysfs
+parameters.
 
 ### `audsel` (0 to 3, default none)
 
