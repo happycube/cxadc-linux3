@@ -16,15 +16,15 @@ https://www.aliexpress.com/item/1005003092946304.html - Green Variation
 
 https://www.aliexpress.com/item/4001286595482.html    - Blue Variation
 
-Note 01: For reliable 40Mhz 8-bit & 20mhz 16-bit samples the recommended crystal is the `ABLS2-40.000MHZ-D4YF-T`.
+Note 01: The CX chip variant with the least self-noise is the cx23883 mostly found on the White Variation card with most clean captures at the 6dB off and Digital Gain at 0-10.
 
-Note 02: Asmedia PCI to PCIE 1x bridge chips may have support issues on some older PCH chipsets Intel 3rd gen, for example, white cards use ITE chips which might not have said issue.
+Note 02: For reliable 40Mhz 8-bit & 20mhz 16-bit samples the recommended crystal is the `ABLS2-40.000MHZ-D4YF-T`.
 
-Note 03: Added cooling can provide stability more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware but currently only 40mhz mods have been broadly viable in testing.
+Note 03: Asmedia PCI to PCIE 1x bridge chips may have support issues on some older PCH chipsets Intel 3rd gen, for example, white cards use ITE chips which might not have said issue.
 
-Note 04: For crystals over 54mhz it might be possible to use higher crystals with self temperature regulated isolated chamber models but this is still to have proper testing.
+Note 04: Added cooling can provide stability more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware but currently only 40mhz mods have been broadly viable in testing.
 
-Note 05: The CX chip variant with the least self-noise is the cx23883 mostly found on the White Variation card with most clean captures at the 6dB off and Digital Gain at 0-10.
+Note 05: For crystals over 54mhz it might be possible to use higher crystals with self temperature regulated isolated chamber models but this is still to have proper testing.
 
 ## List of tested working crystals:
 
