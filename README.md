@@ -83,10 +83,10 @@ Module parameters can also be configured in that file.
 
 If there is an issue just re-load the CXADC module from the install directory via terminal
 
-`sudo rmmod cxadc
-make
-make modules_install
-depmod -a`
+	sudo rmmod cxadc
+	make
+	sudo make modules_install
+	sudo depmod -a
 
 `depmod -a` enables auto load on start-up
 
@@ -106,7 +106,15 @@ Note: When using a lower end system, if there is not enough system resources you
 
 Most of these parameters (except `latency`) can be changed using sysfs
 after the module has been loaded. Re-opening the device will update the
-CX2388x's registers.
+CX2388x's registers. If you wish to be able to change module parameters
+as a regular users (e.g. without `sudo`), you need to run the command:
+
+        sudo usermod -a -G root YourUbuntuUserName
+
+NOTE: the above command adds your local user account to the `root` group,
+and as such, elevates your general permissions level. If you don't like
+the idea of this, you will need to use `sudo` to change mudule sysfs
+parameters.
 
 To change configuration open the terminal and use the following command to change driver config settings.
 
@@ -117,6 +125,8 @@ Y = Parameter setting i.e `vmux` `level` etc
 sudo echo X >/sys/module/cxadc/parameters/Y
 
 Example: `sudo echo 1 >/sys/module/cxadc/parameters/vmux`
+
+NOTE: Also see the utils folders for scripts to manipulate these values, sudo will be required unless you add your local user to the `root` group as mentoined above.
 
 ### `vmux` (0 to 3, default 2) select physical input to capture.
 
@@ -167,7 +177,7 @@ The fixed digital gain to be applied by the CX2388x
 Adjust to minimise clipping; `./leveladj` will do this
 for you automatically.
 
-### `tenxfsc` (0 to 2, default 0)
+### `tenxfsc` (0 to 2, 10 to 99, or 10022728 to "see below", default 0)
 
 By default, cxadc captures at a rate of 8 x fsc (8 * 315 / 88 Mhz, approximately 28.6 MHz)
 
@@ -177,7 +187,7 @@ tenxfsc - Sets sampling rate of the ADC based on the crystal's native frequency
 
 `1` = Native crystal frequency times 1.25
 
-`2` = Native crystal frequency times 1.4
+`2` = Native crystal frequency times ~1.4
 
 With the Stock 28Mhz Crystal the modes are the following:
 
@@ -185,7 +195,25 @@ With the Stock 28Mhz Crystal the modes are the following:
 
 `1` = 35.8 MHz 8bit
 
-`2` = 40.04 MHz 8bit
+`2` = 40 MHz 8bit
+
+Alternately, enter 2 digit values (like 20), that will then be
+multiplied by 1,000,000 (so 20 = 20,000,000sps), with the caveat
+that the lowest possible rate is a little more than 1/3 the actual
+`HW Crystal` rate (HW crystal / 40 * 14). For stock 28.6mhz crystal,
+this is about 10,022,728sps. For a 40mhz crystal card, the lowest
+rate will be 14,000,000sps. The highest rate is capped at the
+10fsc rate, or:  HW crystal / 8 * 10.
+
+Full range sample values can also be entered: 14318181 for intance.
+Again, the caveat is that the lowest possible rate is:
+HW crystal / 40 * 14 and the highest allowed rate is:
+HW crystal / 8 * 10.
+
+Values outside the range will be converted to the lowest / highest
+value appropriately. Higher rates may work, with the max rate depending
+on individual card and cooling, but can cause system crash for others,
+so are prevented by the driver code (increase at your own risk).
 
 ### `tenbit`  (0 or 1, default 0)
 
@@ -203,7 +231,15 @@ When in 16bit sample modes change to the following:
 
 `17.9 MHz 16-bit` - Stock Card
 
-`20.02 MHz 16-bit` - Stock Card
+`20 MHz 16-bit` - Stock Card
+
+### `crystal` (? - 54000000,  default 28636363)
+
+The Mhz of the actual XTAL crystal affixed to the board. The stock
+crystal is usually 28636363, but a 40mhz replacement crystal is easily
+available and crystals as high as 54mhz have been shown to work (with
+extra cooling required above 40mhz).  This value is ONLY used to compute
+the sample rates entered for the tenxfsc parameters other than 0, 1, 2.
 
 Note!
 
@@ -255,6 +291,8 @@ Defaults cxadc3-linux/cxadc.c file to have the defaults you like. at stock, it w
 
 `static int sixdb = 1;`
 
+`static int crystal = 28636363;`
+
 But you could change it to:
 
 `static int latency = -1;` (leave this alone)
@@ -271,6 +309,7 @@ But you could change it to:
 
 `static int sixdb = 0;`
 
+`static int crystal = 40000000;`
 
 Then redo the make and sudo make modules_install commands. Then next reboot, it will come up with those settings as the default.
 

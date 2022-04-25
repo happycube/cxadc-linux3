@@ -11,7 +11,7 @@ inst_scripts = create simlinks to these scripts in /usr/bin.
 
 To make the command list executable from anywhere on the system via symlinks
 
-ls |xargs -I % bash -c 'ln -s `pwd`/% /usr/bin/%'
+ls |xargs -I % bash -c 'ln -s \`pwd\`/% /usr/bin/%'
 
 ## Command Arguments
 
@@ -33,27 +33,12 @@ cxvx1 = set cxadc to work off vmux1
 
 cxvx2 = set cxadc to work off vmux2
 
-cxlvlcavdd.py = A capture script to use instead of `dd` that adjust the gain down automatically if clipping is detected during capture.
+cxfreq = set cx card desired frequency, (same as echo 'somenumber' > tenxfsc. See main wiki for tenxfsc parameter).
 
-# Change CXADC defaults
+cxlevel = set cx card level 0-31.
 
-Defaults cxadc3-linux/cxadc.c file to have the defaults you like. at stock, it will look like this:
+cxlvlcavdd = A capture script to use that adjusts the gain automatically.
 
-static int latency = -1; (leave this alone)
-static int audsel = -1;  (leave this alone)
-static int vmux = 2;
-static int level = 16;
-static int tenbit;
-static int tenxfsc;
-static int sixdb = 1;
+cxvalues = display current values of cx card module parameters.
 
-But you could change it to:
-static int latency = -1; (leave this alone)
-static int audsel = -1; (leave this alone)
-static int vmux = 1;
-static int level = 0;
-static int tenbit = 1;
-static int tenxfsc = 1;
-static int sixdb = 0;
 
-Then redo the make and sudo make modules_install commands. Then next reboot, it will come up with those settings as the default
