@@ -197,7 +197,23 @@ With the Stock 28Mhz Crystal the modes are the following:
 
 `2` = 40 MHz 8bit
 
+Alternately, enter 2 digit values (like 20), that will then be
+multiplied by 1,000,000 (so 20 = 20,000,000sps), with the caveat
+that the lowest possible rate is a little more than 1/3 the actual
+`HW Crystal` rate (HW crystal / 40 * 14). For stock 28.6mhz crystal,
+this is about 10,022,728sps. For a 40mhz crystal card, the lowest
+rate will be 14,000,000sps. The highest rate is capped at the
+10fsc rate, or:  HW crystal / 8 * 10.
 
+Full range sample values can also be entered: 14318181 for intance.
+Again, the caveat is that the lowest possible rate is:
+HW crystal / 40 * 14 and the highest allowed rate is:
+HW crystal / 8 * 10.
+
+Values outside the range will be converted to the lowest / highest
+value appropriately. Higher rates may work, with the max rate depending
+on individual card and cooling, but can cause system crash for others,
+so are prevented by the driver code (increase at your own risk).
 
 ### `tenbit`  (0 or 1, default 0)
 
@@ -216,24 +232,6 @@ When in 16bit sample modes change to the following:
 `17.9 MHz 16-bit` - Stock Card
 
 `20 MHz 16-bit` - Stock Card
-
-Alternately, enter 2 digit values (like 20), that will then be
-multiplied by 1,000,000 (so 20 = 20,000,000sps), with the caveat
-that the lowest possible rate is a little more than 1/3 the actual
-`HW Crystal` rate (HW crystal / 40 * 14). For stock 28.6mhz crystal,
-this is about 10,022,728sps. For a 40mhz crystal card, the lowest
-rate will be 14,000,000sps. The highest rate is capped at the
-10fsc rate, or:  HW crystal / 8 * 10.
-
-Full range sample values can also be entered: 14318181 for intance.
-Again, the caveat is that the lowest possible rate is:
-HW crystal / 40 * 14 and the highest allowed rate is:
-HW crystal / 8 * 10.
-
-Values outside the range will be converted to the lowest / highest
-value appropriately. Higher rates may work, with the max rate depending
-on individual card and cooling, but can cause system crash for others,
-so are prevented by the driver code (increase at your own risk).
 
 ### `crystal` (? - 54000000,  default 28636363)
 
