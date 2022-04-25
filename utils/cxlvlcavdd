@@ -13,11 +13,8 @@
 # this version of the script uses the 
 # cx card 'level' paramter to adjust gain
 # the cx card has a lot of inherent noise
-# so i consider this to be only experimental
-# the use of an external amp and gain 
-# control will probably provide better 
-# results, unless you have one of the 
-# 1 in 100 cards that have low noise. 
+# so cx gain levels above 10 can cause
+# interference with the captured signal
 
 import time
 import os
@@ -55,26 +52,28 @@ def child16(data):
             if OneOfBuff < 514 or OneOfBuff > 64900:
                 NumSampOver += 1
         else:
-            NumSampOver = 99999
+            NumSampOver = 999
             break
-    if NumSampOver == 99999:
-        #GainLevel -= 2 
+    if NumSampOver >= 20:
         GainLevel -= 1
         if GainLevel < 0 :
             GainLevel = 0
-        #GainAction = "Lowering Gain: Coarse " + str(GainLevel) + " "
-        GainAction = "Lowering Gain: Fine " + str(GainLevel) + " "
-    elif NumSampOver >= 20:
-        GainLevel -= 1
-        if GainLevel < 0 :
-            GainLevel < 0
-        GainAction = "Lowering Gain: Fine " + str(GainLevel) + " "
+            GainAction = "!!!Warning!!! Signal high, gain can't go low enough:" + str(GainLevel) + " "
+        else:
+            GainAction = "Lowering Gain: " + str(GainLevel) + " "
+    elif NumSampOver == 0:
+        GainLevel += 1
+        if GainLevel > 31 :
+            GainLevel = 31
+            GainAction = "!!!Warning!!! Signal quite low, gain maxed:" + str(GainLevel) + " "
+        else:
+            GainAction = "Raising Gain: " + str(GainLevel) + " "
     syssyfsfile = open(r"/sys/module/cxadc/parameters/level","w")
     syssyfsfile.write(str(GainLevel))
     syssyfsfile.close()
     now = datetime.datetime.now()
-    #print (now,":",GainAction,"Low:",LowestSamp," High:",HighestSamp," Clipped:",NumSampOver,"                  ",end='\r')
-    print (now,":",GainAction,"Low:",LowestSamp," High:",HighestSamp," Clipped:",NumSampOver,"                  ")
+    #print (now,":",GainAction,"Low:",LowestSamp," High:",HighestSamp," Over Threshold:",NumSampOver,"                  ",end='\r')
+    print (now,":",GainAction,"Low:",LowestSamp," High:",HighestSamp," Over Threshold:",NumSampOver,"                  ")
     os._exit(0)
 
 def child(data):
@@ -97,27 +96,30 @@ def child(data):
             if OneOfBuff < 8 or OneOfBuff >248:
                 NumSampOver += 1
         else:
-            NumSampOver = 99999
+            NumSampOver = 999
             break
-    if NumSampOver == 99999:  
-        #GainLevel -= 2
-        GainLevel -= 1 
-        if GainLevel < 0 :
-            GainLevel = 0
-        #GainAction = "Lowering Gain: Coarse " + str(GainLevel) + " "
-        GainAction = "Lowering Gain: Fine " + str(GainLevel) + " "
-    elif NumSampOver >= 20:  
+    if NumSampOver >= 20:
         GainLevel -= 1
         if GainLevel < 0 :
-            GainLevel < 0
-        GainAction = "Lowering Gain: Fine " + str(GainLevel) + " "
-    syssyfsfile = open(r"/sys/module/cxadc/parameters/level","w")    
+            GainLevel = 0
+            GainAction = "!!!Warning!!! Signal high, gain can't go low enough:" + str(GainLevel) + " "
+        else:
+            GainAction = "Lowering Gain: " + str(GainLevel) + " "
+    elif NumSampOver == 0:
+        GainLevel += 1
+        if GainLevel > 31 :
+            GainLevel = 31
+            GainAction = "!!!Warning!!! Signal quite low, gain maxed:" + str(GainLevel) + " "
+        else:
+            GainAction = "Raising Gain: " + str(GainLevel) + " "
+    syssyfsfile = open(r"/sys/module/cxadc/parameters/level","w")
     syssyfsfile.write(str(GainLevel))
     syssyfsfile.close()
     now = datetime.datetime.now()
-    #print (now,":",GainAction,"Low:",LowestSamp," High:",HighestSamp," Clipped:",NumSampOver,"                  ",end='\r')
-    print (now,":",GainAction,"Low:",LowestSamp," High:",HighestSamp," Clipped:",NumSampOver,"                  ")
+    #print (now,":",GainAction,"Low:",LowestSamp," High:",HighestSamp," Over Threshold:",NumSampOver,"                  ",end='\r')
+    print (now,":",GainAction,"Low:",LowestSamp," High:",HighestSamp," Over Threshold:",NumSampOver,"                  ")
     os._exit(0)
+
 ##########################################################################################################
 
 name_in  = "/dev/cxadc0"

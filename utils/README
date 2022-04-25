@@ -16,9 +16,12 @@ cx6off = set sixdb to off. This is a 6db gain setting for the AFE. Kind of like 
 cx6on = set sixdb to on.  (see above).
 cx8bit = set cxadc to return unsigned 8 bit samples.
 cx8fsc = set 8fsc sample rate mode.  1x crystal speed.
+cxfreq = set cx card desired frequency, (same as echo 'somenumber' > tenxfsc. See main wiki for tenxfsc parameter).
+cxlevel = set cx card level 0-31
+cxlvlcavdd = A capture script to use that adjusts the gain automatically if clipping is detected during capture. 
+cxvalues = display current values of cx card module parameters.
 cxvx0 = set cxadc to work off vmux0
 cxvx1 = set cxadc to work off vmux1
 cxvx2 = set cxadc to work off vmux2
-cxlvlcavdd.py = A capture script to use instead of `dd` that adjust the gain down automatically if clipping is detected during capture. 
 inst_scripts = create simlinks to these scripts in /usr/bin. Requires sudo to install.
 
