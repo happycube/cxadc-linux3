@@ -33,7 +33,14 @@ cxvx1 = set cxadc to work off vmux1
 
 cxvx2 = set cxadc to work off vmux2
 
-cxlvlcavdd.py = A capture script to use instead of `dd` that adjust the gain down automatically if clipping is detected during capture.
+cxfreq = set cx card desired frequency, (same as echo 'somenumber' > tenxfsc. See main wiki for tenxfsc parameter).
+
+cxlevel = set cx card level 0-31.
+
+cxlvlcavdd = A capture script to use that adjusts the gain automatically.
+
+cxvalues = display current values of cx card module parameters.
+
 
 # Change CXADC defaults
 
