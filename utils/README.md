@@ -9,10 +9,6 @@ sudo ./inst_scripts
 
 inst_scripts = create simlinks to these scripts in /usr/bin.
 
-To make the command list executable from anywhere on the system via symlinks
-
-ls |xargs -I % bash -c 'ln -s \`pwd\`/% /usr/bin/%'
-
 ## Command Arguments
 
 cx8fsc = set 8fsc sample rate mode.  1x crystal speed.
