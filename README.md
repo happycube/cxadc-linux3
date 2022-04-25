@@ -52,11 +52,11 @@ of samples:
 
 Most of these parameters (except `latency`) can be changed using sysfs
 after the module has been loaded. Re-opening the device will update the
-CX2388x's registers. If you wish to be able to change module parameters 
+CX2388x's registers. If you wish to be able to change module parameters
 as a regular users (e.g. without `sudo`), you need to run the command:
 
 	sudo usermod -a -G root YourUbuntuUserName
-	
+
 NOTE: the above command adds your local user account to the `root` group,
 and as such, elevates your general permissions level. If you don't like
 the idea of this, you will need to use `sudo` to change mudule sysfs
@@ -99,30 +99,30 @@ By default, cxadc captures unsigned 8-bit samples. Set this to 1 to
 capture 10-bit samples, which will be returned as unsigned 16-bit
 values. In 10-bit mode, the sample rate is halved.
 
-### `tenxfsc` (0 to 2, 10 to 99, or 10022728 to "see below", default 0)
+### `new tenxfsc` (0 to 2, 10 to 99, or 10022728 to "see below", default 0)
 
 By default, cxadc captures at a rate of 8 x fSc (8 * 315 / 88 Mhz,
 approximately 28.6 MHz). Set this to 1 to capture at 10 x fSc
-(approximately 35.8 MHz). Set this to 2 to capture at 40 Mhz 
+(approximately 35.8 MHz). Set this to 2 to capture at 40 Mhz
 (NOTE: 40mhz only works on a select few cards, mostly none).
 
-Alternately, enter 2 digit values (like 20), that will then be 
-multiplied by 1,000,000 (so 20 = 20,000,000sps), with the caveat 
+Alternately, enter 2 digit values (like 20), that will then be
+multiplied by 1,000,000 (so 20 = 20,000,000sps), with the caveat
 that the lowest possible rate is a little more than 1/3 the actual
-`HW Crystal` rate (HW crystal / 40 * 14). For stock 28.6mhz crystal, 
+`HW Crystal` rate (HW crystal / 40 * 14). For stock 28.6mhz crystal,
 this is about 10,022,728sps. For a 40mhz crystal card, the lowest
-rate will be 14,000,000sps. The highest rate is capped at the 
-10fsc rate, or:  HW crystal / 8 * 10. 
+rate will be 14,000,000sps. The highest rate is capped at the
+10fsc rate, or:  HW crystal / 8 * 10.
 
 Full range sample values are now also allowed: 14318181 for intance.
-Again, the caveat is that the lowest possible rate is: 
+Again, the caveat is that the lowest possible rate is:
 HW crystal / 40 * 14 and the highest allowed rate is:
 HW crystal / 8 * 10.
 
-Values outside the range will be converted to the lowest / highest 
+Values outside the range will be converted to the lowest / highest
 value appropriately. Higher rates may work, with the max rate depending
-on individual card and cooling, but can cause system crash for others, 
-so are prevented by the driver code (increase at your own risk). 
+on individual card and cooling, but can cause system crash for others,
+so are prevented by the driver code (increase at your own risk).
 
 
 ### `vmux` (0 to 3, default 2)
