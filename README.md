@@ -240,8 +240,8 @@ so are prevented by the driver code (increase at your own risk).
 The Mhz of the actual XTAL crystal affixed to the board. The stock
 crystal is usually 28636363, but a 40mhz replacement crystal is easily
 available and crystals as high as 54mhz have been shown to work (with
-extra cooling required above 40mhz).  This value is used to compute
-the sample rates entered for the tenxfsc parameter.
+extra cooling required above 40mhz).  This value is ONLY used to compute
+the sample rates entered for the tenxfsc parameters other than 0, 1, 2.
 
 Note!
 
@@ -293,6 +293,8 @@ Defaults cxadc3-linux/cxadc.c file to have the defaults you like. at stock, it w
 
 `static int sixdb = 1;`
 
+`static int crystal = 28636363;`
+
 But you could change it to:
 
 `static int latency = -1;` (leave this alone)
@@ -309,6 +311,7 @@ But you could change it to:
 
 `static int sixdb = 0;`
 
+`static int crystal = 40000000;`
 
 Then redo the make and sudo make modules_install commands. Then next reboot, it will come up with those settings as the default.
 
