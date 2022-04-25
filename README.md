@@ -86,7 +86,7 @@ If there is an issue just re-load the CXADC module from the install directory vi
 	sudo rmmod cxadc
 	make
 	sudo make modules_install
-	sudo depmod -a`
+	sudo depmod -a
 
 `depmod -a` enables auto load on start-up
 
