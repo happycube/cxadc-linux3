@@ -60,22 +60,22 @@ Once files have been acquired then proceed to do the following:
 
 Build and install the out-of-tree module:
 
-	make && sudo make modules_install && sudo depmod -a
+    make && sudo make modules_install && sudo depmod -a
 
 If you see the following error, ignore it:
 
-        At main.c:160:
-        - SSL error:02001002:system library:fopen:No such file or directory: ../crypto/bio/bss_file.c:69
-        - SSL error:2006D080:BIO routines:BIO_new_file:no such file: ../crypto/bio/bss_file.c:76
-        sign-file: certs/signing_key.pem: No such file or directory
-        Warning: modules_install: missing 'System.map' file. Skipping depmod.
+    At main.c:160:
+    - SSL error:02001002:system library:fopen:No such file or directory: ../crypto/bio/bss_file.c:69
+    - SSL error:2006D080:BIO routines:BIO_new_file:no such file: ../crypto/bio/bss_file.c:76
+    sign-file: certs/signing_key.pem: No such file or directory
+    Warning: modules_install: missing 'System.map' file. Skipping depmod.
 
 This error just means the module could not be signed. It will still be installed.
 
 Install configuration files::
 
-	sudo cp cxadc.rules /etc/udev/rules.d
-	sudo cp cxadc.conf /etc/modprobe.d
+    sudo cp cxadc.rules /etc/udev/rules.d
+    sudo cp cxadc.conf /etc/modprobe.d
 
 Now reboot and the modules will be loaded automatically. The device node will
 be called `/dev/cxadc0`. The default cx88 driver will be blacklisted by cxadc.conf.
@@ -83,16 +83,16 @@ Module parameters can also be configured in that file.
 
 If there is an issue just re-load the CXADC module from the install directory via terminal
 
-	sudo rmmod cxadc
-	make
-	sudo make modules_install
-	sudo depmod -a
+    sudo rmmod cxadc 
+    make
+    sudo make modules_install
+    sudo depmod -a
 
 `depmod -a` enables auto load on start-up
 
 Build the level adjustment tool:
 
-	gcc -o leveladj leveladj.c
+    gcc -o leveladj leveladj.c
 
 Install PV to allow real-time monitoring of the runtime & datarate.
 
@@ -109,7 +109,7 @@ after the module has been loaded. Re-opening the device will update the
 CX2388x's registers. If you wish to be able to change module parameters
 as a regular users (e.g. without `sudo`), you need to run the command:
 
-        sudo usermod -a -G root YourUbuntuUserName
+    sudo usermod -a -G root YourUbuntuUserName
 
 NOTE: the above command adds your local user account to the `root` group,
 and as such, elevates your general permissions level. If you don't like
@@ -117,6 +117,8 @@ the idea of this, you will need to use `sudo` to change mudule sysfs
 parameters.
 
 To change configuration open the terminal and use the following command to change driver config settings.
+
+Note! use `cxvalues` to check your current configuration state at anytime.
 
 X = Number Setting i.e  `0`  `1`  `2`  `3`  etc
 
@@ -250,7 +252,7 @@ Note!
 Connect a signal to the input you've selected, and run `leveladj` to
 adjust the gain automatically:
 
-	  ./leveladj
+    ./leveladj
 
 Open Terminal in the directory you wish to write the data and use the following example command capture 10 seconds of test samples:
 
@@ -271,6 +273,18 @@ Use CTRL+C to manually stop capture.
 
 Note: For use with (S)VHS & LD-Decode projects .u8 for 8-bit & .u16 for 16-bit samples instead of .raw extension this allows the software to correctly detect the data and use it for decoding or flac compression to .vhs/.svhs & .ldf and so on.
 
+
+Optional but **not optimal** due to risk of dropped samples with fast enough hardware (e.g 2018+ AMD R7 Intel I7 CPU NVME SSD's etc) on the fly flac compressed captures are possible with the following commands, edit rates as required.
+
+16-bit Mode 
+
+    sudo sox -r 14318 -b 16 -c 1 -e unsigned -t raw /dev/cxadc0 -t raw - | flac --fast -16 --sample-rate=14318 --sign=unsigned --channels=1 --endian=little --bps=16 --blocksize=65535 --lax -f - -o .flac
+
+8-bit Mode 
+
+    sudo sox -r 28636 -b 8 -c 1 -e unsigned -t raw /dev/cxadc0 -t raw - | flac --fast -16 --sample-rate=28636 --sign=unsigned --channels=1 --endian=little --bps=8 --blocksize=65535 --lax -f - -o .flac
+    
+    
 ## Other Tips
 
 ### Change CXADC defaults
@@ -394,6 +408,8 @@ SMP.
 
 ### 2021-12-14 - Updated Documentation
 
+Information Additions Documentation Cleanup by Harry Munday (harry@opcomedia.com)
+
 - Change 10bit to the correct 16bit as that's what's stated in RAW16 under the datasheet and that's what the actual samples are in format-wise.
 - Cleaned up and added examples for adjusting module parameters and basic real-time readout information.
 - Added notations of ABLS2-40.000MHZ-D4YF-T a drop-in replacement crystal that adds 40mhz ability at low cost for current market PCIE cards.
@@ -402,11 +418,21 @@ SMP.
 - Added issues that have been found
 - Added crystal list of working replacements
 
-### 2022-12-14 - v0.6 - Usability Improvements
+### 2022-01-21 - v0.6 - Usability Improvements
 
 New additions by Tony Anderson (tandersn@uw.edu)
 
 - Fixed ./leveladj script from re-setting module parameters
 - Added new command scripts
-- Added new level adjustment tool cxlvlcavdd.py
+- Added new level adjustment tool cxlvlcavdd
 - Added dedicated readme for new scripts and future tools
+
+### 2022-04-26 - More Usability Improvements & Tools
+
+- Documentation Cleanup 
+- More utils additons
+- Added cxlevel (utils/README.md)
+- Added cxfreq  (utils/README.md)
+- Added cxvalues shows the current configuration.
+- Added fortycryst 0 for no, 1 for yes, and then added sample rates 11-27 (14-27 on 40cryst)
+- Added warning messages for high & low gain states
