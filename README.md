@@ -1,14 +1,10 @@
-cxadc (CX - Analogue Digital Converter )
+cxadc (CX - Analogue-Digital Converter)
 
-cxadc is an alternative Linux driver for the Conexant CX2388x video
-capture chips used on many PCI TV cards and cheep PCIE (with 1x bridge chip) capture cards It configures the CX2388x to
-capture raw 8-bit or 16-bit unsigned samples from the video input ports, allowing these cards to be used as a low-cost 28-54Mhz 10bit ADC for SDR and similar applications.
+cxadc is an alternative Linux driver for the Conexant CX2388x video capture chips used on many PCI TV cards and cheap PCIe (with 1x bridge chip) capture cards. It configures the CX2388x to capture raw 8-bit or 16-bit unsigned samples from the video input ports, allowing these cards to be used as a low-cost 28-54Mhz 10bit ADC for SDR and similar applications.
 
-The regular cx88 driver in Linux provides support for capturing composite
-video, digital video, audio and the other normal features of these
-chips. You shouldn't load both drivers at the same time.
+The regular cx88 driver in Linux provides support for capturing composite video, digital video, audio and the other normal features of these chips. You shouldn't load both drivers at the same time.
 
-## Where to find current PCIE 1x CX23881 cards and notes
+## Where to find current PCIe 1x CX23881 cards + notes
 
 https://www.aliexpress.com/item/1005003461248897.html - White Variation
 
@@ -18,9 +14,9 @@ https://www.aliexpress.com/item/4001286595482.html    - Blue Variation
 
 Note 01: The CX chip variant with the least self-noise is the cx23883 mostly found on the White Variation card with most clean captures at the 6dB off and Digital Gain at 0-10.
 
-Note 02: For reliable 40Mhz 8-bit & 20mhz 16-bit samples the recommended crystal is the `ABLS2-40.000MHZ-D4YF-T`.
+Note 02: ASMedia PCI to PCIe 1x bridge chips may have support issues on some older PCH chipsets: Intel 3rd gen, for example. ITE chips don't appear to have this issue. All White cards purchased so far have used the ITE chip.
 
-Note 03: Asmedia PCI to PCIE 1x bridge chips may have support issues on some older PCH chipsets Intel 3rd gen, for example, white cards use ITE chips which might not have said issue.
+Note 03: Users can replace the crystal to allow additional sample rates. For reliable 40Mhz 8-bit & 20mhz 16-bit capture, the recommended crystal is the `ABLS2-40.000MHZ-D4YF-T`.
 
 Note 04: Added cooling can provide stability more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware but currently only 40mhz mods have been broadly viable in testing.
 
@@ -28,7 +24,7 @@ Note 05: For crystals over 54mhz it might be possible to use higher crystals wit
 
 ## List of tested working crystals:
 
-Native SMD crystal on current PCIE 1x cards is a `HC-49/US` type
+Native SMD crystal on current PCIe 1x cards is a `HC-49/US` type
 
 `40MHz` - ABRACON ABLS2-40.000MHZ-D4YF-T 18pF 30ppm `HC-49/US`
 
@@ -42,19 +38,15 @@ Native SMD crystal on current PCIE 1x cards is a `HC-49/US` type
 
 ## Scripted Commands
 
-Check the utils folder and the associated readme for quicker and more simplified commands.
+Check the `utils` folder and the associated readme for quicker and more simplified commands.
 
 ## Getting started
 
-Open the directory that you wish to install into git pull to pull down the driver into a directory of your choice and use the following:
+Create a directory that you wish to install into. In a Terminal, navigate your directory and use the following to pull down the driver:
 
-`git clone https://github.com/happycube/cxadc-linux`
+`git clone https://github.com/happycube/cxadc-linux3`
 
-You can then use `git pull` to update later
-
-or
-
-Click code then download zip and extract files to the directory you wish to use CXADC in then open a terminal in said directory
+When updates are made, you can later use `git pull` to update your local copy.
 
 Once files have been acquired then proceed to do the following:
 
@@ -77,8 +69,7 @@ Install configuration files::
     sudo cp cxadc.rules /etc/udev/rules.d
     sudo cp cxadc.conf /etc/modprobe.d
 
-Now reboot and the modules will be loaded automatically. The device node will
-be called `/dev/cxadc0`. The default cx88 driver will be blacklisted by cxadc.conf.
+Now reboot and the modules will be loaded automatically. The device node will be called `/dev/cxadc0`. The default cx88 driver will be blacklisted by cxadc.conf.
 Module parameters can also be configured in that file.
 
 If there is an issue just re-load the CXADC module from the install directory via terminal
@@ -94,7 +85,7 @@ Build the level adjustment tool:
 
     gcc -o leveladj leveladj.c
 
-Install PV to allow real-time monitoring of the runtime & datarate.
+Optionally, install PV to allow real-time monitoring of the runtime & datarate.
 
     sudo apt install pv
 
@@ -132,9 +123,7 @@ NOTE: Also see the utils folders for scripts to manipulate these values, sudo wi
 
 ### `vmux` (0 to 3, default 2) select physical input to capture.
 
-A typical TV card has a tuner,
-a composite input with RCA/BNC ports and S-Video inputs tied to three of these inputs; you
-may need to experiment the quickest way is to attach a video signal and see a white flash on signal hook-up and change vmux until you get something.
+A typical TV card has a tuner, a composite input with RCA/BNC ports and S-Video inputs tied to three of these inputs; you may need to experiment. The quickest way is to attach a video signal and see a white flash on signal hook-up and change vmux until you get something.
 
 ### Commands to Check for Signal Burst
 
@@ -256,11 +245,13 @@ adjust the gain automatically:
 
 Open Terminal in the directory you wish to write the data and use the following example command capture 10 seconds of test samples:
 
-    timeout 10s cat /dev/cxadc0 |pv > output.raw
+    timeout 10s cat /dev/cxadc0 > output.raw
 
 `cat` is the defualt due to user issues with `dd`
 
-To use PV argument that enables datarate/runtime readout modify command with `|pv >` it will look like this when in use:
+Note: For use with VHS-Decode & LD-Decode projects, instead of `.raw` extension use `.u8` for 8-bit or `.u16` for 16-bit samples. This allows the software to correctly detect the type of data.
+
+To use PV argument that enables datarate/runtime readout, modify command with `|pv >`. It will look like this when in use:
 
     cat /dev/cxadc0 |pv > output.raw
     0:00:04 [38.1MiB/s] [        <=>  
@@ -269,18 +260,15 @@ Use CTRL+C to manually stop capture.
 
 `timeout 30s` at the start of the command will end the capture after 30 seconds; this can be adjusted to whatever the user wishes.
 
-`sox -r 28636363` etc can be used to resample to the sample rate specified ware as cat/dd will just do whatever has been pre-defined by parameters set below.
+`sox -r 28636363` etc can be used to resample to the sample rate specified whereas cat/dd will just do whatever has been pre-defined by parameters set below.
 
-Note: For use with (S)VHS & LD-Decode projects .u8 for 8-bit & .u16 for 16-bit samples instead of .raw extension this allows the software to correctly detect the data and use it for decoding or flac compression to .vhs/.svhs & .ldf and so on.
+Optional but **not optimal** due to risk of dropped samples: on-the-fly FLAC-compressed captures are possible with the following commands. Edit sample rates to match your cxadc configuration. (We use the actual sample rate divided by 1000, because tools can only handle kHz range, not MHz range. This is more of an "informational" flag than anything. It doesn't affect compression level.)
 
-
-Optional but **not optimal** due to risk of dropped samples with fast enough hardware (e.g 2018+ AMD R7 Intel I7 CPU NVME SSD's etc) on the fly flac compressed captures are possible with the following commands, edit rates as required.
-
-16-bit Mode 
+16-bit mode 
 
     sudo sox -r 14318 -b 16 -c 1 -e unsigned -t raw /dev/cxadc0 -t raw - | flac --fast -16 --sample-rate=14318 --sign=unsigned --channels=1 --endian=little --bps=16 --blocksize=65535 --lax -f - -o .flac
 
-8-bit Mode 
+8-bit mode 
 
     sudo sox -r 28636 -b 8 -c 1 -e unsigned -t raw /dev/cxadc0 -t raw - | flac --fast -16 --sample-rate=28636 --sign=unsigned --channels=1 --endian=little --bps=8 --blocksize=65535 --lax -f - -o .flac
     
@@ -412,7 +400,7 @@ Information Additions Documentation Cleanup by Harry Munday (harry@opcomedia.com
 
 - Change 10bit to the correct 16bit as that's what's stated in RAW16 under the datasheet and that's what the actual samples are in format-wise.
 - Cleaned up and added examples for adjusting module parameters and basic real-time readout information.
-- Added notations of ABLS2-40.000MHZ-D4YF-T a drop-in replacement crystal that adds 40mhz ability at low cost for current market PCIE cards.
+- Added notations of ABLS2-40.000MHZ-D4YF-T a drop-in replacement crystal that adds 40mhz ability at low cost for current market PCIe cards.
 - Added documentation for sixdb mode selection.
 - Added links to find current CX cards
 - Added issues that have been found
