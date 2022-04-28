@@ -42,7 +42,7 @@ Check the `utils` folder and the associated readme for quicker and more simplifi
 
 ## Getting started
 
-Create a directory that you wish to install into. In a Terminal, navigate your directory and use the following to pull down the driver:
+Create a directory that you wish to install into. In a Terminal, navigate to your directory and use the following to pull down the driver:
 
 `git clone https://github.com/happycube/cxadc-linux3`
 
