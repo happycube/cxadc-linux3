@@ -247,7 +247,7 @@ Open Terminal in the directory you wish to write the data and use the following 
 
     timeout 10s cat /dev/cxadc0 > output.raw
 
-`cat` is the defualt due to user issues with `dd`
+`cat` is recommended due to user issues with `dd`
 
 Note: For use with VHS-Decode & LD-Decode projects, instead of `.raw` extension use `.u8` for 8-bit or `.u16` for 16-bit samples. This allows the software to correctly detect the type of data.
 
