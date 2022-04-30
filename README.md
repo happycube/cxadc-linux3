@@ -1,14 +1,18 @@
-cxadc (CX - Analogue Digital Converter )
+CXADC (CX - Analogue Digital Converter )
 
-cxadc is an alternative Linux driver for the Conexant CX2388x video
-capture chips used on many PCI TV cards and cheep PCIE (with 1x bridge chip) capture cards It configures the CX2388x to
-capture raw 8-bit or 16-bit unsigned samples from the video input ports, allowing these cards to be used as a low-cost 28-54Mhz 10bit ADC for SDR and similar applications.
+cxadc is an alternative Linux driver for the Conexant CX2388x series of video decoder/encoder chips used on many PCI TV tuner and capture cards.
+
+The new driver configures the CX2388x to
+capture in its raw output mode in 8-bit or 16-bit unsigned samples from the video input ports, allowing these cards to be used as a low-cost 28-54Mhz 10bit ADC for SDR and similar applications.
+
+Today the cheep PCIe (with 1x bridge chip) capture card market uses these chips at 25-35USD prices per card from China directly.
 
 The regular cx88 driver in Linux provides support for capturing composite
-video, digital video, audio and the other normal features of these
-chips. You shouldn't load both drivers at the same time.
+video, digital video, audio and the other normal features of these chips.
 
-## Where to find current PCIE 1x CX23881 cards and notes
+**Note!** You shouldn't load both drivers at the same time.
+
+## Where to find current PCIe 1x CX2388x cards & notes:
 
 https://www.aliexpress.com/item/1005003461248897.html - White Variation
 
@@ -18,45 +22,33 @@ https://www.aliexpress.com/item/4001286595482.html    - Blue Variation
 
 Note 01: The CX chip variant with the least self-noise is the cx23883 mostly found on the White Variation card with most clean captures at the 6dB off and Digital Gain at 0-10.
 
-Note 02: For reliable 40Mhz 8-bit & 20mhz 16-bit samples the recommended crystal is the `ABLS2-40.000MHZ-D4YF-T`.
+Note 02: For reliable 40Mhz 8-bit & 20mhz 16-bit samples its recommended to replace the stock crystal with the `ABLS2-40.000MHZ-D4YF-T`.
 
-Note 03: Asmedia PCI to PCIE 1x bridge chips may have support issues on some older PCH chipsets Intel 3rd gen, for example, white cards use ITE chips which might not have said issue.
+[For the full list of working crystal replacements you can look the wiki page here!](https://github.com/happycube/cxadc-linux3/wiki/Upgraded-Crystals)
 
-Note 04: Added cooling can provide stability more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware but currently only 40mhz mods have been broadly viable in testing.
+Note 03: Asmedia PCI to PCIe 1x bridge chips may have support issues on some older PCH chipsets Intel 3rd gen, for example, white cards use ITE chips which might not have said issue.
+
+Note 04: Added cooling can provide stability more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware but currently only 40mhz mods have been broadly viable in testing for current PCIe cards.
 
 Note 05: For crystals over 54mhz it might be possible to use higher crystals with self temperature regulated isolated chamber models but this is still to have proper testing.
 
-## List of tested working crystals:
+# Wiki
 
-Native SMD crystal on current PCIE 1x cards is a `HC-49/US` type
-
-`40MHz` - ABRACON ABLS2-40.000MHZ-D4YF-T 18pF 30ppm `HC-49/US`
-
-`40MHz` - Diodes Incorporated FL400WFQA1 7pF 10ppm `SMD Package`
-
-`48MHz` - ECS ECS-480-18-33-AGM-TR 18pF 25ppm  `SMD Package`
-
-`50MHz` - ECS ECS-500-18-33-AGM-TR 18pF 30ppm  `SMD Package`
-
-`54MHz` - ECS ECS-540-8-33-JTN-TR 8pF 20ppm `SMD Package`
+There is now a [wiki](https://github.com/happycube/cxadc-linux3/wiki) about the cards verients and helpful information on modifications
 
 ## Scripted Commands
 
 Check the utils folder and the associated readme for quicker and more simplified commands.
 
-## Getting started
+## Getting Started
 
 Open the directory that you wish to install into git pull to pull down the driver into a directory of your choice and use the following:
 
-`git clone https://github.com/happycube/cxadc-linux`
+`git clone git clone https://github.com/happycube/cxadc-linux3`
 
 You can then use `git pull` to update later
 
-or
-
-Click code then download zip and extract files to the directory you wish to use CXADC in then open a terminal in said directory
-
-Once files have been acquired then proceed to do the following:
+For manual or offline use, click code and then download the zip and extract files to the directory you wish to use CXADC in then open a terminal in said directory & continue.
 
 Build and install the out-of-tree module:
 
@@ -83,7 +75,7 @@ Module parameters can also be configured in that file.
 
 If there is an issue just re-load the CXADC module from the install directory via terminal
 
-    sudo rmmod cxadc 
+    sudo rmmod cxadc
     make
     sudo make modules_install
     sudo depmod -a
@@ -94,9 +86,13 @@ Build the level adjustment tool:
 
     gcc -o leveladj leveladj.c
 
-Install PV to allow real-time monitoring of the runtime & datarate.
+PV is required to allow real-time monitoring of the runtime & datarate output:
 
     sudo apt install pv
+
+Sox is key for maniupating data in real time or more usefully after captures:
+
+    sudo apt install sox
 
 Note: When using a lower end system, if there is not enough system resources you may have dropped samples!
 
@@ -199,6 +195,11 @@ With the Stock 28Mhz Crystal the modes are the following:
 
 `2` = 40 MHz 8bit
 
+
+**Note!**
+
+`40/20mhz modes` have a rare chance of working on stock cards with there stock crystal its recommended to physically replace the stock crystal with an ABLS2-40.000MHZ-D4YF-T to archive said abbility.
+
 Alternately, enter 2 digit values (like 20), that will then be
 multiplied by 1,000,000 (so 20 = 20,000,000sps), with the caveat
 that the lowest possible rate is a little more than 1/3 the actual
@@ -243,9 +244,6 @@ available and crystals as high as 54mhz have been shown to work (with
 extra cooling required above 40mhz).  This value is ONLY used to compute
 the sample rates entered for the tenxfsc parameters other than 0, 1, 2.
 
-Note!
-
-`40/20mhz modes` have a rare chance of working on stock cards its recommended to just replace the stock crystal with ABLS2-40.000MHZ-D4YF-T for more reliable results.
 
 ## Capture
 
@@ -271,20 +269,19 @@ Use CTRL+C to manually stop capture.
 
 `sox -r 28636363` etc can be used to resample to the sample rate specified ware as cat/dd will just do whatever has been pre-defined by parameters set below.
 
-Note: For use with (S)VHS & LD-Decode projects .u8 for 8-bit & .u16 for 16-bit samples instead of .raw extension this allows the software to correctly detect the data and use it for decoding or flac compression to .vhs/.svhs & .ldf and so on.
+Note: For use with (S)VHS & LD-Decode projects .u8 for 8-bit & .u16 for 16-bit samples instead of .raw extension this allows the software to correctly detect the data and use it for decoding or flac compression to .vhs/.svhs etc.
 
 
-Optional but **not optimal** due to risk of dropped samples with fast enough hardware (e.g 2018+ AMD R7 Intel I7 CPU NVME SSD's etc) on the fly flac compressed captures are possible with the following commands, edit rates as required.
+Optional but **not optimal** due to risk of dropped samples even with high end hardware etc on the fly flac compressed captures are possible with the following commands, edit rates as needed.
 
-16-bit Mode 
+16-bit Mode (Stock 14.3 Mhz)
 
     sudo sox -r 14318 -b 16 -c 1 -e unsigned -t raw /dev/cxadc0 -t raw - | flac --fast -16 --sample-rate=14318 --sign=unsigned --channels=1 --endian=little --bps=16 --blocksize=65535 --lax -f - -o .flac
 
-8-bit Mode 
+8-bit Mode (Stock 28.6 Mhz)
 
     sudo sox -r 28636 -b 8 -c 1 -e unsigned -t raw /dev/cxadc0 -t raw - | flac --fast -16 --sample-rate=28636 --sign=unsigned --channels=1 --endian=little --bps=8 --blocksize=65535 --lax -f - -o .flac
-    
-    
+
 ## Other Tips
 
 ### Change CXADC defaults
@@ -429,7 +426,7 @@ New additions by Tony Anderson (tandersn@uw.edu)
 
 ### 2022-04-26 - More Usability Improvements & Tools
 
-- Documentation Cleanup 
+- Documentation Cleanup
 - More utils additons
 - Added cxlevel (utils/README.md)
 - Added cxfreq  (utils/README.md)
