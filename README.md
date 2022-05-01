@@ -1,9 +1,10 @@
-CXADC (CX - Analogue Digital Converter )
+CXADC (CX - Analogue-Digital Converter)
 
 cxadc is an alternative Linux driver for the Conexant CX2388x series of video decoder/encoder chips used on many PCI TV tuner and capture cards.
 
-The new driver configures the CX2388x to
-capture in its raw output mode in 8-bit or 16-bit unsigned samples from the video input ports, allowing these cards to be used as a low-cost 28-54Mhz 10bit ADC for SDR and similar applications.
+**Note!** cx23885 and cx23888 are incompatible chips.
+
+The new driver configures the CX2388x to capture in its raw output mode in 8-bit or 16-bit unsigned samples from the video input ports, allowing these cards to be used as a low-cost 28-54Mhz 10bit ADC for SDR and similar applications.
 
 Today the cheep PCIe (with 1x bridge chip) capture card market uses these chips at 25-35USD prices per card from China directly.
 
@@ -128,13 +129,15 @@ NOTE: Also see the utils folders for scripts to manipulate these values, sudo wi
 
 ### `vmux` (0 to 3, default 2) select physical input to capture.
 
+[Check the Wiki](https://github.com/happycube/cxadc-linux3/wiki/Types-Of-CX2388x-Cards) for the optimal way to connect your card type!
+
 A typical TV card has a tuner,
 a composite input with RCA/BNC ports and S-Video inputs tied to three of these inputs; you
 may need to experiment the quickest way is to attach a video signal and see a white flash on signal hook-up and change vmux until you get something.
 
 ### Commands to Check for Signal Burst
 
-Creates a video preview of signal depending on RF type you will get an unstable video or just a white flash.
+Creates a video preview of signal depending on the RF signal type you will get an unstable video or just a white flash.
 
 PAL:
 `sudo ffplay -hide_banner -async 1 -f rawvideo -pixel_format gray8 -video_size 2291x625 -i /dev/cxadc0 -vf scale=1135x625,eq=gamma=0.5:contrast=1.5`
@@ -195,16 +198,17 @@ With the Stock 28Mhz Crystal the modes are the following:
 
 `2` = 40 MHz 8bit
 
-
 **Note!**
 
-`40/20mhz modes` have a rare chance of working on stock cards with there stock crystal its recommended to physically replace the stock crystal with an ABLS2-40.000MHZ-D4YF-T to archive said abbility.
+`40Mhz 8-bit & 20Mhz 16-bit modes` have a **very rare** chance of working on stock non-modifyed cards with there stock 28Mhz crystal its recommended to physically replace the stock crystal with an ABLS2-40.000MHZ-D4YF-T to archive said sample rate capture abbility and lower noise.
 
 Alternately, enter 2 digit values (like 20), that will then be
 multiplied by 1,000,000 (so 20 = 20,000,000sps), with the caveat
 that the lowest possible rate is a little more than 1/3 the actual
 `HW Crystal` rate (HW crystal / 40 * 14). For stock 28.6mhz crystal,
-this is about 10,022,728sps. For a 40mhz crystal card, the lowest
+this is about 10,022,728sps.
+
+For a 40mhz crystal card, the lowest
 rate will be 14,000,000sps. The highest rate is capped at the
 10fsc rate, or:  HW crystal / 8 * 10.
 
@@ -239,8 +243,7 @@ When in 16bit sample modes change to the following:
 ### `crystal` (? - 54000000,  default 28636363)
 
 The Mhz of the actual XTAL crystal affixed to the board. The stock
-crystal is usually 28636363, but a 40mhz replacement crystal is easily
-available and crystals as high as 54mhz have been shown to work (with
+crystal is usually 28636363 (28.6Mhz), but a 40mhz replacement crystal is easily available and crystals as high as 54mhz have been shown to work (with
 extra cooling required above 40mhz).  This value is ONLY used to compute
 the sample rates entered for the tenxfsc parameters other than 0, 1, 2.
 
@@ -267,10 +270,9 @@ Use CTRL+C to manually stop capture.
 
 `timeout 30s` at the start of the command will end the capture after 30 seconds; this can be adjusted to whatever the user wishes.
 
-`sox -r 28636363` etc can be used to resample to the sample rate specified ware as cat/dd will just do whatever has been pre-defined by parameters set below.
+`sox -r 28636363` etc can be used to resample to the sample rate specified ware as cat/dd will just do whatever has been pre-defined by parameters set above.
 
 Note: For use with (S)VHS & LD-Decode projects .u8 for 8-bit & .u16 for 16-bit samples instead of .raw extension this allows the software to correctly detect the data and use it for decoding or flac compression to .vhs/.svhs etc.
-
 
 Optional but **not optimal** due to risk of dropped samples even with high end hardware etc on the fly flac compressed captures are possible with the following commands, edit rates as needed.
 
@@ -409,7 +411,7 @@ Information Additions Documentation Cleanup by Harry Munday (harry@opcomedia.com
 
 - Change 10bit to the correct 16bit as that's what's stated in RAW16 under the datasheet and that's what the actual samples are in format-wise.
 - Cleaned up and added examples for adjusting module parameters and basic real-time readout information.
-- Added notations of ABLS2-40.000MHZ-D4YF-T a drop-in replacement crystal that adds 40mhz ability at low cost for current market PCIE cards.
+- Added notations of ABLS2-40.000MHZ-D4YF-T a drop-in replacement crystal that adds 40mhz ability at low cost for current market PCIe cards.
 - Added documentation for sixdb mode selection.
 - Added links to find current CX cards
 - Added issues that have been found
