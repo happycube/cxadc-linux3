@@ -47,7 +47,7 @@ static int tenbit = 0;
 static int tenxfsc = 0;
 static int sixdb = 1;
 static int crystal = 28636363;
-static int center_offset = 2;
+static int center_offset = 8;
 
 #define cx_read(reg)         readl(ctd->mmio + ((reg) >> 2))
 #define cx_write(reg, value) writel((value), ctd->mmio + ((reg) >> 2))
