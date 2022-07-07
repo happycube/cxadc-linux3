@@ -63,7 +63,7 @@ def child16(data):
             GainAction = "!!!Warning!!! Signal high, gain can't go low enough:" + str(GainLevel) + " "
         else:
             GainAction = "Lowering Gain: " + str(GainLevel) + " "
-    elif NumSampGood < 21:
+    elif NumSampGood < 100:
         GainLevel += 1
         if GainLevel > 31 :
             GainLevel = 31
@@ -110,7 +110,7 @@ def child(data):
             GainAction = "!!!Warning!!! Signal high, gain can't go low enough:" + str(GainLevel) + " "
         else:
             GainAction = "Lowering Gain: " + str(GainLevel) + " "
-    elif NumSampGood < 21:
+    elif NumSampGood < 100:
         GainLevel += 1
         if GainLevel > 31 :
             GainLevel = 31
