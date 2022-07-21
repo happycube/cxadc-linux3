@@ -37,17 +37,13 @@ Note 05: For crystals over 54mhz it might be possible to use higher crystals wit
 
 There is now a [wiki](https://github.com/happycube/cxadc-linux3/wiki) about the cards verients and helpful information on modifications
 
-## Scripted Commands
-
-Check the utils folder and the associated readme for quicker and more simplified commands.
-
-## Getting Started
+## Getting Started & Installation
 
 Open the directory that you wish to install into git pull to pull down the driver into a directory of your choice and use the following:
 
-`git clone git clone https://github.com/happycube/cxadc-linux3`
+    git clone https://github.com/happycube/cxadc-linux3 cxadc
 
-You can then use `git pull` to update later
+You can then use `git pull` inside the directory to update later.
 
 For manual or offline use, click code and then download the zip and extract files to the directory you wish to use CXADC in then open a terminal in said directory & continue.
 
@@ -97,6 +93,18 @@ Sox is key for maniupating data in real time or more usefully after captures:
 
 Note: When using a lower end system, if there is not enough system resources you may have dropped samples!
 
+## Scripted Commands
+
+Check the utils folder and the associated readme for quicker and more simplified commands.
+
+To enable short system wide commands first enter into the utils directory from cxadc:
+
+    cd utils
+
+Then install the system links with:
+
+    sudo ./inst_scripts
+
 # Configuration
 
 ## Module Parameters
@@ -137,12 +145,14 @@ may need to experiment the quickest way is to attach a video signal and see a wh
 
 ### Commands to Check for Signal Burst
 
-Creates a video preview of signal depending on the RF signal type you will get an unstable video or just a white flash.
+Creates a video preview of signal depending on the RF signal type you will get an unstable video or just a white flash on cable hookup.
 
 PAL:
+
 `sudo ffplay -hide_banner -async 1 -f rawvideo -pixel_format gray8 -video_size 2291x625 -i /dev/cxadc0 -vf scale=1135x625,eq=gamma=0.5:contrast=1.5`
 
 NTSC:
+
 `sudo ffplay -hide_banner -async 1 -f rawvideo -pix_fmt gray8 -video_size 2275x525 -i /dev/cxadc0 -vf scale=910x525,eq=gamma=0.5:contrast=1.5`
 
 ### `audsel` (0 to 3, default none)
