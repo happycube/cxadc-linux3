@@ -38,7 +38,6 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 21, 0)
 #define dma_zalloc_coherent dma_alloc_coherent
 #endif
-#ABC TEST
 static int latency = -1;
 static int audsel = -1;
 static int vmux = 2;
