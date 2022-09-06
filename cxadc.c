@@ -38,7 +38,6 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 21, 0)
 #define dma_zalloc_coherent dma_alloc_coherent
 #endif
-
 static int latency = -1;
 static int audsel = -1;
 static int vmux = 2;
@@ -47,6 +46,8 @@ static int tenbit = 0;
 static int tenxfsc = 0;
 static int sixdb = 1;
 static int crystal = 28636363;
+static int center_offset = 8;
+
 #define cx_read(reg)         readl(ctd->mmio + ((reg) >> 2))
 #define cx_write(reg, value) writel((value), ctd->mmio + ((reg) >> 2))
 
@@ -314,6 +315,7 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 		level = 31;
 	/* control gain also bit 16 */
 	cx_write(MO_AGC_GAIN_ADJ4, (sixdb<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0));
+	cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(center_offset));
 
        if (tenxfsc < 10) {
         //old code for old parameter compatibility
@@ -437,6 +439,7 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 	             if (level > 31)
                         level = 31;
 	             cx_write(MO_AGC_GAIN_ADJ4, (sixdb<<23)|(0<<22)|(0<<21)|(level<<16)|(0xff<<8)|(0x0<<0));
+	             cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(center_offset));
 
 
 		if (count) {
@@ -761,7 +764,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	/* for 'cooked' composite */
 	cx_write(MO_AGC_SYNC_TIP1, (0x1c0<<17)|(0x0<<9)|(0<<7)|(0xf<<0));
 	cx_write(MO_AGC_SYNC_TIP2, (0x20<<17)|(0x0<<9)|(0<<7)|(0xf<<0));
-	cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(0x8));
+	cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(center_offset));
 	cx_write(MO_AGC_GAIN_ADJ1, (0xe0<<17)|(0xe<<9)|(0x0<<7)|(0x7<<0));
 	/* set gain of agc but not offset */
 	cx_write(MO_AGC_GAIN_ADJ3, (0x28<<16)|(0x28<<8)|(0x50<<0));
@@ -928,6 +931,7 @@ module_param(tenbit, int, 0664);
 module_param(tenxfsc, int, 0664);
 module_param(sixdb, int, 0664);
 module_param(crystal, int, 0664);
+module_param(center_offset, int, 0664);
 
 MODULE_DESCRIPTION("cx2388xx adc driver");
 MODULE_AUTHOR("Hew How Chee");

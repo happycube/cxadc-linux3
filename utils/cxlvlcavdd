@@ -33,6 +33,7 @@ def child16(data):
     syssyfsfile = open(r"/sys/module/cxadc/parameters/level","r")    
     GainLevel = int(syssyfsfile.read())
     syssyfsfile.close()
+    OldGainLevel = GainLevel
     data = bytes(data)         # convert from list of ints into a byte array
     mv = memoryview(data)      # convert to a memory view...
     mv = mv.cast('H')          # treat every 2-bytes as a 16-bit value
@@ -48,12 +49,13 @@ def child16(data):
         if OneOfBuff < LowestSamp:
             LowestSamp = OneOfBuff
         if NumSampOver < BUFSIZE / 50000:
-        #if NumSampOver < BUFSIZE / 200000:   
             if OneOfBuff < 514 or OneOfBuff > 64900:
                 NumSampOver += 1
         else:
             NumSampOver = 999
             break
+        if OneOfBuff > 62000 or OneOfBuff < 4000:
+            NumSampGood += 1 
     if NumSampOver >= 20:
         GainLevel -= 1
         if GainLevel < 0 :
@@ -61,18 +63,19 @@ def child16(data):
             GainAction = "!!!Warning!!! Signal high, gain can't go low enough:" + str(GainLevel) + " "
         else:
             GainAction = "Lowering Gain: " + str(GainLevel) + " "
-    elif NumSampOver == 0:
+    elif NumSampGood < 0:  #disabling this, not tested enough
         GainLevel += 1
         if GainLevel > 31 :
             GainLevel = 31
             GainAction = "!!!Warning!!! Signal quite low, gain maxed:" + str(GainLevel) + " "
         else:
             GainAction = "Raising Gain: " + str(GainLevel) + " "
-    syssyfsfile = open(r"/sys/module/cxadc/parameters/level","w")
-    syssyfsfile.write(str(GainLevel))
-    syssyfsfile.close()
+    if OldGainLevel != GainLevel:
+        syssyfsfile = open(r"/sys/module/cxadc/parameters/level","w")
+        syssyfsfile.write(str(GainLevel))
+        syssyfsfile.close()
+
     now = datetime.datetime.now()
-    #print (now,":",GainAction,"Low:",LowestSamp," High:",HighestSamp," Over Threshold:",NumSampOver,"                  ",end='\r')
     print (now,":",GainAction,"Low:",LowestSamp," High:",HighestSamp," Over Threshold:",NumSampOver,"                  ")
     os._exit(0)
 
@@ -80,6 +83,7 @@ def child(data):
     syssyfsfile = open(r"/sys/module/cxadc/parameters/level","r")    
     GainLevel = int(syssyfsfile.read())
     syssyfsfile.close()
+    OldGainLevel = GainLevel
     NumSampOver = 0
     NumSampGood = 0
     OneOfBuff = 0
@@ -92,12 +96,13 @@ def child(data):
         if OneOfBuff < LowestSamp:
              LowestSamp = OneOfBuff
         if NumSampOver < BUFSIZE / 50000:
-        #if NumSampOver < BUFSIZE / 200000: 
             if OneOfBuff < 8 or OneOfBuff >248:
                 NumSampOver += 1
         else:
             NumSampOver = 999
             break
+        if OneOfBuff > 225 or OneOfBuff < 15:
+            NumSampGood += 1
     if NumSampOver >= 20:
         GainLevel -= 1
         if GainLevel < 0 :
@@ -105,18 +110,19 @@ def child(data):
             GainAction = "!!!Warning!!! Signal high, gain can't go low enough:" + str(GainLevel) + " "
         else:
             GainAction = "Lowering Gain: " + str(GainLevel) + " "
-    elif NumSampOver == 0:
+    elif NumSampGood < 0:  #disabling this, not enough testing done
         GainLevel += 1
         if GainLevel > 31 :
             GainLevel = 31
             GainAction = "!!!Warning!!! Signal quite low, gain maxed:" + str(GainLevel) + " "
         else:
             GainAction = "Raising Gain: " + str(GainLevel) + " "
-    syssyfsfile = open(r"/sys/module/cxadc/parameters/level","w")
-    syssyfsfile.write(str(GainLevel))
-    syssyfsfile.close()
+    if GainLevel != OldGainLevel:
+        syssyfsfile = open(r"/sys/module/cxadc/parameters/level","w")
+        syssyfsfile.write(str(GainLevel))
+        syssyfsfile.close()
+        
     now = datetime.datetime.now()
-    #print (now,":",GainAction,"Low:",LowestSamp," High:",HighestSamp," Over Threshold:",NumSampOver,"                  ",end='\r')
     print (now,":",GainAction,"Low:",LowestSamp," High:",HighestSamp," Over Threshold:",NumSampOver,"                  ")
     os._exit(0)
 
@@ -127,8 +133,6 @@ name_out = sys.argv[1]
 CheckInterval = 150 #checking interval 125 = ~7sec@40msps
 CountVar = -150
 BUFSIZE   = 2097152
-print ("start: now using buff divided by 50k instead of 200k")
-#print ("start: back using buff divided by  200k")
 syssyfsfile = open(r"/sys/module/cxadc/parameters/tenbit","r")
 tenbit = int(syssyfsfile.read())
 syssyfsfile.close()
