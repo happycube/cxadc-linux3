@@ -135,6 +135,10 @@ Example: `sudo echo 1 >/sys/module/cxadc/parameters/vmux`
 
 NOTE: Also see the utils folders for scripts to manipulate these values, sudo will be required unless you add your local user to the `root` group as mentoined above.
 
+### `center_offset` (0 to 100?, default 2) 
+
+This option allows you to manually adjust DC center offset or the centering of the RF signal you wish to capture.
+
 ### `vmux` (0 to 3, default 2) select physical input to capture.
 
 [Check the Wiki](https://github.com/happycube/cxadc-linux3/wiki/Types-Of-CX2388x-Cards) for the optimal way to connect your card type!
