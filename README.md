@@ -135,10 +135,6 @@ Example: `sudo echo 1 >/sys/module/cxadc/parameters/vmux`
 
 NOTE: Also see the utils folders for scripts to manipulate these values, sudo will be required unless you add your local user to the `root` group as mentoined above.
 
-### `center_offset` (0 to 100?, default 2) 
-
-This option allows you to manually adjust DC center offset or the centering of the RF signal you wish to capture.
-
 ### `vmux` (0 to 3, default 2) select physical input to capture.
 
 [Check the Wiki](https://github.com/happycube/cxadc-linux3/wiki/Types-Of-CX2388x-Cards) for the optimal way to connect your card type!
@@ -261,6 +257,21 @@ crystal is usually 28636363 (28.6Mhz), but a 40mhz replacement crystal is easily
 extra cooling required above 40mhz).  This value is ONLY used to compute
 the sample rates entered for the tenxfsc parameters other than 0, 1, 2.
 
+### `center_offset` (0 to 255, default 2)
+
+This option allows you to manually adjust DC centre offset or the centring of the RF signal you wish to capture.
+
+Manual calculation: If the "highest" and "lowest" values returned are equidistant from 0 and 255 respectively, it's centred.
+
+Example:
+
+`low 121 high 133 clipped 0 nsamp 2097152`
+
+121-121=0  133+121 = 254 = centred, but: low
+
+`110 high 119 clipped 0 nsamp 2097152`
+
+110-110=0  119+110 = 229 = not centred.
 
 ## Capture
 
