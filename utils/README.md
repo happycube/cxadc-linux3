@@ -9,6 +9,19 @@ sudo ./inst_scripts
 
 inst_scripts = create simlinks to these scripts in /usr/bin.
 
+## IMPORTANT:  About capturing a CAV laserdisc
+
+CAV laserdiscs increase in gain as they play, in order to get a good quality capture, you have to adjust the CX card gain *down* as the disc plays (unless using the RMS amp). This means the physical amp must be set as such, that at the end of the disc, the CX card gain is about 1 or 2. If you were, to say,  run level adjust at the beginning of the disc and adjust the amp until it landed at 1 or 2, after about 5 minutes the entire capture would be clipping. ⚡ 🔥 🤕 The **cxlvlcavdd** script is designed to capture the data and turn down the CX card gain as the capture progresses.  
+
+The user which you are capturing with must have read-write access to the sysfs parameters.
+
+There's a few steps to using cxlvlcavdd:
+
+1. Go to near the end of the disk, use leveladj and the gain POT of the amp to get leveladj to land at 1 or 2.
+2. Go to the beginning of the disc and run leveladj again.
+3. Finally, start the capture with `cxlvlcavdd CaptureFileName.r8`.
+
+
 ## Command Arguments
 
 cx8fsc = set 8fsc sample rate mode.  1x crystal speed.
