@@ -6,7 +6,7 @@ cxadc is an alternative Linux driver for the Conexant CX2388x series of video de
 
 The new driver configures the CX2388x to capture in its raw output mode in 8-bit or 16-bit unsigned samples from the video input ports, allowing these cards to be used as a low-cost 28-54Mhz 10bit ADC for SDR and similar applications.
 
-Today the cheep PCIe (with 1x bridge chip) capture card market uses these chips at 25-35USD prices per card, directly from China.
+Today the cheap PCIe (with 1x bridge chip) capture card market uses these chips at 25-35USD prices per card, directly from China.
 
 The regular cx88 driver in Linux provides support for capturing composite
 video, digital video, audio and the other normal features of these chips.
