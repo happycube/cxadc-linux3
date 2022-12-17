@@ -38,6 +38,7 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 21, 0)
 #define dma_zalloc_coherent dma_alloc_coherent
 #endif
+
 static int latency = -1;
 static int audsel = -1;
 static int vmux = 2;
@@ -218,7 +219,7 @@ static int alloc_risc_inst_buffer(struct cxadc *ctd)
 {
 	/* add 1 page for sync instruct and jump */
 	ctd->risc_inst_buff_size = (VBI_DMA_BUFF_SIZE/CLUSTER_BUFFER_SIZE)*8+PAGE_SIZE;
-	ctd->risc_inst_virt = pci_alloc_consistent(ctd->pci, ctd->risc_inst_buff_size, &ctd->risc_inst_phy);
+	ctd->risc_inst_virt = dma_alloc_coherent(&ctd->pci->dev, ctd->risc_inst_buff_size, &ctd->risc_inst_phy, GFP_KERNEL);
 	if (ctd->risc_inst_virt == NULL)
 		return -ENOMEM;
 	memset(ctd->risc_inst_virt, 0, ctd->risc_inst_buff_size);
@@ -232,7 +233,7 @@ static int alloc_risc_inst_buffer(struct cxadc *ctd)
 static void free_risc_inst_buffer(struct cxadc *ctd)
 {
 	if (ctd->risc_inst_virt != NULL)
-		pci_free_consistent(ctd->pci, ctd->risc_inst_buff_size, ctd->risc_inst_virt, ctd->risc_inst_phy);
+		dma_free_coherent(&ctd->pci->dev, ctd->risc_inst_buff_size, ctd->risc_inst_virt, ctd->risc_inst_phy);
 }
 
 static int make_risc_instructions(struct cxadc *ctd)
@@ -550,7 +551,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		return -EBUSY;
 	}
 
-	ctd = kmalloc(sizeof(*ctd), GFP_ATOMIC);
+	ctd = kmalloc(sizeof(*ctd), GFP_KERNEL);
 	if (!ctd) {
 		rc = -ENOMEM;
 		dev_err(&pci_dev->dev, "cxadc: kmalloc failed\n");
@@ -580,7 +581,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	for (i = 0; i < MAX_DMA_PAGE; i++) {
 		dma_addr_t dma_handle;
 
-		ctd->pgvec_virt[i] = (void *)dma_zalloc_coherent(&ctd->pci->dev, 4096, &dma_handle, GFP_KERNEL);
+		ctd->pgvec_virt[i] = dma_zalloc_coherent(&ctd->pci->dev, 4096, &dma_handle, GFP_KERNEL);
 		if (ctd->pgvec_virt[i] != 0) {
 			ctd->pgvec_phy[i] = dma_handle;
 			total_size += pgsize;
