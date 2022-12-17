@@ -6,7 +6,7 @@ cxadc is an alternative Linux driver for the Conexant CX2388x series of video de
 
 The new driver configures the CX2388x to capture in its raw output mode in 8-bit or 16-bit unsigned samples from the video input ports, allowing these cards to be used as a low-cost 28-54Mhz 10bit ADC for SDR and similar applications.
 
-Today the cheep PCIe (with 1x bridge chip) capture card market uses these chips at 25-35USD prices per card from China directly.
+Today the cheep PCIe (with 1x bridge chip) capture card market uses these chips at 25-35USD prices per card, directly from China.
 
 The regular cx88 driver in Linux provides support for capturing composite
 video, digital video, audio and the other normal features of these chips.
@@ -15,37 +15,38 @@ video, digital video, audio and the other normal features of these chips.
 
 ## Where to find current PCIe 1x CX2388x cards & notes:
 
-https://www.aliexpress.com/item/1005003461248897.html - White Variation
+https://www.aliexpress.com/item/1005003461248897.html - White Variant
 
-https://www.aliexpress.com/item/1005003092946304.html - Green Variation
+https://www.aliexpress.com/item/1005003092946304.html - Green Variant
 
-https://www.aliexpress.com/item/4001286595482.html    - Blue Variation
+https://www.aliexpress.com/item/4001286595482.html    - Blue Variant
 
-Note 01: The CX chip variant with the least self-noise is the cx23883 mostly found on the White Variation card with most clean captures at the 6dB off and Digital Gain at 0-10.
+Note 01: The CX chip variant with the least self-noise is the cx23883, mostly found on the White Variation card; most clean captures are at 6dB off, and Digital Gain at 0-10.
 
-Note 02: For reliable 40Mhz 8-bit & 20mhz 16-bit samples its recommended to replace the stock crystal with the `ABLS2-40.000MHZ-D4YF-T`.
+Note 02: For reliable 40Mhz 8-bit & 20mhz 16-bit samples, its recommended to replace the stock crystal with the `ABLS2-40.000MHZ-D4YF-T`.
 
-[For the full list of working crystal replacements you can look the wiki page here!](https://github.com/happycube/cxadc-linux3/wiki/Upgraded-Crystals)
+[For the full list of working crystal replacements, check the wiki page here!](https://github.com/happycube/cxadc-linux3/wiki/Upgraded-Crystals)
 
-Note 03: Asmedia PCI to PCIe 1x bridge chips may have support issues on some older PCH chipsets Intel 3rd gen, for example, white cards use ITE chips which might not have said issue.
+Note 03: Asmedia PCI to PCIe 1x bridge chips may have support issues on some older PCH chipsets based on Intel 3rd gen; for example, white cards use ITE chips which might not have said issue.
 
-Note 04: Added cooling can provide stability more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware but currently only 40mhz mods have been broadly viable in testing for current PCIe cards.
+Note 04: Added cooling can provide additional stability, more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware. Currently only 40mhz mods have been broadly viable in testing for current PCIe cards.
 
-Note 05: For crystals over 54mhz it might be possible to use higher crystals with self temperature regulated isolated chamber models but this is still to have proper testing.
+Note 05: For crystals over 54mhz: it might be possible to use higher crystals with self temperature regulated isolated chamber models, but this is still to have proper testing.
 
 # Wiki
 
-There is now a [wiki](https://github.com/happycube/cxadc-linux3/wiki) about the cards verients and helpful information on modifications
+There is now a [wiki](https://github.com/happycube/cxadc-linux3/wiki) about the cards variants and helpful information on modifications
 
 ## Getting Started & Installation
 
-Open the directory that you wish to install into git pull to pull down the driver into a directory of your choice and use the following:
+Open the directory that you wish to install into, and git clone the repo source:
 
     git clone https://github.com/happycube/cxadc-linux3 cxadc
 
 You can then use `git pull` inside the directory to update later.
 
-For manual or offline use, click code and then download the zip and extract files to the directory you wish to use CXADC in then open a terminal in said directory & continue.
+For manual or offline use, click Code on the Github page and then download the zip. Move the zip where it's needed, and extract the files.
+Afterwards, open a terminal in said directory and continue below.
 
 Build and install the out-of-tree module:
 
@@ -91,13 +92,13 @@ Sox is key for maniupating data in real time or more usefully after captures:
 
     sudo apt install sox
 
-Note: When using a lower end system, if there is not enough system resources you may have dropped samples!
+Note: When using a lower end system (Pentium 4 and before era), if there are not enough system resources, you may have dropped samples!
 
 ## Scripted Commands
 
-Check the utils folder and the associated readme for quicker and more simplified commands.
+Check the utils folder and the associated README for quicker and more simplified commands.
 
-To enable short system wide commands first enter into the utils directory from cxadc:
+To enable short system wide commands, first change into the utils directory from the cxadc source folder:
 
     cd utils
 
@@ -118,7 +119,7 @@ as a regular users (e.g. without `sudo`), you need to run the command:
 
 NOTE: the above command adds your local user account to the `root` group,
 and as such, elevates your general permissions level. If you don't like
-the idea of this, you will need to use `sudo` to change mudule sysfs
+the idea of this, you will need to use `sudo` to change module sysfs
 parameters.
 
 To change configuration open the terminal and use the following command to change driver config settings.
@@ -133,7 +134,7 @@ sudo echo X >/sys/module/cxadc/parameters/Y
 
 Example: `sudo echo 1 >/sys/module/cxadc/parameters/vmux`
 
-NOTE: Also see the utils folders for scripts to manipulate these values, sudo will be required unless you add your local user to the `root` group as mentoined above.
+NOTE: Also see the utils folders for scripts to manipulate these values; sudo will be required unless you add your local user to the `root` group as mentioned above.
 
 ### `vmux` (0 to 3, default 2) select physical input to capture.
 
@@ -141,11 +142,11 @@ NOTE: Also see the utils folders for scripts to manipulate these values, sudo wi
 
 A typical TV card has a tuner,
 a composite input with RCA/BNC ports and S-Video inputs tied to three of these inputs; you
-may need to experiment the quickest way is to attach a video signal and see a white flash on signal hook-up and change vmux until you get something.
+may need to experiment with inputs. The quickest way is to attach a video signal and see a white flash on signal hook-up, and change vmux until you get something.
 
 ### Commands to Check for Signal Burst
 
-Creates a video preview of signal depending on the RF signal type you will get an unstable video or just a white flash on cable hookup.
+Create a video preview of signal. Depending on the RF signal type, you will get an unstable video or just a white flash on cable hookup.
 
 PAL:
 
@@ -210,9 +211,9 @@ With the Stock 28Mhz Crystal the modes are the following:
 
 **Note!**
 
-`40Mhz 8-bit & 20Mhz 16-bit modes` have a **very rare** chance of working on stock non-modifyed cards with there stock 28Mhz crystal its recommended to physically replace the stock crystal with an ABLS2-40.000MHZ-D4YF-T to archive said sample rate capture abbility and lower noise.
+`40Mhz 8-bit & 20Mhz 16-bit modes` have a **very rare** chance of working on stock non-modified cards, with the stock 28Mhz crystal. It's recommended to physically replace the stock crystal with an ABLS2-40.000MHZ-D4YF-T, to achieve said sample rate capture abbility and lower noise.
 
-Alternately, enter 2 digit values (like 20), that will then be
+Alternatively, enter 2 digit values (like 20), that will then be
 multiplied by 1,000,000 (so 20 = 20,000,000sps), with the caveat
 that the lowest possible rate is a little more than 1/3 the actual
 `HW Crystal` rate (HW crystal / 40 * 14). For stock 28.6mhz crystal,
@@ -222,7 +223,7 @@ For a 40mhz crystal card, the lowest
 rate will be 14,000,000sps. The highest rate is capped at the
 10fsc rate, or:  HW crystal / 8 * 10.
 
-Full range sample values can also be entered: 14318181 for intance.
+Full range sample values can also be entered: 14318181 for instance.
 Again, the caveat is that the lowest possible rate is:
 HW crystal / 40 * 14 and the highest allowed rate is:
 HW crystal / 8 * 10.
@@ -242,7 +243,7 @@ In mode 1, unsigned 16-bit mode, the data is resampled (down-converted) by 50%
 
 `1` = 4xFsc 16-bit data mode (Filtered Vertical Blanking Interval Data)
 
-When in 16bit sample modes change to the following:
+When in 16bit sample modes, change to the following:
 
 `14.3 MHz 16-bit` - Stock Card
 
@@ -275,18 +276,19 @@ Example:
 
 ## Capture
 
-Connect a signal to the input you've selected, and run `leveladj` to
+Connect a signal to the input you've selected, and run `leveladj` to 
 adjust the gain automatically:
 
     ./leveladj
 
-Open Terminal in the directory you wish to write the data and use the following example command capture 10 seconds of test samples:
+Open a terminal in the directory you wish to write the data to, and use the following example command to capture 10 seconds of test samples:
 
     timeout 10s cat /dev/cxadc0 |pv > output.raw
 
 `cat` is the defualt due to user issues with `dd`
 
-To use PV argument that enables datarate/runtime readout modify command with `|pv >` it will look like this when in use:
+To use the PV argument that enables datarate/runtime readout, modify the command command with `|pv >` .
+It will look like this when in use:
 
     cat /dev/cxadc0 |pv > output.raw
     0:00:04 [38.1MiB/s] [        <=>  
@@ -295,11 +297,11 @@ Use CTRL+C to manually stop capture.
 
 `timeout 30s` at the start of the command will end the capture after 30 seconds; this can be adjusted to whatever the user wishes.
 
-`sox -r 28636363` etc can be used to resample to the sample rate specified ware as cat/dd will just do whatever has been pre-defined by parameters set above.
+`sox -r 28636363` etc can be used to resample to the sample rate specified, where as cat/dd will just do whatever has been pre-defined by parameters set above.
 
-Note: For use with (S)VHS & LD-Decode projects .u8 for 8-bit & .u16 for 16-bit samples instead of .raw extension this allows the software to correctly detect the data and use it for decoding or flac compression to .vhs/.svhs etc.
+Note: For use with (S)VHS & LD-Decode projects, filetypes .u8 for 8-bit & .u16 for 16-bit samples are used instead of .raw extension. This allows the software to correctly detect the data and use it for decoding or flac compression to .vhs/.svhs etc.
 
-Optional but **not optimal** due to risk of dropped samples even with high end hardware etc on the fly flac compressed captures are possible with the following commands, edit rates as needed.
+Optional but **not optimal** due to risk of dropped samples even with high end hardware etc, on the fly flac compressed captures are possible with the following commands; edit rates as needed.
 
 16-bit Mode (Stock 14.3 Mhz)
 
