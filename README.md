@@ -297,7 +297,7 @@ Use CTRL+C to manually stop capture.
 
 `timeout 30s` at the start of the command will end the capture after 30 seconds; this can be adjusted to whatever the user wishes.
 
-`sox -r 28636363` etc can be used to resample to the sample rate specified, where as cat/dd will just do whatever has been pre-defined by parameters set above.
+`sox -r 28636363` etc can be used to resample to the sample rate specified, whereas cat/dd will just do whatever has been pre-defined by parameters set above.
 
 Note: For use with (S)VHS & LD-Decode projects, filetypes .u8 for 8-bit & .u16 for 16-bit samples are used instead of .raw extension. This allows the software to correctly detect the data and use it for decoding or flac compression to .vhs/.svhs etc.
 
