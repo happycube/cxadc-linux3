@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2005-2007 Hew How Chee <how_chee@yahoo.com>
  * Copyright (C) 2013-2015 Chad Page <Chad.Page@gmail.com>
- * Copyright (C) 2019 Adam Sampson <ats@offog.org>
+ * Copyright (C) 2019-2022 Adam Sampson <ats@offog.org>
  * Copyright (C) 2020-2022 Tony Anderson  <tandersn@cs.washington.edu>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -224,8 +224,8 @@ static int alloc_risc_inst_buffer(struct cxadc *ctd)
 		return -ENOMEM;
 	memset(ctd->risc_inst_virt, 0, ctd->risc_inst_buff_size);
 
-	cx_info("risc inst buff allocated at virt 0x%p phy 0x%lx size %d kbytes\n",
-		ctd->risc_inst_virt, (unsigned long)ctd->risc_inst_phy, ctd->risc_inst_buff_size/1024);
+	cx_info("risc inst buff allocated at virt 0x%p phy 0x%lx size %u kbytes\n",
+		ctd->risc_inst_virt, (unsigned long)ctd->risc_inst_phy, ctd->risc_inst_buff_size / 1024);
 
 	return 0;
 }
@@ -271,8 +271,8 @@ static int make_risc_instructions(struct cxadc *ctd)
 	*pp++ = RISC_JUMP|(0<<24)|(0<<16); /* interrupt and increment counter */
 	*pp++ = loop_addr;
 
-	cx_info("end of risc inst 0x%p total size %ld kbyte\n",
-		pp, ((void *)pp-(void *)ctd->risc_inst_virt)/1024);
+	cx_info("end of risc inst 0x%p total size %lu kbyte\n",
+		pp, (unsigned long)((char *)pp - (char *)ctd->risc_inst_virt) / 1024);
 	return 0;
 }
 
@@ -586,7 +586,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 			ctd->pgvec_phy[i] = dma_handle;
 			total_size += pgsize;
 		} else {
-			cx_err("alloc dma buffer failed. index = %d\n", i);
+			cx_err("alloc dma buffer failed. index = %u\n", i);
 
 			rc = -ENOMEM;
 			goto fail1x;
@@ -594,7 +594,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 
 	}
 
-	cx_info("total DMA size allocated = %d kb\n", total_size/1024);
+	cx_info("total DMA size allocated = %u kb\n", total_size / 1024);
 
 	make_risc_instructions(ctd);
 
@@ -683,7 +683,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	/* enable fifo and risc */
 	cx_write(MO_VID_DMACNTRL, ((1<<7)|(1<<3)));
 
-	rc = request_irq(ctd->irq, cxadc_irq, IRQF_SHARED, "cxadc", (void *)ctd);
+	rc = request_irq(ctd->irq, cxadc_irq, IRQF_SHARED, "cxadc", ctd);
 	if (rc < 0) {
 		cx_err("can't request irq (rc=%d)\n", rc);
 		goto fail1x;
