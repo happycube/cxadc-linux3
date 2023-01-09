@@ -147,7 +147,7 @@ may need to experiment with inputs. The quickest way is to attach a video signal
 ### Commands to Check for Signal Burst
 
 Create a video preview of signal. Depending on the RF signal type, you will get an unstable video or just a white flash on cable hookup.
-(Usuing video_size resolution for default 28.64 Mhz sample rate)
+(Using video_size values to give approximately the correct resolution for the default 28.64 Mhz sample rate)
 
 PAL:
 
