@@ -15,23 +15,21 @@ video, digital video, audio and the other normal features of these chips.
 
 ## Where to find current PCIe 1x CX2388x cards & notes:
 
-https://www.aliexpress.com/item/1005003461248897.html - White Variant
+Links to buy a CX Card [White Variant](https://www.aliexpress.com/item/1005003461248897.html) / [Green Variant](https://www.aliexpress.com/item/1005003092946304.html) / [Blue Variant](https://www.aliexpress.com/item/4001286595482.html)
 
-https://www.aliexpress.com/item/1005003092946304.html - Green Variant
+**Note 01:** The CX chip variant with the least self-noise is the cx23883, mostly found on the White Variation card; most clean captures are at 6dB off, and Digital Gain at 0-10.
 
-https://www.aliexpress.com/item/4001286595482.html    - Blue Variant
-
-Note 01: The CX chip variant with the least self-noise is the cx23883, mostly found on the White Variation card; most clean captures are at 6dB off, and Digital Gain at 0-10.
-
-Note 02: For reliable 40Mhz 8-bit & 20mhz 16-bit samples, its recommended to replace the stock crystal with the `ABLS2-40.000MHZ-D4YF-T`.
+**Note 02:** For reliable 40Mhz 8-bit & 20Mhz 16-bit samples, its recommended to replace the stock crystal with the `ABLS2-40.000MHZ-D4YF-T`.
 
 [For the full list of working crystal replacements, check the wiki page here!](https://github.com/happycube/cxadc-linux3/wiki/Upgraded-Crystals)
 
-Note 03: Asmedia PCI to PCIe 1x bridge chips may have support issues on some older PCH chipsets based on Intel 3rd gen; for example, white cards use ITE chips which might not have said issue.
+**Note 03:** Asmedia PCI to PCIe 1x bridge chips may have support issues on some older PCH chipsets based on Intel 3rd gen; for example, white cards use ITE chips which might not have said issue.
 
-Note 04: Added cooling can provide additional stability, more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware. Currently only 40mhz mods have been broadly viable in testing for current PCIe cards.
+**Note 04:** Added cooling can provide additional stability, more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware. Currently only 40mhz mods have been broadly viable in testing for current PCIe cards.
 
-Note 05: For crystals over 54mhz: it might be possible to use higher crystals with self temperature regulated isolated chamber models, but this is still to have proper testing.
+**Note 05:** For crystals over 54mhz: it might be possible to use higher crystals with self temperature regulated isolated chamber models, but this is still to have proper testing.
+
+**Note 06:** While the term Mhz is used and is hardware accurate, to be clear with Nyquist sampling the crystal frequency should be noted as the MSPS or million samples per second rating, the number is always halfed to equal its effective bandwith of whatever its sampling i.e 28mhz is 28msps with 14mhz of bandwith and so on you want a 2:1 ratio or higher of whatever your capturing to correctly sample it.
 
 # Wiki
 
@@ -146,7 +144,12 @@ may need to experiment with inputs. The quickest way is to attach a video signal
 
 ### Commands to Check for Signal Burst
 
+<<<<<<< Updated upstream
 Create a video preview of signal. Depending on the RF signal type, you will get an unstable video or just a white flash on cable hookup.
+=======
+Create a video preview of signal. Depending on the RF signal type, you will get an unstable video or just a white flash on cable hookup. 
+
+>>>>>>> Stashed changes
 (Using video_size values to give approximately the correct resolution for the default 28.64 Mhz sample rate)
 
 PAL:
@@ -156,6 +159,10 @@ PAL:
 NTSC:
 
 `sudo ffplay -hide_banner -async 1 -f rawvideo -pix_fmt gray8 -video_size 1820x525 -i /dev/cxadc0 -vf scale=910x525,eq=gamma=0.5:contrast=1.5`
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 
 ### `audsel` (0 to 3, default none)
 
