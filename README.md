@@ -147,14 +147,15 @@ may need to experiment with inputs. The quickest way is to attach a video signal
 ### Commands to Check for Signal Burst
 
 Create a video preview of signal. Depending on the RF signal type, you will get an unstable video or just a white flash on cable hookup.
+(Usuing video_size resolution for default 28.64 Mhz sample rate)
 
 PAL:
 
-`sudo ffplay -hide_banner -async 1 -f rawvideo -pixel_format gray8 -video_size 2291x625 -i /dev/cxadc0 -vf scale=1135x625,eq=gamma=0.5:contrast=1.5`
+`sudo ffplay -hide_banner -async 1 -f rawvideo -pixel_format gray8 -video_size 1832x625 -i /dev/cxadc0 -vf scale=1135x625,eq=gamma=0.5:contrast=1.5`
 
 NTSC:
 
-`sudo ffplay -hide_banner -async 1 -f rawvideo -pix_fmt gray8 -video_size 2275x525 -i /dev/cxadc0 -vf scale=910x525,eq=gamma=0.5:contrast=1.5`
+`sudo ffplay -hide_banner -async 1 -f rawvideo -pix_fmt gray8 -video_size 1820x525 -i /dev/cxadc0 -vf scale=910x525,eq=gamma=0.5:contrast=1.5`
 
 ### `audsel` (0 to 3, default none)
 
