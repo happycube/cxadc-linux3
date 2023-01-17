@@ -156,8 +156,6 @@ NTSC:
 
 `sudo ffplay -hide_banner -async 1 -f rawvideo -pix_fmt gray8 -video_size 1820x525 -i /dev/cxadc0 -vf scale=910x525,eq=gamma=0.5:contrast=1.5`
 
->>>>>>> Stashed changes
-
 ### `audsel` (0 to 3, default none)
 
 Some TV cards (e.g. the PixelView PlayTV Pro Ultra) have an external
