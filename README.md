@@ -29,7 +29,7 @@ Links to buy a CX Card [White Variant](https://www.aliexpress.com/item/100500346
 
 **Note 05:** For crystals over 54mhz: it might be possible to use higher crystals with self temperature regulated isolated chamber models, but this is still to have proper testing.
 
-**Note 06:** While the term Mhz is used and is hardware accurate, to be clear with Nyquist sampling the crystal frequency should be noted as the MSPS or million samples per second rating, the number is always halfed to equal its effective bandwith of whatever its sampling i.e 28mhz is 28msps with 14mhz of bandwith and so on you want a 2:1 ratio or higher of whatever your capturing to correctly sample it.
+**Note 06:** While the term Mhz is used and is hardware accurate, to be clear with Nyquist sampling the crystal frequency should be noted as the MSPS or million samples per second rating, the number is always halved to equal its effective bandwidth of whatever its sampling i.e 28mhz is 28msps with 14mhz of bandwidth and so on you want a 2:1 ratio or higher of whatever your capturing to correctly sample it.
 
 # Wiki
 
@@ -126,7 +126,7 @@ Note! use `cxvalues` to check your current configuration state at anytime.
 
 X = Number Setting i.e  `0`  `1`  `2`  `3`  etc
 
-Y = Parameter setting i.e `vmux` `level` etc
+Y = Parameter setting i.e `vmux`, `level` etc
 
 sudo echo X >/sys/module/cxadc/parameters/Y
 
@@ -144,12 +144,8 @@ may need to experiment with inputs. The quickest way is to attach a video signal
 
 ### Commands to Check for Signal Burst
 
-<<<<<<< Updated upstream
-Create a video preview of signal. Depending on the RF signal type, you will get an unstable video or just a white flash on cable hookup.
-=======
 Create a video preview of signal. Depending on the RF signal type, you will get an unstable video or just a white flash on cable hookup. 
 
->>>>>>> Stashed changes
 (Using video_size values to give approximately the correct resolution for the default 28.64 Mhz sample rate)
 
 PAL:
@@ -159,8 +155,6 @@ PAL:
 NTSC:
 
 `sudo ffplay -hide_banner -async 1 -f rawvideo -pix_fmt gray8 -video_size 1820x525 -i /dev/cxadc0 -vf scale=910x525,eq=gamma=0.5:contrast=1.5`
-<<<<<<< Updated upstream
-=======
 
 >>>>>>> Stashed changes
 
