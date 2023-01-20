@@ -752,7 +752,8 @@ static int cxadc_probe(struct pci_dev *pci_dev,
  
 
 	/* set vbi agc */
-	cx_write(MO_AGC_SYNC_SLICER, 0x0);
+        /* Set the sample delays to maximum (issue #2) */
+	cx_write(MO_AGC_SYNC_SLICER, (0xff << 8) || 0xff);
 
 	if (level < 0)
 		level = 0;
@@ -769,6 +770,9 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	cx_write(MO_AGC_GAIN_ADJ1, (0xe0<<17)|(0xe<<9)|(0x0<<7)|(0x7<<0));
 	/* set gain of agc but not offset */
 	cx_write(MO_AGC_GAIN_ADJ3, (0x28<<16)|(0x28<<8)|(0x50<<0));
+
+        /* Disable PLL adjust (stabilizes output when video is detected by chip) */
+	cx_write(MO_PLL_ADJ_CTRL, cx_read(MO_PLL_ADJ_CTRL) & ~(0x0<<25));
 
 	if (audsel != -1) {
 		/*
