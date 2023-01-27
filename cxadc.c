@@ -570,7 +570,7 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	struct cxadc *ctd = container_of(inode->i_cdev, struct cxadc, cdev);
         unsigned long longtenxfsc, longPLLboth, longPLLint;
         int PLLint, PLLfrac, PLLfin, SConv;
-  
+
 	for (ctd = cxadcs; ctd != NULL; ctd = ctd->next)
 		if (MINOR(ctd->cdev.dev) == minor)
 			break;
@@ -690,7 +690,7 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 	unsigned int rv = 0;
 	unsigned int pnum;
 	int gp_cnt;
-        
+
 	pnum = (*offset % VBI_DMA_BUFF_SIZE) / PAGE_SIZE;
 	pnum += ctd->initial_page;
 	pnum %= MAX_DMA_PAGE;
@@ -1068,7 +1068,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
            cx_write(MO_SCONV_REG, SConv ); 
       }
 
- 
+
 
 	/* set vbi agc */
 	cx_write(MO_AGC_SYNC_SLICER, 0x0);
@@ -1192,6 +1192,171 @@ static void cxadc_remove(struct pci_dev *pci_dev)
 	pci_disable_device(pci_dev);
 }
 
+int cxadc_suspend(struct pci_dev *pci_dev, pm_message_t state)
+{
+	struct cxadc *ctd = pci_get_drvdata(pci_dev);
+
+	disable_card(ctd);
+	pci_save_state(pci_dev);
+	pci_set_power_state(pci_dev, pci_choose_state(pci_dev, state));
+	pci_disable_device(pci_dev);
+	return 0;
+}
+
+int cxadc_resume (struct pci_dev *pci_dev)
+{
+/* I have no idea what state this card is in after resume
+ * so re-init the hardware and re-sync our settings
+ */
+	struct cxadc *ctd = pci_get_drvdata(pci_dev);
+	unsigned long longtenxfsc, longPLLboth, longPLLint;
+	int PLLint, PLLfrac, PLLfin, SConv, intstat, ret;
+
+	ret = pci_enable_device (pci_dev);
+	pci_set_power_state (pci_dev, PCI_D0);
+	pci_restore_state (pci_dev);
+	/* init hw */
+	pci_set_master(pci_dev);
+	disable_card(ctd);
+
+	/* we use 16kbytes of FIFO buffer */
+	create_cdt_table(ctd, NUMBER_OF_CLUSTER_BUFFER, CLUSTER_BUFFER_SIZE, CLUSTER_BUFFER_BASE, CDT_BASE);
+	/* size of one buffer in qword -1 */
+	cx_write(MO_DMA24_CNT1, (CLUSTER_BUFFER_SIZE/8-1));
+
+	/* ptr to cdt */
+	cx_write(MO_DMA24_PTR2, CDT_BASE);
+	/* size of cdt in qword */
+	cx_write(MO_DMA24_CNT2, 2*NUMBER_OF_CLUSTER_BUFFER);
+
+	/* clear interrupt */
+	intstat = cx_read(MO_VID_INTSTAT);
+	cx_write(MO_VID_INTSTAT, intstat);
+
+	cx_write(CHN24_CMDS_BASE, ctd->risc_inst_phy); /* working */
+	cx_write(CHN24_CMDS_BASE+4, CDT_BASE);
+	cx_write(CHN24_CMDS_BASE+8, 2*NUMBER_OF_CLUSTER_BUFFER);
+	cx_write(CHN24_CMDS_BASE+12, RISC_INST_QUEUE);
+
+	cx_write(CHN24_CMDS_BASE+16, 0x40);
+
+	/* source select (see datasheet on how to change adc source) */
+	ctd->vmux &= 3;/* default vmux=1 */
+	/* pal-B */
+	cx_write(MO_INPUT_FORMAT, (ctd->vmux<<14)|(1<<13)|0x01|0x10|0x10000);
+	cx_write(MO_OUTPUT_FORMAT, 0x0f); /* allow full range */
+
+	cx_write(MO_CONTR_BRIGHT, 0xff00);
+
+	/* vbi lenght CLUSTER_BUFFER_SIZE/2  work */
+
+	/*
+	 * no of byte transferred from peripehral to fifo
+	 * if fifo buffer < this, it will still transfer this no of byte
+	 * must be multiple of 8, if not go haywire?
+	 */
+	cx_write(MO_VBI_PACKET, (((CLUSTER_BUFFER_SIZE)<<17)|(2<<11)));
+
+	/* raw mode & byte swap <<8 (3<<8=swap) */
+	cx_write(MO_COLOR_CTRL, ((0xe)|(0xe<<4)|(0<<8)));
+
+	/* capture 16 bit or 8 bit raw samples */
+	if (ctd->tenbit)
+		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5)));
+	else
+		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5)));
+
+	/* power down audio and chroma DAC+ADC */
+	cx_write(MO_AFECFG_IO, 0x12);
+
+	/* run risc */
+	cx_write(MO_DEV_CNTRL2, 1<<5);
+	/* enable fifo and risc */
+	cx_write(MO_VID_DMACNTRL, ((1<<7)|(1<<3)));
+	if (ctd->tenxfsc < 10) {
+	//old code for old parameter compatibility
+		switch (ctd->tenxfsc) {
+			case 0 :
+				/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+				cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+				cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+				break;
+			case 1 :
+				/* clock speed equal to 1.25 x crystal speed, unmodified card = 35.8 mhz */
+				cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
+				cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
+				break;
+			case 2 :
+				/* clock speed equal to ~1.4 x crystal speed, unmodified card = 40 mhz */
+				cx_write(MO_SCONV_REG, 131072*0.715909072483);
+				cx_write(MO_PLL_REG, 0x0165965A); /* 40000000.1406459 */
+				break;
+			default :
+				/* if someone sets value out of range, default to crystal speed */
+				/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+				cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+				cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+		}
+	} else {
+		if (ctd->tenxfsc < 100) {
+			ctd->tenxfsc = ctd->tenxfsc * 1000000;  //if number 11-99, conver to 11,000,000 to 99,000,000
+		}
+		PLLint = ctd->tenxfsc/(ctd->crystal/40);  //always use PLL_PRE of 5 (=64)
+		longtenxfsc = (long)ctd->tenxfsc * 1000000;
+		longPLLboth = (long)(longtenxfsc/(long)(ctd->crystal/40));
+		longPLLint = (long)PLLint * 1000000;
+		PLLfrac = ((longPLLboth-longPLLint)*1048576)/1000000;
+		PLLfin =  ((PLLint+64)*1048576)+PLLfrac;
+		if (PLLfin < 81788928) {
+			PLLfin = 81788928; // 81788928 lowest possible value
+		}
+		if (PLLfin > 119537664 ) {
+			PLLfin = 119537664 ; //133169152 is highest possible value with PLL_PRE = 5 but above 119537664 may crash
+		}
+		cx_write(MO_PLL_REG,  PLLfin);
+		SConv = (long)(131072 * (long)ctd->crystal) / (long)ctd->tenxfsc;
+		cx_write(MO_SCONV_REG, SConv );
+	}
+
+	/* set vbi agc */
+	cx_write(MO_AGC_SYNC_SLICER, 0x0);
+
+	if (ctd->level < 0)
+		ctd->level = 0;
+	if (ctd->level > 31)
+		ctd->level = 31;
+
+	cx_write(MO_AGC_BACK_VBI, (0<<27)|(0<<26)|(1<<25)|(0x100<<16)|(0xfff<<0));
+	/* control gain also bit 16 */
+	cx_write(MO_AGC_GAIN_ADJ4, (ctd->sixdb<<23)|(0<<22)|(0<<21)|(ctd->level<<16)|(0xff<<8)|(0x0<<0));
+	/* for 'cooked' composite */
+	cx_write(MO_AGC_SYNC_TIP1, (0x1c0<<17)|(0x0<<9)|(0<<7)|(0xf<<0));
+	cx_write(MO_AGC_SYNC_TIP2, (0x20<<17)|(0x0<<9)|(0<<7)|(0xf<<0));
+	cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(ctd->center_offset));
+	cx_write(MO_AGC_GAIN_ADJ1, (0xe0<<17)|(0xe<<9)|(0x0<<7)|(0x7<<0));
+	/* set gain of agc but not offset */
+	cx_write(MO_AGC_GAIN_ADJ3, (0x28<<16)|(0x28<<8)|(0x50<<0));
+
+	if (ctd->audsel != -1) {
+		/*
+		 * Pixelview PlayTVPro Ultracard specific
+		 * select which output is redirected to audio output jack
+		 * GPIO bit 3 is to enable 4052 , bit 0-1 4052's AB
+		 */
+		cx_write(MO_GP3_IO, 1<<25); /* use as 24 bit GPIO/GPOE */
+		cx_write(MO_GP1_IO, 0x0b);
+		cx_write(MO_GP0_IO, ctd->audsel&3);
+		cx_info("audsel = %d\n", ctd->audsel&3);
+	}
+
+	/* i2c sda/scl set to high and use software control */
+	cx_write(MO_I2C, 3);
+
+	ret = request_irq(ctd->irq, cxadc_irq, IRQF_SHARED, "cxadc", ctd);
+	cx_write(MO_VID_INTMSK, INTERRUPT_MASK);
+	return 0;
+}
+
 MODULE_DEVICE_TABLE(pci, cxadc_pci_tbl);
 
 static struct pci_driver cxadc_pci_driver = {
@@ -1199,6 +1364,9 @@ static struct pci_driver cxadc_pci_driver = {
 	.id_table = cxadc_pci_tbl,
 	.probe    = cxadc_probe,
 	.remove   = cxadc_remove,
+	.shutdown = cxadc_remove,
+	.suspend  = cxadc_suspend,
+	.resume   = cxadc_resume,
 };
 
 static int __init cxadc_init_module(void)
