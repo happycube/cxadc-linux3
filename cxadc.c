@@ -49,6 +49,7 @@ static int default_sixdb = 1;
 static int default_crystal = 28636363;
 static int default_center_offset = 8;
 
+/* ownership for our sysfs files */
 #define SYSFS_UID 0
 #define SYSFS_GID 44
 
@@ -106,7 +107,7 @@ struct cxadc {
 	unsigned int   irq;
 	unsigned int  mem;
 	unsigned int  *mmio;
-    struct kref refcnt;
+	struct kref refcnt;
 
 	/* locking */
 	bool in_use;
@@ -123,251 +124,291 @@ struct cxadc {
 
 	int newpage;
 	int initial_page;
-    /* device attributes */
-    int latency;
-    int audsel;
-    int vmux;
-    int level;
-    int tenbit;
-    int tenxfsc;
-    int sixdb;
-    int crystal;
-    int center_offset;
+	/* device attributes */
+	int latency;
+	int audsel;
+	int vmux;
+	int level;
+	int tenbit;
+	int tenxfsc;
+	int sixdb;
+	int crystal;
+	int center_offset;
 };
 
 /* boiler plate for device attributes
-   show/store for latency */
+ * show/store for latency
+ */
 
 static ssize_t mycxadc_latency_show(struct device *dev,
-        struct device_attribute *attr, char *buf)
+		struct device_attribute *attr, char *buf)
 {
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    int len;
-    len = sprintf(buf, "%d\n", mycxadc->latency);
-    if (len <= 0)
-        dev_err(dev, "mydrv: Invalid sprintf len: %d\n", len);
-    return len;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+	int len;
+
+	len = sprintf(buf, "%d\n", mycxadc->latency);
+	if (len <= 0)
+		dev_err(dev, "cxadc: Invalid sprintf len: %d\n", len);
+	return len;
 }
 
 static ssize_t mycxadc_latency_store(struct device *dev,
-        struct device_attribute *attr, const char *buf, size_t count)
+		struct device_attribute *attr, const char *buf, size_t count)
 {
-    int ret;
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    ret = kstrtoint(buf, 10, &mycxadc->latency);
-    return count;
+	int ret;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+
+	ret = kstrtoint(buf, 10, &mycxadc->latency);
+	return count;
 }
 
-/* show/store for audsel */
+/* show/store for audsel
+ */
 
 static ssize_t mycxadc_audsel_show(struct device *dev,
-        struct device_attribute *attr, char *buf)
+		struct device_attribute *attr, char *buf)
 {
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    int len;
-    len = sprintf(buf, "%d\n", mycxadc->audsel);
-    if (len <= 0)
-        dev_err(dev, "mydrv: Invalid sprintf len: %d\n", len);
-    return len;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+	int len;
+
+	len = sprintf(buf, "%d\n", mycxadc->audsel);
+	if (len <= 0)
+		dev_err(dev, "cxadc: Invalid sprintf len: %d\n", len);
+	return len;
 }
 
 static ssize_t mycxadc_audsel_store(struct device *dev,
-        struct device_attribute *attr, const char *buf, size_t count)
+		struct device_attribute *attr, const char *buf, size_t count)
 {
-    int ret;
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    ret = kstrtoint(buf, 10, &mycxadc->audsel);
-    return count;
+	int ret;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+
+	ret = kstrtoint(buf, 10, &mycxadc->audsel);
+	return count;
 }
 
-/* show/store for level */
+/* show/store for level
+ */
 
 static ssize_t mycxadc_level_show(struct device *dev,
-        struct device_attribute *attr, char *buf)
+		struct device_attribute *attr, char *buf)
 {
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    int len;
-    len = sprintf(buf, "%d\n", mycxadc->level);
-    if (len <= 0)
-        dev_err(dev, "mydrv: Invalid sprintf len: %d\n", len);
-    return len;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+	int len;
+
+	len = sprintf(buf, "%d\n", mycxadc->level);
+	if (len <= 0)
+		dev_err(dev, "cxadc: Invalid sprintf len: %d\n", len);
+	return len;
 }
 
 static ssize_t mycxadc_level_store(struct device *dev,
-        struct device_attribute *attr, const char *buf, size_t count)
+		struct device_attribute *attr, const char *buf, size_t count)
 {
-    int ret;
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    ret = kstrtoint(buf, 10, &mycxadc->level);
-    return count;
+	int ret;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+
+	ret = kstrtoint(buf, 10, &mycxadc->level);
+	return count;
 }
 
-/* show/store for vmux */
+/* show/store for vmux
+ */
 
 static ssize_t mycxadc_vmux_show(struct device *dev,
-        struct device_attribute *attr, char *buf)
+		struct device_attribute *attr, char *buf)
 {
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    int len;
-    len = sprintf(buf, "%d\n", mycxadc->vmux);
-    if (len <= 0)
-        dev_err(dev, "mydrv: Invalid sprintf len: %d\n", len);
-    return len;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+	int len;
+
+	len = sprintf(buf, "%d\n", mycxadc->vmux);
+	if (len <= 0)
+		dev_err(dev, "cxadc: Invalid sprintf len: %d\n", len);
+	return len;
 }
 
 static ssize_t mycxadc_vmux_store(struct device *dev,
-        struct device_attribute *attr, const char *buf, size_t count)
+		struct device_attribute *attr, const char *buf, size_t count)
 {
-    int ret;
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    ret = kstrtoint(buf, 10, &mycxadc->vmux);
-    return count;
+	int ret;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+
+	ret = kstrtoint(buf, 10, &mycxadc->vmux);
+	return count;
 }
 
-/* show/store for tenbit */
+/* show/store for tenbit
+ */
 
 static ssize_t mycxadc_tenbit_show(struct device *dev,
-        struct device_attribute *attr, char *buf)
+		struct device_attribute *attr, char *buf)
 {
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    int len;
-    len = sprintf(buf, "%d\n", mycxadc->tenbit);
-    if (len <= 0)
-        dev_err(dev, "mydrv: Invalid sprintf len: %d\n", len);
-    return len;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+	int len;
+
+	len = sprintf(buf, "%d\n", mycxadc->tenbit);
+	if (len <= 0)
+		dev_err(dev, "cxadc: Invalid sprintf len: %d\n", len);
+	return len;
 }
 
 static ssize_t mycxadc_tenbit_store(struct device *dev,
-        struct device_attribute *attr, const char *buf, size_t count)
+		struct device_attribute *attr, const char *buf, size_t count)
 {
-    int ret;
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    ret = kstrtoint(buf, 10, &mycxadc->tenbit);
-    return count;
+	int ret;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+
+	ret = kstrtoint(buf, 10, &mycxadc->tenbit);
+	return count;
 }
 
-/* show/store for tenfsc */
+/* show/store for tenfsc
+ */
 
 static ssize_t mycxadc_tenxfsc_show(struct device *dev,
-        struct device_attribute *attr, char *buf)
+		struct device_attribute *attr, char *buf)
 {
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    int len;
-    len = sprintf(buf, "%d\n", mycxadc->tenxfsc);
-    if (len <= 0)
-        dev_err(dev, "mydrv: Invalid sprintf len: %d\n", len);
-    return len;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+	int len;
+
+	len = sprintf(buf, "%d\n", mycxadc->tenxfsc);
+	if (len <= 0)
+		dev_err(dev, "cxadc: Invalid sprintf len: %d\n", len);
+	return len;
 }
 
 static ssize_t mycxadc_tenxfsc_store(struct device *dev,
-        struct device_attribute *attr, const char *buf, size_t count)
+		struct device_attribute *attr, const char *buf, size_t count)
 {
-    int ret;
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    ret = kstrtoint(buf, 10, &mycxadc->tenxfsc);
-    return count;
+	int ret;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+
+	ret = kstrtoint(buf, 10, &mycxadc->tenxfsc);
+	return count;
 }
 
-/* show/store for sixdb */
+/* show/store for sixdb
+ */
 
 static ssize_t mycxadc_sixdb_show(struct device *dev,
-        struct device_attribute *attr, char *buf)
+		struct device_attribute *attr, char *buf)
 {
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    int len;
-    len = sprintf(buf, "%d\n", mycxadc->sixdb);
-    if (len <= 0)
-        dev_err(dev, "mydrv: Invalid sprintf len: %d\n", len);
-    return len;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+	int len;
+
+	len = sprintf(buf, "%d\n", mycxadc->sixdb);
+	if (len <= 0)
+		dev_err(dev, "cxadc: Invalid sprintf len: %d\n", len);
+	return len;
 }
 
 static ssize_t mycxadc_sixdb_store(struct device *dev,
-        struct device_attribute *attr, const char *buf, size_t count)
+		struct device_attribute *attr, const char *buf, size_t count)
 {
-    int ret;
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    ret = kstrtoint(buf, 10, &mycxadc->sixdb);
-    return count;
+	int ret;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+
+	ret = kstrtoint(buf, 10, &mycxadc->sixdb);
+	return count;
 }
 
-/* show/store for crystal */
+/* show/store for crystal
+ */
 
 static ssize_t mycxadc_crystal_show(struct device *dev,
-        struct device_attribute *attr, char *buf)
+		struct device_attribute *attr, char *buf)
 {
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    int len;
-    len = sprintf(buf, "%d\n", mycxadc->crystal);
-    if (len <= 0)
-        dev_err(dev, "mydrv: Invalid sprintf len: %d\n", len);
-    return len;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+	int len;
+
+	len = sprintf(buf, "%d\n", mycxadc->crystal);
+	if (len <= 0)
+		dev_err(dev, "cxadc: Invalid sprintf len: %d\n", len);
+	return len;
 }
 
 static ssize_t mycxadc_crystal_store(struct device *dev,
-        struct device_attribute *attr, const char *buf, size_t count)
+		struct device_attribute *attr, const char *buf, size_t count)
 {
-    int ret;
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    ret = kstrtoint(buf, 10, &mycxadc->crystal);
-    return count;
+	int ret;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+
+	ret = kstrtoint(buf, 10, &mycxadc->crystal);
+	return count;
 }
 
-/* show/store for center_offset */
+/* show/store for center_offset
+ */
 
 static ssize_t mycxadc_center_offset_show(struct device *dev,
-        struct device_attribute *attr, char *buf)
+		struct device_attribute *attr, char *buf)
 {
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    int len;
-    len = sprintf(buf, "%d\n", mycxadc->center_offset);
-    if (len <= 0)
-        dev_err(dev, "mydrv: Invalid sprintf len: %d\n", len);
-    return len;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+	int len;
+
+	len = sprintf(buf, "%d\n", mycxadc->center_offset);
+	if (len <= 0)
+		dev_err(dev, "cxadc: Invalid sprintf len: %d\n", len);
+	return len;
 }
 
 static ssize_t mycxadc_center_offset_store(struct device *dev,
-        struct device_attribute *attr, const char *buf, size_t count)
+		struct device_attribute *attr, const char *buf, size_t count)
 {
-    int ret;
-    struct cxadc *mycxadc = dev_get_drvdata(dev);
-    ret = kstrtoint(buf, 10, &mycxadc->center_offset);
-    return count;
+	int ret;
+	struct cxadc *mycxadc = dev_get_drvdata(dev);
+
+	ret = kstrtoint(buf, 10, &mycxadc->center_offset);
+	return count;
 }
-static DEVICE_ATTR(latency, 0664, mycxadc_latency_show, mycxadc_latency_store);
-static DEVICE_ATTR(audsel, 0664, mycxadc_audsel_show, mycxadc_audsel_store);
-static DEVICE_ATTR(vmux, 0664, mycxadc_vmux_show, mycxadc_vmux_store);
-static DEVICE_ATTR(level, 0664, mycxadc_level_show, mycxadc_level_store);
-static DEVICE_ATTR(tenbit, 0664, mycxadc_tenbit_show, mycxadc_tenbit_store);
-static DEVICE_ATTR(tenxfsc, 0664, mycxadc_tenxfsc_show, mycxadc_tenxfsc_store);
-static DEVICE_ATTR(sixdb, 0664, mycxadc_sixdb_show, mycxadc_sixdb_store);
-static DEVICE_ATTR(crystal, 0664, mycxadc_crystal_show, mycxadc_crystal_store);
-static DEVICE_ATTR(center_offset, 0664, mycxadc_center_offset_show, mycxadc_center_offset_store);
+
+static DEVICE_ATTR(latency, 0664, mycxadc_latency_show,
+		mycxadc_latency_store);
+
+static DEVICE_ATTR(audsel, 0664, mycxadc_audsel_show,
+		mycxadc_audsel_store);
+
+static DEVICE_ATTR(vmux, 0664, mycxadc_vmux_show,
+		mycxadc_vmux_store);
+
+static DEVICE_ATTR(level, 0664, mycxadc_level_show,
+		mycxadc_level_store);
+
+static DEVICE_ATTR(tenbit, 0664, mycxadc_tenbit_show,
+		mycxadc_tenbit_store);
+
+static DEVICE_ATTR(tenxfsc, 0664, mycxadc_tenxfsc_show,
+		mycxadc_tenxfsc_store);
+
+static DEVICE_ATTR(sixdb, 0664, mycxadc_sixdb_show,
+		mycxadc_sixdb_store);
+
+static DEVICE_ATTR(crystal, 0664, mycxadc_crystal_show,
+		mycxadc_crystal_store);
+
+static DEVICE_ATTR(center_offset, 0664, mycxadc_center_offset_show,
+		mycxadc_center_offset_store);
 
 static struct attribute *mycxadc_attrs[] = {
-    &dev_attr_latency.attr,
-    &dev_attr_audsel.attr,
-    &dev_attr_vmux.attr,
-    &dev_attr_level.attr,
-    &dev_attr_tenbit.attr,
-    &dev_attr_tenxfsc.attr,
-    &dev_attr_sixdb.attr,
-    &dev_attr_crystal.attr,
-    &dev_attr_center_offset.attr,
-    NULL
+	&dev_attr_latency.attr,
+	&dev_attr_audsel.attr,
+	&dev_attr_vmux.attr,
+	&dev_attr_level.attr,
+	&dev_attr_tenbit.attr,
+	&dev_attr_tenxfsc.attr,
+	&dev_attr_sixdb.attr,
+	&dev_attr_crystal.attr,
+	&dev_attr_center_offset.attr,
+	NULL
 };
 
 static struct attribute_group mycxadc_group = {
-    .name = "parameters",
-    .attrs = mycxadc_attrs,
+	.name = "parameters",
+	.attrs = mycxadc_attrs,
 };
 
-/*
-const static struct attribute_group *mycxadc_groups[] = {
-    &mycxadc_group,
-    NULL
-};
-*/
-/* end boiler plate */
+/* end boiler plate
+ */
 
 static struct cxadc *cxadcs;
 static unsigned int cxcount;
@@ -526,7 +567,7 @@ static int make_risc_instructions(struct cxadc *ctd)
 static int cxadc_char_open(struct inode *inode, struct file *file)
 {
 	int minor = iminor(inode);
-    struct cxadc *ctd = container_of(inode->i_cdev, struct cxadc, cdev);
+	struct cxadc *ctd = container_of(inode->i_cdev, struct cxadc, cdev);
         unsigned long longtenxfsc, longPLLboth, longPLLint;
         int PLLint, PLLfrac, PLLfin, SConv;
   
@@ -542,32 +583,32 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 		return -EBUSY;
 	}
 
-    kref_get(&ctd->refcnt);
-    file->private_data = ctd;
+	kref_get(&ctd->refcnt);
+	file->private_data = ctd;
 
 	ctd->in_use = true;
 	mutex_unlock(&ctd->lock);
 
 	/* source select (see datasheet on how to change adc source) */
-    ctd->vmux &= 3;/* default vmux=1 */
+	ctd->vmux &= 3;/* default vmux=1 */
 	/* pal-B */
-    cx_write(MO_INPUT_FORMAT, (ctd->vmux<<14)|(1<<13)|0x01|0x10|0x10000);
+	cx_write(MO_INPUT_FORMAT, (ctd->vmux<<14)|(1<<13)|0x01|0x10|0x10000);
 
 	/* capture 16 bit or 8 bit raw samples */
-    if (ctd->tenbit)
+	if (ctd->tenbit)
 		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5)));
 	else
 		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5)));
 
 	/* re-set the level, clock speed, and bit size */
 
-    if (ctd->level < 0)
-        ctd->level = 0;
-    if (ctd->level > 31)
-        ctd->level = 31;
+	if (ctd->level < 0)
+		ctd->level = 0;
+	if (ctd->level > 31)
+		ctd->level = 31;
 	/* control gain also bit 16 */
-    cx_write(MO_AGC_GAIN_ADJ4, (ctd->sixdb<<23)|(0<<22)|(0<<21)|(ctd->level<<16)|(0xff<<8)|(0x0<<0));
-    cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(ctd->center_offset));
+	cx_write(MO_AGC_GAIN_ADJ4, (ctd->sixdb<<23)|(0<<22)|(0<<21)|(ctd->level<<16)|(0xff<<8)|(0x0<<0));
+	cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(ctd->center_offset));
 
        if (ctd->tenxfsc < 10) {
         //old code for old parameter compatibility
@@ -595,10 +636,10 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
        }
       } else {
            if (ctd->tenxfsc < 100) {
-         ctd->tenxfsc = ctd->tenxfsc * 1000000;  //if number 11-99, conver to 11,000,000 to 99,000,000
+	     ctd->tenxfsc = ctd->tenxfsc * 1000000;  //if number 11-99, conver to 11,000,000 to 99,000,000
            }
-       PLLint = ctd->tenxfsc/(ctd->crystal/40);  //always use PLL_PRE of 5 (=64)
-       longtenxfsc = (long)ctd->tenxfsc * 1000000;
+	   PLLint = ctd->tenxfsc/(ctd->crystal/40);  //always use PLL_PRE of 5 (=64)
+	   longtenxfsc = (long)ctd->tenxfsc * 1000000;
            longPLLboth = (long)(longtenxfsc/(long)(ctd->crystal/40));
 	   longPLLint = (long)PLLint * 1000000;
 	   PLLfrac = ((longPLLboth-longPLLint)*1048576)/1000000;
@@ -613,12 +654,11 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
            //cx_write(MO_SCONV_REG, 131072 * (crystal / tenxfsc));
            SConv = (long)(131072 * (long)ctd->crystal) / (long)ctd->tenxfsc;
            cx_write(MO_SCONV_REG, SConv ); 
-           
       }
 
 
 	/* capture 16 bit or 8 bit raw samples */
-    if (ctd->tenbit)
+	if (ctd->tenbit)
 		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5)));
 	else
 		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5)));
@@ -687,10 +727,10 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt, size_t count
 		 * script i have been working on */
                      if (ctd->level < 0)
                         ctd->level = 0;
-                 if (ctd->level > 31)
+	             if (ctd->level > 31)
                         ctd->level = 31;
-                 cx_write(MO_AGC_GAIN_ADJ4, (ctd->sixdb<<23)|(0<<22)|(0<<21)|(ctd->level<<16)|(0xff<<8)|(0x0<<0));
-                 cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(ctd->center_offset));
+	             cx_write(MO_AGC_GAIN_ADJ4, (ctd->sixdb<<23)|(0<<22)|(0<<21)|(ctd->level<<16)|(0xff<<8)|(0x0<<0));
+	             cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(ctd->center_offset));
 
 
 		if (count) {
@@ -723,7 +763,7 @@ static long cxadc_char_ioctl(struct file *file,
 			gain = 31;
 
 		/* control gain also bit 16 */
-        cx_write(MO_AGC_GAIN_ADJ4, (ctd->sixdb<<23)|(0<<22)|(0<<21)|(gain<<16)|(0xff<<8)|(0x0<<0));
+		cx_write(MO_AGC_GAIN_ADJ4, (ctd->sixdb<<23)|(0<<22)|(0<<21)|(gain<<16)|(0xff<<8)|(0x0<<0));
 	}
 
 	return ret;
@@ -773,15 +813,16 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	u32 i, intstat;
 	struct cxadc *ctd;
 	unsigned char revision, lat;
-    int rc, retval;
+	int rc;
 	unsigned int total_size;
 	unsigned int pgsize;
         unsigned long longtenxfsc, longPLLboth, longPLLint;
         int PLLint, PLLfrac, PLLfin, SConv;
-    kuid_t rootUid;
-    kgid_t videoGid;
-    rootUid.val = SYSFS_UID;
-    videoGid.val = SYSFS_GID;
+	kuid_t sysfs_user;
+	kgid_t sysfs_group;
+
+	sysfs_user.val = SYSFS_UID;
+	sysfs_group.val = SYSFS_GID;
 
 	if (PAGE_SIZE != 4096) {
 		dev_err(&pci_dev->dev, "cxadc: only page size of 4096 is supported\n");
@@ -808,33 +849,36 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	}
 	memset(ctd, 0, sizeof(*ctd));
 
-    if (cxcount >= CXCOUNT_MAX) {
-        dev_err(&pci_dev->dev, "cxadc: only 8 cards are supported\n");
-        return -EBUSY;
-    }
+	if (cxcount >= CXCOUNT_MAX) {
+		dev_err(&pci_dev->dev, "cxadc: only 8 cards are supported\n");
+		return -EBUSY;
+	}
 
 	ctd->pci = pci_dev;
 	ctd->irq = pci_dev->irq;
 
-    /* set default device attributes */
-    ctd->latency = default_latency;
-    ctd->audsel = default_audsel;
-    ctd->vmux = default_vmux;
-    ctd->level = default_level;
-    ctd->tenbit = default_tenbit;
-    ctd->tenxfsc = default_tenxfsc;
-    ctd->sixdb = default_sixdb;
-    ctd->crystal = default_crystal;
-    ctd->center_offset = default_center_offset;
+	/* set default device attributes */
+	ctd->latency = default_latency;
+	ctd->audsel = default_audsel;
+	ctd->vmux = default_vmux;
+	ctd->level = default_level;
+	ctd->tenbit = default_tenbit;
+	ctd->tenxfsc = default_tenxfsc;
+	ctd->sixdb = default_sixdb;
+	ctd->crystal = default_crystal;
+	ctd->center_offset = default_center_offset;
 
-    /* creates our device attributs in
-    /sys/class/cxadc/cxadc[0-7]/device/parameters */
+	/* creates our device attributs in */
+	/*/sys/class/cxadc/cxadc[0-7]/device/parameters */
 
-    retval = sysfs_create_group(&pci_dev->dev.kobj, &mycxadc_group);
+	if (sysfs_create_group(&pci_dev->dev.kobj, &mycxadc_group))
+		cx_err("cannot create sysfs attributes\n");
 
-    /* change ownership of our sysfs files to root:video */
+	/* change ownership of our sysfs files to root:video */
 
-    retval = sysfs_group_change_owner(&pci_dev->dev.kobj, &mycxadc_group, rootUid, videoGid);
+	if (sysfs_group_change_owner(&pci_dev->dev.kobj, &mycxadc_group,
+			sysfs_user, sysfs_group))
+		cx_err("cannot change sysfs ownership\n");
 
 	/* We can use cx_err/cx_info from here, now ctd has been set up. */
 
@@ -880,13 +924,13 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 
 	ctd->in_use = false;
 	mutex_init(&ctd->lock);
-    kref_init(&ctd->refcnt);
+	kref_init(&ctd->refcnt);
 
 	init_waitqueue_head(&ctd->readQ);
 
-    if (ctd->latency != -1) {
-        cx_info("setting pci latency timer to %d\n", ctd->latency);
-        pci_write_config_byte(pci_dev, PCI_LATENCY_TIMER, ctd->latency);
+	if (ctd->latency != -1) {
+		cx_info("setting pci latency timer to %d\n", ctd->latency);
+		pci_write_config_byte(pci_dev, PCI_LATENCY_TIMER, ctd->latency);
 	} else {
 		pci_write_config_byte(pci_dev, PCI_LATENCY_TIMER, 255);
 	}
@@ -925,9 +969,9 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	cx_write(CHN24_CMDS_BASE+16, 0x40);
 
 	/* source select (see datasheet on how to change adc source) */
-    ctd->vmux &= 3;/* default vmux=1 */
+	ctd->vmux &= 3;/* default vmux=1 */
 	/* pal-B */
-    cx_write(MO_INPUT_FORMAT, (ctd->vmux<<14)|(1<<13)|0x01|0x10|0x10000);
+	cx_write(MO_INPUT_FORMAT, (ctd->vmux<<14)|(1<<13)|0x01|0x10|0x10000);
 	cx_write(MO_OUTPUT_FORMAT, 0x0f); /* allow full range */
 
 	cx_write(MO_CONTR_BRIGHT, 0xff00);
@@ -945,7 +989,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	cx_write(MO_COLOR_CTRL, ((0xe)|(0xe<<4)|(0<<8)));
 
 	/* capture 16 bit or 8 bit raw samples */
-    if (ctd->tenbit)
+	if (ctd->tenbit)
 		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(1<<5)));
 	else
 		cx_write(MO_CAPTURE_CTRL, ((1<<6)|(3<<1)|(0<<5)));
@@ -1029,23 +1073,23 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	/* set vbi agc */
 	cx_write(MO_AGC_SYNC_SLICER, 0x0);
 
-    if (ctd->level < 0)
-        ctd->level = 0;
-    if (ctd->level > 31)
-        ctd->level = 31;
+	if (ctd->level < 0)
+		ctd->level = 0;
+	if (ctd->level > 31)
+		ctd->level = 31;
 
 	cx_write(MO_AGC_BACK_VBI, (0<<27)|(0<<26)|(1<<25)|(0x100<<16)|(0xfff<<0));
 	/* control gain also bit 16 */
-    cx_write(MO_AGC_GAIN_ADJ4, (ctd->sixdb<<23)|(0<<22)|(0<<21)|(ctd->level<<16)|(0xff<<8)|(0x0<<0));
+	cx_write(MO_AGC_GAIN_ADJ4, (ctd->sixdb<<23)|(0<<22)|(0<<21)|(ctd->level<<16)|(0xff<<8)|(0x0<<0));
 	/* for 'cooked' composite */
 	cx_write(MO_AGC_SYNC_TIP1, (0x1c0<<17)|(0x0<<9)|(0<<7)|(0xf<<0));
 	cx_write(MO_AGC_SYNC_TIP2, (0x20<<17)|(0x0<<9)|(0<<7)|(0xf<<0));
-    cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(ctd->center_offset));
+	cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(ctd->center_offset));
 	cx_write(MO_AGC_GAIN_ADJ1, (0xe0<<17)|(0xe<<9)|(0x0<<7)|(0x7<<0));
 	/* set gain of agc but not offset */
 	cx_write(MO_AGC_GAIN_ADJ3, (0x28<<16)|(0x28<<8)|(0x50<<0));
 
-    if (ctd->audsel != -1) {
+	if (ctd->audsel != -1) {
 		/*
 		 * Pixelview PlayTVPro Ultracard specific
 		 * select which output is redirected to audio output jack
@@ -1053,8 +1097,8 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		 */
 		cx_write(MO_GP3_IO, 1<<25); /* use as 24 bit GPIO/GPOE */
 		cx_write(MO_GP1_IO, 0x0b);
-        cx_write(MO_GP0_IO, ctd->audsel&3);
-        cx_info("audsel = %d\n", ctd->audsel&3);
+		cx_write(MO_GP0_IO, ctd->audsel&3);
+		cx_info("audsel = %d\n", ctd->audsel&3);
 	}
 
 	/* i2c sda/scl set to high and use software control */
@@ -1086,10 +1130,12 @@ fail0:
 static void cxadc_remove(struct pci_dev *pci_dev)
 {
 	struct cxadc *ctd = pci_get_drvdata(pci_dev);
-    /* struct cxadc *walk; */
+	/* struct cxadc *walk; */
 
 	disable_card(ctd);
-    sysfs_remove_group(&pci_dev->dev.kobj, &mycxadc_group);
+
+	/* removes our sysfs files */
+	sysfs_remove_group(&pci_dev->dev.kobj, &mycxadc_group);
 
 	/*
 	 * Set AGC registers back to their default values, as per the CX23833
@@ -1127,7 +1173,7 @@ static void cxadc_remove(struct pci_dev *pci_dev)
 			   pci_resource_len(pci_dev, 0));
 
 	/* remove from linked list */
-    /* CAUSES KERNEL PANIC
+	/* CAUSES KERNEL PANIC
 	if (ctd == cxadcs) {
 		cxadcs = NULL;
 	} else {
@@ -1135,7 +1181,7 @@ static void cxadc_remove(struct pci_dev *pci_dev)
 			;
 		walk->next = ctd->next;
 	}
-    */
+	*/
 
 	cxcount--;
 
@@ -1143,7 +1189,7 @@ static void cxadc_remove(struct pci_dev *pci_dev)
 	pci_set_drvdata(pci_dev, NULL);
 	cx_info("reset drv ok\n");
 	kfree(ctd);
-    pci_disable_device(pci_dev);
+	pci_disable_device(pci_dev);
 }
 
 MODULE_DEVICE_TABLE(pci, cxadc_pci_tbl);
