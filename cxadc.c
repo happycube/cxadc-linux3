@@ -882,15 +882,22 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	 * /sys/class/cxadc/cxadc[0-7]/device/parameters
 	 */
 
-	if (sysfs_create_group(&pci_dev->dev.kobj, &mycxadc_group))
+	if (sysfs_create_group(&pci_dev->dev.kobj, &mycxadc_group)) {
 		cx_err("cannot create sysfs attributes\n");
+		/* something is very wrong if we can't create sysfs files */
+		rc = -ENOMEM;
+		goto fail1;
+	}
 
 	/* change ownership of our sysfs files to root:video */
 
 	if (sysfs_group_change_owner(&pci_dev->dev.kobj, &mycxadc_group,
-			sysfs_user, sysfs_group))
+			sysfs_user, sysfs_group)) {
 		cx_err("cannot change sysfs ownership\n");
-
+		/* something is very wrong if we can't change sysfs ownership */
+		rc = -ENOMEM;
+		goto fail1;
+	}
 	/* We can use cx_err/cx_info from here, now ctd has been set up. */
 
 	if (alloc_risc_inst_buffer(ctd)) {
@@ -1370,7 +1377,6 @@ int cxadc_resume (struct pci_dev *pci_dev)
 		cx_write(MO_GP3_IO, 1<<25); /* use as 24 bit GPIO/GPOE */
 		cx_write(MO_GP1_IO, 0x0b);
 		cx_write(MO_GP0_IO, ctd->audsel&3);
-		cx_info("audsel = %d\n", ctd->audsel&3);
 	}
 
 	/* i2c sda/scl set to high and use software control */
