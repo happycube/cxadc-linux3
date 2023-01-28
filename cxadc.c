@@ -859,7 +859,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	memset(ctd, 0, sizeof(*ctd));
 
 	if (cxcount >= CXCOUNT_MAX) {
-		dev_err(&pci_dev->dev, "cxadc: only 8 cards are supported\n");
+		dev_err(&pci_dev->dev, "cxadc: only 256 cards are supported\n");
 		return -EBUSY;
 	}
 
