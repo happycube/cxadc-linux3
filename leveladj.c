@@ -12,10 +12,10 @@ unsigned char buf[bufsize];
 
 int readlen = 2048 * 1024;
 
-void set(char *name, int level) 
+void set(char *name, char *device, int level)
 {
 	char str[512];
-	sprintf(str, "/sys/module/cxadc/parameters/%s", name); 
+	sprintf(str, "/sys/class/cxadc/%s/device/parameters/%s", device, name);
 	int fd = open(str, O_WRONLY);
 
 	sprintf(str, "%d", level); 
@@ -31,13 +31,9 @@ int main(int argc, char *argv[])
 	int fd;
 	int level = 20;
 	int go_on = 1; // 2 after going over
-
-	fd = open("/dev/cxadc0", O_RDWR);
-	if (fd <= 0) {
-		fprintf(stderr, "/dev/cxadc0 not found\n");
-		return -1;
-	}
-	close(fd);
+	char *device;
+	char *device_path;
+	char str[512];
 
 	int tenbit  = 0;
 	int tenxfsc = 0;  
@@ -45,8 +41,12 @@ int main(int argc, char *argv[])
 	int c;
         opterr = 0;
         
-        if (argc > 1) {
-        	while ((c = getopt(argc, argv, "bx")) != -1) {
+	device = (char *)malloc(0x20);
+	device_path = (char *)malloc(0x20);
+	sprintf(device, "cxadc0");
+	sprintf(device_path, "/dev/cxadc0");
+
+	while ((c = getopt(argc, argv, "d:bx")) != -1) {
 			switch (c) {
 				case 'b':
 					tenbit = 1;
@@ -54,43 +54,75 @@ int main(int argc, char *argv[])
 				case 'x':
 					tenxfsc = 1;
 					break;	
+			case 'd':
+				sprintf(device_path, "/dev/%s", optarg);
+				sprintf(device, "%s", optarg);
+				break;
 			}; 
 	   	}
-        } else {
-		syssfys = fopen ("/sys/module/cxadc/parameters/tenbit", "r");
+
+	fd = open(device_path, O_RDWR);
+	if (fd <= 0) {
+		fprintf(stderr, "%s not found\n", device_path);
+		if(device_path)
+			free(device_path);
+		if(device)
+			free(device);
+		return -1;
+	}
+	close(fd);
+
+		sprintf(str, "/sys/class/cxadc/%s/device/parameters/tenbit", device);
+		syssfys = fopen (str, "r");
+
 	        if (syssfys == NULL) {
 	                fprintf(stderr, "no sysfs paramerters\n");
+			if(device_path)
+				free(device_path);
+			if(device)
+				free(device);
 	                return -1;
 	        }
+
         	fscanf(syssfys, "%d", &tenbit);
 		fclose(syssfys);
-	        syssfys = fopen ("/sys/module/cxadc/parameters/tenxfsc", "r");
+
+		sprintf(str, "/sys/class/cxadc/%s/device/parameters/tenxfsc", device);
+		syssfys = fopen (str, "r");
+
         	if (syssfys == NULL) {
                 	fprintf(stderr, "no sysfs paramerters\n");
+		if(device_path)
+			free(device_path);
+		if(device)
+			free(device);
 	               return -1;
         	}
+
 	        fscanf(syssfys, "%d", &tenxfsc);
 		fclose(syssfys);
-        }
 
 
-	
-	set("tenbit", tenbit);
-	set("tenxfsc", tenxfsc);
+	set("tenbit", device, tenbit);
+	set("tenxfsc", device, tenxfsc);
 
 	if (argc > optind) {
 		level = atoi(argv[optind]);
 
-		set("level", level);
+		set("level", device, level);
+		if(device_path)
+			free(device_path);
+		if(device)
+			free(device);
 		return 0;
 	}
 
 	while (go_on) {
 		int over = 0;
 		unsigned int low = tenbit ? 65535 : 255, high = 0;
-		set("level", level);
+		set("level", device, level);
 	
-		fd = open("/dev/cxadc0", O_RDWR);
+		fd = open(device_path, O_RDWR);
 
 		printf("testing level %d\n", level);
 
@@ -141,7 +173,10 @@ int main(int argc, char *argv[])
 		if ((level < 0) || (level > 31)) go_on = 0;
 		close(fd);
 	}
-
+	if(device_path)
+		free(device_path);
+	if(device)
+		free(device);
 	return 0;
 }
 
