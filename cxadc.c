@@ -39,15 +39,15 @@
 #define dma_zalloc_coherent dma_alloc_coherent
 #endif
 
-static int default_latency = -1;
-static int default_audsel = -1;
-static int default_vmux = 2;
-static int default_level = 16;
-static int default_tenbit = 0;
-static int default_tenxfsc = 0;
-static int default_sixdb = 1;
-static int default_crystal = 28636363;
-static int default_center_offset = 8;
+#define default_latency			-1
+#define default_audsel			-1
+#define default_vmux			2
+#define default_level			16
+#define default_tenbit			0
+#define default_tenxfsc			0
+#define default_sixdb			1
+#define default_crystal			28636363
+#define default_center_offset	8
 
 /* ownership for our sysfs files */
 #define SYSFS_UID 0
@@ -371,32 +371,86 @@ static ssize_t mycxadc_center_offset_store(struct device *dev,
 	return count;
 }
 
-static DEVICE_ATTR(latency, 0664, mycxadc_latency_show,
-		mycxadc_latency_store);
+static struct device_attribute dev_attr_latency = {
+	.attr = {
+		.name = "latency",
+		.mode = 0664,
+	},
+	.show = mycxadc_latency_show,
+	.store = mycxadc_latency_store,
+};
 
-static DEVICE_ATTR(audsel, 0664, mycxadc_audsel_show,
-		mycxadc_audsel_store);
+static struct device_attribute dev_attr_audsel = {
+	.attr = {
+		.name = "audsel",
+		.mode = 0664,
+	},
+	.show = mycxadc_audsel_show,
+	.store = mycxadc_audsel_store,
+};
 
-static DEVICE_ATTR(vmux, 0664, mycxadc_vmux_show,
-		mycxadc_vmux_store);
+static struct device_attribute dev_attr_vmux = {
+	.attr = {
+		.name = "vmux",
+		.mode = 0664,
+	},
+	.show = mycxadc_vmux_show,
+	.store = mycxadc_vmux_store,
+};
 
-static DEVICE_ATTR(level, 0664, mycxadc_level_show,
-		mycxadc_level_store);
+static struct device_attribute dev_attr_level = {
+	.attr = {
+		.name = "level",
+		.mode = 0664,
+	},
+	.show = mycxadc_level_show,
+	.store = mycxadc_level_store,
+};
 
-static DEVICE_ATTR(tenbit, 0664, mycxadc_tenbit_show,
-		mycxadc_tenbit_store);
+static struct device_attribute dev_attr_tenbit = {
+	.attr = {
+		.name = "tenbit",
+		.mode = 0664,
+	},
+	.show = mycxadc_tenbit_show,
+	.store = mycxadc_tenbit_store,
+};
 
-static DEVICE_ATTR(tenxfsc, 0664, mycxadc_tenxfsc_show,
-		mycxadc_tenxfsc_store);
+static struct device_attribute dev_attr_tenxfsc = {
+	.attr = {
+		.name = "tenxfsc",
+		.mode = 0664,
+	},
+	.show = mycxadc_tenxfsc_show,
+	.store = mycxadc_tenxfsc_store,
+};
 
-static DEVICE_ATTR(sixdb, 0664, mycxadc_sixdb_show,
-		mycxadc_sixdb_store);
+static struct device_attribute dev_attr_sixdb = {
+	.attr = {
+		.name = "sixdb",
+		.mode = 0664,
+	},
+	.show = mycxadc_sixdb_show,
+	.store = mycxadc_sixdb_store,
+};
 
-static DEVICE_ATTR(crystal, 0664, mycxadc_crystal_show,
-		mycxadc_crystal_store);
+static struct device_attribute dev_attr_crystal = {
+	.attr = {
+		.name = "crystal",
+		.mode = 0664,
+	},
+	.show = mycxadc_crystal_show,
+	.store = mycxadc_crystal_store,
+};
 
-static DEVICE_ATTR(center_offset, 0664, mycxadc_center_offset_show,
-		mycxadc_center_offset_store);
+static struct device_attribute dev_attr_center_offset = {
+	.attr = {
+		.name = "center_offset",
+		.mode = 0664,
+	},
+	.show = mycxadc_center_offset_show,
+	.store = mycxadc_center_offset_store,
+};
 
 static struct attribute *mycxadc_attrs[] = {
 	&dev_attr_latency.attr,
@@ -508,9 +562,8 @@ static void free_dma_buffer(struct cxadc *ctd)
 	int i;
 
 	for (i = 0; i < MAX_DMA_PAGE; i++) {
-		if (ctd->pgvec_virt[i]) {
+		if (ctd->pgvec_virt[i])
 			dma_free_coherent(&ctd->pci->dev, 4096, ctd->pgvec_virt[i], ctd->pgvec_phy[i]);
-		}
 	}
 }
 
@@ -624,47 +677,44 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	if (ctd->tenxfsc < 10) {
 		//old code for old parameter compatibility
 		switch (ctd->tenxfsc) {
-			case 0 :
-				/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
-				cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
-				cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
-				break;
-			case 1 :
-				/* clock speed equal to 1.25 x crystal speed, unmodified card = 35.8 mhz */
-				cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
-				cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
-				break;
-			case 2 :
-				/* clock speed equal to ~1.4 x crystal speed, unmodified card = 40 mhz */
-				cx_write(MO_SCONV_REG, 131072*0.715909072483);
-				cx_write(MO_PLL_REG, 0x0165965A); /* 40000000.1406459 */
-				break;
-			default :
-				/* if someone sets value out of range, default to crystal speed */
-				/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
-				cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
-				cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+		case 0:
+			/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+			cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+			cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+			break;
+		case 1:
+			/* clock speed equal to 1.25 x crystal speed, unmodified card = 35.8 mhz */
+			cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
+			cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
+			break;
+		case 2:
+			/* clock speed equal to ~1.4 x crystal speed, unmodified card = 40 mhz */
+			cx_write(MO_SCONV_REG, 131072*0.715909072483);
+			cx_write(MO_PLL_REG, 0x0165965A); /* 40000000.1406459 */
+			break;
+		default:
+			/* if someone sets value out of range, default to crystal speed */
+			/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+			cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+			cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
 		}
 	} else {
-		if (ctd->tenxfsc < 100) {
+		if (ctd->tenxfsc < 100)
 			ctd->tenxfsc = ctd->tenxfsc * 1000000;  //if number 11-99, conver to 11,000,000 to 99,000,000
-		}
 		PLLint = ctd->tenxfsc/(ctd->crystal/40);  //always use PLL_PRE of 5 (=64)
 		longtenxfsc = (long)ctd->tenxfsc * 1000000;
 		longPLLboth = (long)(longtenxfsc/(long)(ctd->crystal/40));
 		longPLLint = (long)PLLint * 1000000;
 		PLLfrac = ((longPLLboth-longPLLint)*1048576)/1000000;
 		PLLfin =  ((PLLint+64)*1048576)+PLLfrac;
-		if (PLLfin < 81788928) {
+		if (PLLfin < 81788928)
 			PLLfin = 81788928; // 81788928 lowest possible value
-		}
-		if (PLLfin > 119537664 ) {
+		if (PLLfin > 119537664)
 			PLLfin = 119537664 ; //133169152 is highest possible value with PLL_PRE = 5 but above 119537664 may crash
-		}
 		cx_write(MO_PLL_REG,  PLLfin);
 		//cx_write(MO_SCONV_REG, 131072 * (crystal / tenxfsc));
 		SConv = (long)(131072 * (long)ctd->crystal) / (long)ctd->tenxfsc;
-		cx_write(MO_SCONV_REG, SConv );
+		cx_write(MO_SCONV_REG, SConv);
 	}
 
 
@@ -734,8 +784,10 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt,
 			pnum += ctd->initial_page;
 			pnum %= MAX_DMA_PAGE;
 		}
-		/* adding code to allow level change during read, have tested, works with CAV capture
-		 * script i have been working on */
+		/*
+		 * adding code to allow level change during read, have tested, works with CAV capture
+		 * script i have been working on
+		 */
 		if (ctd->level < 0)
 			ctd->level = 0;
 		if (ctd->level > 31)
@@ -1051,46 +1103,43 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	if (ctd->tenxfsc < 10) {
 		//old code for old parameter compatibility
 		switch (ctd->tenxfsc) {
-			case 0 :
-				/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
-				cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
-				cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
-				break;
-			case 1 :
-				/* clock speed equal to 1.25 x crystal speed, unmodified card = 35.8 mhz */
-				cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
-				cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
-				break;
-			case 2 :
-				/* clock speed equal to ~1.4 x crystal speed, unmodified card = 40 mhz */
-				cx_write(MO_SCONV_REG, 131072*0.715909072483);
-				cx_write(MO_PLL_REG, 0x0165965A); /* 40000000.1406459 */
-				break;
-			default :
-				/* if someone sets value out of range, default to crystal speed */
-				/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
-				cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
-				cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+		case 0:
+			/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+			cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+			cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+			break;
+		case 1:
+			/* clock speed equal to 1.25 x crystal speed, unmodified card = 35.8 mhz */
+			cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
+			cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
+			break;
+		case 2:
+			/* clock speed equal to ~1.4 x crystal speed, unmodified card = 40 mhz */
+			cx_write(MO_SCONV_REG, 131072*0.715909072483);
+			cx_write(MO_PLL_REG, 0x0165965A); /* 40000000.1406459 */
+			break;
+		default:
+			/* if someone sets value out of range, default to crystal speed */
+			/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+			cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+			cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
 		}
 	} else {
-		if (ctd->tenxfsc < 100) {
+		if (ctd->tenxfsc < 100)
 			ctd->tenxfsc = ctd->tenxfsc * 1000000;  //if number 11-99, conver to 11,000,000 to 99,000,000
-		}
 		PLLint = ctd->tenxfsc/(ctd->crystal/40);  //always use PLL_PRE of 5 (=64)
 		longtenxfsc = (long)ctd->tenxfsc * 1000000;
 		longPLLboth = (long)(longtenxfsc/(long)(ctd->crystal/40));
 		longPLLint = (long)PLLint * 1000000;
 		PLLfrac = ((longPLLboth-longPLLint)*1048576)/1000000;
 		PLLfin =  ((PLLint+64)*1048576)+PLLfrac;
-		if (PLLfin < 81788928) {
+		if (PLLfin < 81788928)
 			PLLfin = 81788928; // 81788928 lowest possible value
-		}
-		if (PLLfin > 119537664 ) {
+		if (PLLfin > 119537664)
 			PLLfin = 119537664 ; //133169152 is highest possible value with PLL_PRE = 5 but above 119537664 may crash
-		}
 		cx_write(MO_PLL_REG,  PLLfin);
 		SConv = (long)(131072 * (long)ctd->crystal) / (long)ctd->tenxfsc;
-		cx_write(MO_SCONV_REG, SConv );
+		cx_write(MO_SCONV_REG, SConv);
 	}
 
 
@@ -1202,14 +1251,14 @@ static void cxadc_remove(struct pci_dev *pci_dev)
 
 	/* remove from linked list */
 	/* CAUSES KERNEL PANIC
-	if (ctd == cxadcs) {
-		cxadcs = NULL;
-	} else {
-		for (walk = cxadcs; walk->next != ctd; walk = walk->next)
-			;
-		walk->next = ctd->next;
-	}
-	*/
+	 * if (ctd == cxadcs) {
+	 *	cxadcs = NULL;
+	 * } else {
+	 *	for (walk = cxadcs; walk->next != ctd; walk = walk->next)
+	 *		;
+	 *	walk->next = ctd->next;
+	 * }
+	 */
 
 	cxcount--;
 
@@ -1232,7 +1281,7 @@ int cxadc_suspend(struct pci_dev *pci_dev, pm_message_t state)
 	return 0;
 }
 
-int cxadc_resume (struct pci_dev *pci_dev)
+int cxadc_resume(struct pci_dev *pci_dev)
 {
 /*
  * I have no idea what state this card is in after resume
@@ -1242,9 +1291,9 @@ int cxadc_resume (struct pci_dev *pci_dev)
 	unsigned long longtenxfsc, longPLLboth, longPLLint;
 	int PLLint, PLLfrac, PLLfin, SConv, intstat, ret;
 
-	ret = pci_enable_device (pci_dev);
-	pci_set_power_state (pci_dev, PCI_D0);
-	pci_restore_state (pci_dev);
+	ret = pci_enable_device(pci_dev);
+	pci_set_power_state(pci_dev, PCI_D0);
+	pci_restore_state(pci_dev);
 	/* init hw */
 	pci_set_master(pci_dev);
 	disable_card(ctd);
@@ -1307,46 +1356,43 @@ int cxadc_resume (struct pci_dev *pci_dev)
 	if (ctd->tenxfsc < 10) {
 	//old code for old parameter compatibility
 		switch (ctd->tenxfsc) {
-			case 0 :
-				/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
-				cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
-				cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
-				break;
-			case 1 :
-				/* clock speed equal to 1.25 x crystal speed, unmodified card = 35.8 mhz */
-				cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
-				cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
-				break;
-			case 2 :
-				/* clock speed equal to ~1.4 x crystal speed, unmodified card = 40 mhz */
-				cx_write(MO_SCONV_REG, 131072*0.715909072483);
-				cx_write(MO_PLL_REG, 0x0165965A); /* 40000000.1406459 */
-				break;
-			default :
-				/* if someone sets value out of range, default to crystal speed */
-				/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
-				cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
-				cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+		case 0:
+			/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+			cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+			cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
+			break;
+		case 1:
+			/* clock speed equal to 1.25 x crystal speed, unmodified card = 35.8 mhz */
+			cx_write(MO_SCONV_REG, 131072*4/5); /* set SRC to 1.25x/10fsc */
+			cx_write(MO_PLL_REG, 0x01400000); /* set PLL to 1.25x/10fsc */
+			break;
+		case 2:
+			/* clock speed equal to ~1.4 x crystal speed, unmodified card = 40 mhz */
+			cx_write(MO_SCONV_REG, 131072*0.715909072483);
+			cx_write(MO_PLL_REG, 0x0165965A); /* 40000000.1406459 */
+			break;
+		default:
+			/* if someone sets value out of range, default to crystal speed */
+			/* clock speed equal to crystal speed, unmodified card = 28.6 mhz */
+			cx_write(MO_SCONV_REG, 131072); /* set SRC to 8xfsc */
+			cx_write(MO_PLL_REG, 0x11000000); /* set PLL to 1:1 */
 		}
 	} else {
-		if (ctd->tenxfsc < 100) {
+		if (ctd->tenxfsc < 100)
 			ctd->tenxfsc = ctd->tenxfsc * 1000000;  //if number 11-99, conver to 11,000,000 to 99,000,000
-		}
 		PLLint = ctd->tenxfsc/(ctd->crystal/40);  //always use PLL_PRE of 5 (=64)
 		longtenxfsc = (long)ctd->tenxfsc * 1000000;
 		longPLLboth = (long)(longtenxfsc/(long)(ctd->crystal/40));
 		longPLLint = (long)PLLint * 1000000;
 		PLLfrac = ((longPLLboth-longPLLint)*1048576)/1000000;
 		PLLfin =  ((PLLint+64)*1048576)+PLLfrac;
-		if (PLLfin < 81788928) {
+		if (PLLfin < 81788928)
 			PLLfin = 81788928; // 81788928 lowest possible value
-		}
-		if (PLLfin > 119537664 ) {
+		if (PLLfin > 119537664)
 			PLLfin = 119537664 ; //133169152 is highest possible value with PLL_PRE = 5 but above 119537664 may crash
-		}
 		cx_write(MO_PLL_REG,  PLLfin);
 		SConv = (long)(131072 * (long)ctd->crystal) / (long)ctd->tenxfsc;
-		cx_write(MO_SCONV_REG, SConv );
+		cx_write(MO_SCONV_REG, SConv);
 	}
 
 	/* set vbi agc */
