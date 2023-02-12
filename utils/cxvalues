@@ -1,2 +1,2 @@
 #!/bin/bash
-ls /sys/module/cxadc/parameters |xargs -I % bash -c 'echo -n "/sys/module/cxadc/parameters/% "  && cat /sys/module/cxadc/parameters/%'
+ls /dev |grep cxadc |sed -e's/dev//g'|xargs -I % bash -c 'find /sys/class/cxadc/%/device/parameters|grep -v parameters$'|xargs -I % bash -c 'echo -n "% "  && cat %'
