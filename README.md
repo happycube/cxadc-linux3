@@ -46,7 +46,7 @@ Updated for Ubuntu 22.04
 
 Update your package manager
 
-    sudp apt update 
+    sudo apt update 
 
 Install build essentials 
 
@@ -334,6 +334,10 @@ Connect a live or playing signal to the input you've selected, and run `leveladj
 
     ./leveladj
 
+To use this on multible diffrent cards 
+
+`./leveladj -d 1` (1 means for device 2/3/4 and so on device 0 is assumed when `-d` is not used)
+
 You can manually set a fixed gain setting after centering the signal with
 
 `sudo echo 0 >/sys/class/cxadc/cxadc0/device/parameters/level` - Internal Gain (`0`~`31`)
@@ -401,7 +405,7 @@ See [SDR using a CX2388x TV+FM card](http://web.archive.org/web/20091027150612/h
 ### 2013-12-18 - v0.4
 
 This version has been retargeted for Ubuntu 13.10 Linux 3.11 by
-Chad Page (<Chad.Page@gmail.com>).
+[Chad Page](https://github.com/happycube/) (Chad.Page@gmail.com).
 
 While still a mess, the driver has been simplified a bit.  Data is now read
 using standard `read()` semantics, so no capture program is needed like the original
@@ -423,7 +427,7 @@ SMP.
 
 ### 2021-12-14 - Updated Documentation
 
-Information Additions Documentation Cleanup by Harry Munday (harry@opcomedia.com)
+Information Additions Documentation Cleanup by [Harry Munday](https://github.com/harrypm) (harry@opcomedia.com)
 
 - Change 10bit to the correct 16bit as that's what's stated in RAW16 under the datasheet and that's what the actual samples are in format-wise.
 - Cleaned up and added examples for adjusting module parameters and basic real-time readout information.
@@ -435,7 +439,7 @@ Information Additions Documentation Cleanup by Harry Munday (harry@opcomedia.com
 
 ### 2022-01-21 - v0.6 - Usability Improvements
 
-New additions by Tony Anderson (tandersn@uw.edu)
+New additions by [Tony Anderson](https://github.com/tandersn) (tandersn@uw.edu)
 
 - Fixed ./leveladj script from re-setting module parameters
 - Added new command scripts
