@@ -1,7 +1,14 @@
-CXADC (CX - Analogue-Digital Converter)
+## CXADC (CX - Analogue-Digital Converter)
 
 cxadc is an alternative Linux driver for the Conexant CX2388x series of video decoder/encoder chips used on many PCI TV tuner and capture cards.
+
 The new driver configures the CX2388x to capture in its raw output mode in 8-bit or 16-bit unsigned samples from the video input ports, allowing these cards to be used as a low-cost 28-54mhz 10bit ADC for SDR and similar applications.
+
+<img src="https://github.com/happycube/cxadc-linux3/wiki/assets/images/CX-Cards/CX-Card-White-Frount-High-Res-Scaled-2022.12.21.png"  width="500" height="">
+
+<img src="https://raw.githubusercontent.com/wiki/happycube/cxadc-linux3/assets/images/Diagrams/CXADC-Driver-Basic.png"  width="600" height="">
+
+
 
 **Note!** cx23885 and cx23888 are incompatible chips.
 
