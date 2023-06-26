@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2005-2007 Hew How Chee <how_chee@yahoo.com>
  * Copyright (C) 2013-2015 Chad Page <Chad.Page@gmail.com>
- * Copyright (C) 2019-2022 Adam Sampson <ats@offog.org>
+ * Copyright (C) 2019-2023 Adam Sampson <ats@offog.org>
  * Copyright (C) 2020-2022 Tony Anderson  <tandersn@cs.washington.edu>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1450,7 +1450,11 @@ static int __init cxadc_init_module(void)
 	int retval;
 	dev_t dev;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 4, 0)
+	cxadc_class = class_create("cxadc");
+#else
 	cxadc_class = class_create(THIS_MODULE, "cxadc");
+#endif
 	if (IS_ERR(cxadc_class)) {
 		retval = PTR_ERR(cxadc_class);
 		printk(KERN_ERR "cxadc: can't register cxadc class\n");
