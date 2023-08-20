@@ -1,5 +1,6 @@
 ## CXADC (CX - Analogue-Digital Converter)
 
+
 cxadc is an alternative Linux driver for the Conexant CX2388x series of video decoder/encoder chips used on many PCI TV tuner and capture cards.
 
 The new driver configures the CX2388x to capture in its raw output mode in 8-bit or 16-bit unsigned samples from the video input ports, allowing these cards to be used as a low-cost 28-54mhz 10bit ADC for SDR and similar applications.
@@ -19,11 +20,13 @@ video, digital video, audio and the other normal features of these chips.
 
 **Note!** You shouldn't load both drivers at the same time.
 
+
 ## Where to find current PCIe 1x CX2388x cards & notes:
+
 
 Links to buy a CX Card [White Variant](https://www.aliexpress.com/item/1005003461248897.html) / [Green Variant](https://www.aliexpress.com/item/1005003092946304.html) / [Blue Variant](https://www.aliexpress.com/item/4001286595482.html)
 
-**Note 00:** While Mhz is used and is accruate due to crystal used, in reaility it should be called msps (million samples per second) as the actual effective sampling is half the mhz number.
+**Note 00:** While `Mhz` is used and is accurate due to crystal used, in reality it should be called `MSPS` (million samples per second) as the actual effective sampling is half the Mhz number.
 
 **Note 01:** The CX chip variant with the least self-noise is the cx23883, mostly found on the White Variation card; most clean captures are at 6dB off, and Digital Gain at 0-10.
 
@@ -41,13 +44,18 @@ Links to buy a CX Card [White Variant](https://www.aliexpress.com/item/100500346
 
 **Note 07:** When using a lower end older systems (Pentium 4 and before era), if there are not enough system resources, you may have dropped samples!
 
+
 # Wiki
+
 
 There is now a [wiki](https://github.com/happycube/cxadc-linux3/wiki) about the cards variants and helpful information on modifications cabling and amplification.
 
+
 ## Getting Started & Installation
 
-## Install Dependencys
+
+## Install Dependency's
+
 
 Updated for Ubuntu 22.04
 
@@ -67,7 +75,7 @@ Install PV for real-time monitoring of the runtime & datarate output:
 
     sudo apt install pv
 
-Install Sox key for maniupating data in real time or more usefully after captures:
+Install Sox key for manipulating data in real time or more usefully after captures:
 
     sudo apt install sox
 
@@ -79,7 +87,9 @@ Install FLAC (If you dont already have it!)
 
     sudo apt install flac 
 
+
 ## Install CXADC
+
 
 Open the directory that you wish to install into, and git clone the repo source:
 
@@ -87,11 +97,15 @@ Open the directory that you wish to install into, and git clone the repo source:
 
 For manual or offline use, click Code on the Github page and then download the zip. Move the zip where it's needed, and extract the files.
 Afterwards, open a terminal in said directory and continue below.
+
 ## How to Update 
+
 
 You can then use `git pull` inside the directory to update later then re-build the driver with the steps below again.
 
+
 ## Build The Driver
+
 
 If not already inside of the CXADC directory
 
@@ -129,7 +143,9 @@ If there is an issue just re-load the CXADC module from the install directory vi
 
 `depmod -a` enables auto load on start-up
 
+
 ## Scripted Commands
+
 
 Check the `utils folder` and the associated README for quicker and more simplified commands.
 
@@ -195,7 +211,9 @@ A typical TV card has a tuner,
 a composite input with RCA/BNC ports and S-Video inputs tied to three of these inputs; you
 may need to experiment with inputs. The quickest way is to attach a video signal and see a white flash on signal hook-up, and change vmux until you get something.
 
+
 ### Commands to Check for Signal Burst
+
 
 Create a video preview of signal. Depending on the RF signal type, you will get an unstable video or just a white flash on cable hookup. 
 
@@ -207,9 +225,11 @@ PAL:
 
 NTSC:
 
-`sudo ffplay -hide_banner -async 1 -f rawvideo -pix_fmt gray8 -video_size 1820x525 -i /dev/cxadc0 -vf scale=910x525,eq=gamma=0.5:contrast=1.5`
+`sudo ffplay -hide_banner -async 1 -f rawvideo -pixel_format gray8 -video_size 1820x525 -i /dev/cxadc0 -vf scale=910x525,eq=gamma=0.5:contrast=1.5`
+
 
 ### `audsel` (0 to 3, default none)
+
 
 Some TV cards (e.g. the PixelView PlayTV Pro Ultra) have an external
 multiplexer attached to the CX2388x's GPIO pins to select an audio
@@ -222,18 +242,25 @@ On the PlayTV Pro Ultra:
 - `audsel=2`: FM stereo tuner out?
 - `audsel=3`: audio in to audio out
 
+
 ### `latency` (0 to 255, default 255)
+
 
 The PCI latency timer value for the device.
 
+
 ### `sixdb` (0 or 1, default 1)
+
+
 Enables or disables a default 6db gain applied to the input signal (Disabling this can result in cleaner capture but may require an external amplifier)
 
 `1` = On
 
 `0` = Off
 
+
 ### `level` (0 to 31, default 16)
+
 
 The fixed digital gain to be applied by the CX2388x
 
@@ -244,7 +271,9 @@ for you automatically.
 
 To change the card witch add the `-h` flag followed by the card so `./leveladj -h 1` for card 2 for example.
 
+
 ### `tenxfsc` (0 to 2, 10 to 99, or 10022728 to "see below", default 0)
+
 
 By default, cxadc captures at a rate of 8 x fsc (8 * 315 / 88 Mhz, approximately 28.6 MHz)
 
@@ -264,7 +293,9 @@ With the Stock 28Mhz Crystal the modes are the following:
 
 `2` = 40 MHz 8bit
 
+
 **Note!**
+
 
 `40Mhz 8-bit & 20Mhz 16-bit modes` have a **very rare** chance of working on stock non-modified cards, with the stock 28Mhz crystal. It's recommended to physically replace the stock crystal with an ABLS2-40.000MHZ-D4YF-T, to achieve said sample rate capture abbility and lower noise.
 
@@ -288,7 +319,9 @@ value appropriately. Higher rates may work, with the max rate depending
 on individual card and cooling, but can cause system crash for others,
 so are prevented by the driver code (increase at your own risk).
 
+
 ### `tenbit`  (0 or 1, default 0)
+
 
 By default, cxadc captures unsigned 8-bit samples.
 
@@ -306,14 +339,19 @@ When in 16bit sample modes, change to the following:
 
 `20 MHz 16-bit` - Stock Card
 
+
 ### `crystal` (? - 54000000,  default 28636363)
+
 
 The Mhz of the actual XTAL crystal affixed to the board. The stock
 crystal is usually 28636363 (28.6Mhz), but a 40mhz replacement crystal is easily available and crystals as high as 54mhz have been shown to work (with
-extra cooling required above 40mhz).  This value is ONLY used to compute
-the sample rates entered for the tenxfsc parameters other than 0, 1, 2.
+extra cooling required above 40mhz).  
+
+This value is ONLY used to compute the sample rates entered for the tenxfsc parameters other than 0, 1, 2.
+
 
 ### `center_offset` (0 to 255, default 2)
+
 
 This option allows you to manually adjust DC centre offset or the centring of the RF signal you wish to capture.
 
@@ -333,9 +371,12 @@ Example:
 
 110-110=0  119+110 = 229 = not centred.
 
+
 ## Capture
 
+
 ### Gain Adjustment
+
 
 Connect a live or playing signal to the input you've selected, and run `leveladj` to adjust the gain automatically:
 
@@ -351,7 +392,9 @@ You can manually set a fixed gain setting after centering the signal with
 
 `sudo echo 0 >/sys/class/cxadc/cxadc0/device/parameters/sixdb` - Digital Gain Boost (`1` On / `0` Off)
 
+
 ### Command Line Capture (CLI)
+
 
 Open a terminal in the directory you wish to write the data to, and use the following example command to capture 10 seconds of test samples.
 
@@ -374,23 +417,31 @@ It will look like this when in use:
 
 `sox -r 28636363` etc can be used to resample to the sample rate specified, whereas cat/dd will just do whatever has been pre-defined by parameters set above.
 
-Note: For use with (S)VHS & LD-Decode projects, filetypes `.u8` for 8-bit & `.u16` for 16-bit samples are used instead of `.raw` extension. This allows the software to correctly detect the data and use it for decoding or flac compression to .vhs/.svhs etc.
+Note: For use with (S)VHS & LD-Decode projects, filetypes `.u8` for 8-bit & `.u16` for 16-bit samples are used instead of `.raw` extension. 
+
+This allows the software to correctly detect the data and use it for decoding or flac compression and renaming to `.vhs`/`.svhs` etc.
+
 
 ### Real-Time FLAC Compressed Capture
 
+
 Optional but **not optimal** due to risk of dropped samples even with high end hardware etc, on the fly flac compressed captures are possible with the following commands; edit rates as needed.
 
-16-bit Mode (Stock 14.3 Mhz)
+8-bit Mode (Stock 28.6 MSPS)
 
-    sudo sox -r 14318 -b 16 -c 1 -e unsigned -t raw /dev/cxadc0 -t raw - | flac --fast -16 --sample-rate=14318 --sign=unsigned --channels=1 --endian=little --bps=16 --blocksize=65535 --lax -f - -o .flac
+    cat /dev/cxadc0 | flac --fast -16 --sample-rate=28636 --sign=unsigned --channels=1 --endian=little --bps=8 --blocksize=65535 --lax -f - -o media-name-28msps-8bit-cx-card.flac
 
-8-bit Mode (Stock 28.6 Mhz)
+16-bit Mode (Stock 17.8 MSPS)
 
-    sudo sox -r 28636 -b 8 -c 1 -e unsigned -t raw /dev/cxadc0 -t raw - | flac --fast -16 --sample-rate=28636 --sign=unsigned --channels=1 --endian=little --bps=8 --blocksize=65535 --lax -f - -o .flac
+    cat /dev/cxadc0 | flac --fast -16 --sample-rate=17898 --sign=unsigned --channels=1 --endian=little --bps=16 --blocksize=65535 --lax -f - -o media-name-17.8msps-16bit-cx-card.flac
+
+
 
 ## History
 
+
 ### 2005-09-25 - v0.2
+
 
 cxadc was originally written by Hew How Chee (<how_chee@yahoo.com>).
 See [SDR using a CX2388x TV+FM card](http://web.archive.org/web/20091027150612/http://geocities.com/how_chee/cx23881fc6.htm) for more details.

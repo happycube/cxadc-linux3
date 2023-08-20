@@ -51,3 +51,43 @@ cxlvlcavdd = A capture script to use that adjusts the gain automatically.
 cxvalues = display current values of cx card module parameters.
 
 
+## Example of CX Values with 4 Cards
+
+
+    harry@Decode-Station:~$ cxvalues
+    /sys/class/cxadc/cxadc0/device/parameters/sixdb 1
+    /sys/class/cxadc/cxadc0/device/parameters/tenbit 0
+    /sys/class/cxadc/cxadc0/device/parameters/audsel -1
+    /sys/class/cxadc/cxadc0/device/parameters/center_offset 8
+    /sys/class/cxadc/cxadc0/device/parameters/latency -1
+    /sys/class/cxadc/cxadc0/device/parameters/crystal 28636363
+    /sys/class/cxadc/cxadc0/device/parameters/vmux 2
+    /sys/class/cxadc/cxadc0/device/parameters/tenxfsc 0
+    /sys/class/cxadc/cxadc0/device/parameters/level 16
+    /sys/class/cxadc/cxadc1/device/parameters/sixdb 1
+    /sys/class/cxadc/cxadc1/device/parameters/tenbit 0
+    /sys/class/cxadc/cxadc1/device/parameters/audsel -1
+    /sys/class/cxadc/cxadc1/device/parameters/center_offset 8
+    /sys/class/cxadc/cxadc1/device/parameters/latency -1
+    /sys/class/cxadc/cxadc1/device/parameters/crystal 28636363
+    /sys/class/cxadc/cxadc1/device/parameters/vmux 2
+    /sys/class/cxadc/cxadc1/device/parameters/tenxfsc 0
+    /sys/class/cxadc/cxadc1/device/parameters/level 16
+    /sys/class/cxadc/cxadc2/device/parameters/sixdb 1
+    /sys/class/cxadc/cxadc2/device/parameters/tenbit 0
+    /sys/class/cxadc/cxadc2/device/parameters/audsel -1
+    /sys/class/cxadc/cxadc2/device/parameters/center_offset 8
+    /sys/class/cxadc/cxadc2/device/parameters/latency -1
+    /sys/class/cxadc/cxadc2/device/parameters/crystal 28636363
+    /sys/class/cxadc/cxadc2/device/parameters/vmux 2
+    /sys/class/cxadc/cxadc2/device/parameters/tenxfsc 0
+    /sys/class/cxadc/cxadc2/device/parameters/level 16
+    /sys/class/cxadc/cxadc3/device/parameters/sixdb 1
+    /sys/class/cxadc/cxadc3/device/parameters/tenbit 0
+    /sys/class/cxadc/cxadc3/device/parameters/audsel -1
+    /sys/class/cxadc/cxadc3/device/parameters/center_offset 8
+    /sys/class/cxadc/cxadc3/device/parameters/latency -1
+    /sys/class/cxadc/cxadc3/device/parameters/crystal 28636363
+    /sys/class/cxadc/cxadc3/device/parameters/vmux 2
+    /sys/class/cxadc/cxadc3/device/parameters/tenxfsc 0
+    /sys/class/cxadc/cxadc3/device/parameters/level 16
