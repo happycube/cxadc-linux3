@@ -168,11 +168,6 @@ as a regular users (e.g. without `sudo`), you need to run the command:
 
     sudo usermod -a -G video YourUbuntuUserName
 
-NOTE: the above command adds your local user account to the `root` group,
-and as such, elevates your general permissions level. If you don't like
-the idea of this, you will need to use `sudo` to change module sysfs
-parameters.
-
 To change configuration open the terminal and use the following command to change driver config settings.
 
 Note! use `cxvalues` to check your current configuration state at anytime.
@@ -181,11 +176,11 @@ X = Number Setting i.e  `0`  `1`  `2`  `3`  etc
 
 Y = Parameter setting i.e `vmux`, `level` etc
 
-sudo echo X >/sys/class/cxadc/cxadc0/device/parameters/Y
+echo X >/sys/class/cxadc/cxadc0/device/parameters/Y
 
-Example: `sudo echo 1 >/sys/class/cxadc/cxadc0/device/parameters/vmux`
+Example: `echo 1 >/sys/class/cxadc/cxadc0/device/parameters/vmux`
 
-NOTE: Also see the utils folders for scripts to manipulate these values; sudo will be required unless you add your local user to the `root` group as mentioned above.
+NOTE: Also see the utils folders for scripts to manipulate these values; sudo will be required unless you add your local user to the `video` group as mentioned above.
 
 ### `Multi Card Usage`
 
