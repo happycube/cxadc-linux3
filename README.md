@@ -166,7 +166,7 @@ after the module has been loaded. Re-opening the device will update the
 CX2388x's registers. If you wish to be able to change module parameters
 as a regular users (e.g. without `sudo`), you need to run the command:
 
-    sudo usermod -a -G root YourUbuntuUserName
+    sudo usermod -a -G video YourUbuntuUserName
 
 NOTE: the above command adds your local user account to the `root` group,
 and as such, elevates your general permissions level. If you don't like
