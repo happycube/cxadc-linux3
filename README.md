@@ -24,7 +24,7 @@ video, digital video, audio and the other normal features of these chips.
 ## Where to find current PCIe 1x CX2388x cards & notes:
 
 
-Links to buy a CX Card [White Variant](https://www.aliexpress.com/item/1005003461248897.html) / [Green Variant](https://www.aliexpress.com/item/1005003092946304.html) / [Blue Variant](https://www.aliexpress.com/item/4001286595482.html)
+Links to buy a CX Card [White Variant](https://www.aliexpress.com/item/1005005186457820.html?) / [Green Variant](https://www.aliexpress.com/item/1005003092946304.html) / [Blue Variant](https://www.aliexpress.com/item/4001286595482.html)
 
 **Note 00:** While `Mhz` is used and is accurate due to crystal used, in reality it should be called `MSPS` (million samples per second) as the actual effective sampling is half the Mhz number.
 
