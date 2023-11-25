@@ -412,9 +412,16 @@ It will look like this when in use:
 
 `sox -r 28636363` etc can be used to resample to the sample rate specified, whereas cat/dd will just do whatever has been pre-defined by parameters set above.
 
-Note: For use with (S)VHS & LD-Decode projects, filetypes `.u8` for 8-bit & `.u16` for 16-bit samples are used instead of `.raw` extension. 
+Note: For use with [Tape-Decode](https://github.com/oyvindln/vhs-decode/wiki/), [LaserDisc-Decode](https://github.com/happycube/ld-decode) & [CVBS-Decode](https://github.com/oyvindln/vhs-decode/wiki/CVBS-Composite-Decode) projects, filetypes `.u8` for 8-bit & `.u16` for 16-bit samples are used instead of `.raw` extension. 
 
-This allows the software to correctly detect the data and use it for decoding or flac compression and renaming to `.vhs`/`.svhs` etc.
+
+## FLAC Compression
+
+- [Windows Compression Scripts](https://github.com/happycube/cxadc-linux3/tree/master/CXADC-Compression-Scripts/Windows)
+
+- [FLAC Compression Guide](https://github.com/happycube/cxadc-linux3/wiki/FLAC-Compression-Guide) - CXADC Wiki 
+
+- [FLAC Compression Guide](https://github.com/oyvindln/vhs-decode/wiki/RF-Compression-&-Decompression-Guide) - VHS-Decode Wiki 
 
 
 ### Real-Time FLAC Compressed Capture
@@ -429,7 +436,6 @@ Optional but **not optimal** due to risk of dropped samples even with high end h
 16-bit Mode (Stock 17.8 MSPS)
 
     cat /dev/cxadc0 | flac --fast -16 --sample-rate=17898 --sign=unsigned --channels=1 --endian=little --bps=16 --blocksize=65535 --lax -f - -o media-name-17.8msps-16bit-cx-card.flac
-
 
 
 ## History
