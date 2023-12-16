@@ -79,11 +79,11 @@ Install Sox key for manipulating data in real time or more usefully after captur
 
     sudo apt install sox
 
-Install FFmpeg (If you dont already have it!)
+Install FFmpeg (If you don't already have it!)
 
     sudo apt install ffmpeg
 
-Install FLAC (If you dont already have it!)
+Install FLAC (If you don't already have it!)
 
     sudo apt install flac 
 
@@ -168,9 +168,12 @@ as a regular users (e.g. without `sudo`), you need to run the command:
 
     sudo usermod -a -G video YourUbuntuUserName
 
+Parameters cannot be set with parameters specified in the kernel command line or with a configuration file such as one in `/etc/modprobe.d`. If you wish to make settings semi-permanent, see `cxadc.rules`
+for an example of setting a parameter on startup of udev.
+
 To change configuration open the terminal and use the following command to change driver config settings.
 
-Note! use `cxvalues` to check your current configuration state at anytime.
+Note! Use `cxvalues` to check your current configuration state at anytime.
 
 X = Number Setting i.e  `0`  `1`  `2`  `3`  etc
 
@@ -192,11 +195,11 @@ Same for parameters
 
 `sudo echo 1 >/sys/class/cxadc/cxadc0/device/parameters/vmux` 
 
-This chanages to 
+This changes to 
 
 `sudo echo 1 >/sys/class/cxadc/cxadc1/device/parameters/vmux`
 
-This can go upto 256 but in real world we dont expect more then 8-16 per system.
+This can go up to 256 but in real world we don't expect more then 8-16 per system.
 
 ### `vmux` (0 to 3, default 2) select physical input to capture.
 
@@ -377,7 +380,7 @@ Connect a live or playing signal to the input you've selected, and run `leveladj
 
     ./leveladj
 
-To use this on multible diffrent cards 
+To use this on multiple different cards 
 
 `./leveladj -d 1` (1 means for device 2/3/4 and so on device 0 is assumed when `-d` is not used)
 
@@ -408,7 +411,7 @@ It will look like this when in use:
 
 <kbd>Ctrl</kbd>+<kbd>C</kbd> Will kill the current process, use this to stop the capture manually.
 
-`timeout 10s` defines the capture duration of 10 seconds, this can be defined in `h`ours `m`inutes or `s`econds if a timeout duration is not set it will capture until storage space runs out or stoped manually.
+`timeout 10s` defines the capture duration of 10 seconds, this can be defined in `h`ours `m`inutes or `s`econds if a timeout duration is not set it will capture until storage space runs out or stopped manually.
 
 `sox -r 28636363` etc can be used to resample to the sample rate specified, whereas cat/dd will just do whatever has been pre-defined by parameters set above.
 
@@ -510,7 +513,7 @@ New additions by [Tony Anderson](https://github.com/tandersn) (tandersn@uw.edu)
 - Documentation Cleanup
 - More utils additons
 - Added cxlevel (utils/README.md)
-- Added cxfreq  (utils/README.md)
+- Added cxfreq (utils/README.md)
 - Added cxvalues shows the current configuration.
 - Added fortycryst 0 for no, 1 for yes, and then added sample rates 11-27 (14-27 on 40cryst)
 - Added warning messages for high & low gain states
@@ -519,6 +522,6 @@ New additions by [Tony Anderson](https://github.com/tandersn) (tandersn@uw.edu)
 
 New multi-card support added by [Adam R](https://github.com/AR1972)
 
-- Multi card support upto 256 cards per system
-- Intervidual card settings support
-- Documentation & Scripts updated 
+- Multi card support up to 256 cards per system
+- Individual card settings support
+- Documentation & Scripts updated

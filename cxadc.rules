@@ -1,1 +1,4 @@
 KERNEL=="cxadc*", GROUP="video"
+
+# Rule for just cxadc0 to select vmux 0
+KERNEL=="cxadc0", SUBSYSTEM=="cxadc", ATTR{device/parameters/vmux}="0"
