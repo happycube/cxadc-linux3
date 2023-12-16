@@ -7,3 +7,5 @@
 modules.order
 Module.symvers
 built-in.a
+.vscode/
+.directory
