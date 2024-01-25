@@ -106,7 +106,6 @@ You can then use `git pull` inside the directory to update later then re-build t
 
 ## Build The Driver
 
-
 If not already inside of the CXADC directory
 
     cd cxadc
@@ -124,6 +123,7 @@ If you see the following error, ignore it:
     Warning: modules_install: missing 'System.map' file. Skipping depmod.
 
 This error just means the module could not be signed. It will still be installed.
+
 
 Install configuration files:
 
@@ -143,6 +143,23 @@ If there is an issue just re-load the CXADC module from the install directory vi
 
 `depmod -a` enables auto load on start-up
 
+## Mint 21+ Users
+
+If you see this error:
+
+    arch/x86/Makefile:142: CONFIG_X86_X32 enabled but no binutils support
+      INSTALL /lib/modules/5.15.0-92-generic/extra/cxadc.ko
+      SIGN    /lib/modules/5.15.0-92-generic/extra/cxadc.ko
+      DEPMOD  /lib/modules/5.15.0-92-generic
+    Warning: modules_install: missing 'System.map' file. Skipping depmod.
+    make[1]: Leaving directory '/usr/src/linux-headers-5.15.0-92-generic'
+
+
+Try Install Binutils 
+
+    apt install binutils
+
+If issues with binutills persists just use a diffrent Kernal like [Xanmod](https://xanmod.org/) has been tested and fixed the issue.
 
 ## Scripted Commands
 
