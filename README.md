@@ -161,10 +161,14 @@ Try Install Binutils
 
 If issues with binutills persists just use a diffrent Kernal like [Xanmod](https://xanmod.org/) has been tested and fixed the issue.
 
+
+# Configuration
+
+
 ## Scripted Commands
 
 
-Check the `utils folder` and the associated README for quicker and more simplified commands.
+Check the `utils folder` and the associated [README](https://github.com/happycube/cxadc-linux3/blob/master/utils/README.md) for quicker and more simplified commands.
 
 To enable short system wide commands, first change into the utils directory from the cxadc source folder:
 
@@ -174,7 +178,10 @@ Then install the system links with:
 
     sudo ./inst_scripts
 
-# Configuration
+Then exit back to your main CXADC folder with:
+
+    cd.. 
+
 
 ## Module Parameters
 
@@ -304,7 +311,7 @@ With the Stock 28Mhz Crystal the modes are the following:
 
 `0` = 28.6 MHz 8bit
 
-`1` = 35.8 MHz 8bit
+`1` = 35.8 MHz 8bit (Upsampled not recommended for use actual use)
 
 `2` = 40 MHz 8bit
 
@@ -312,7 +319,9 @@ With the Stock 28Mhz Crystal the modes are the following:
 **Note!**
 
 
-`40Mhz 8-bit & 20Mhz 16-bit modes` have a **very rare** chance of working on stock non-modified cards, with the stock 28Mhz crystal. It's recommended to physically replace the stock crystal with an ABLS2-40.000MHZ-D4YF-T, to achieve said sample rate capture abbility and lower noise.
+`40Mhz 8-bit & 20Mhz 16-bit modes` have a **very rare** chance of working on stock non-modified cards, with the stock 28Mhz crystal. 
+
+It's recommended to physically replace the stock crystal with an [40/48/54Mhz fundamental crystal or external clock mod](https://github.com/happycube/cxadc-linux3/wiki/Modifications) to achieve higher sample rate capture abbility and lower noise or multi card capture on the same clock source.
 
 Alternatively, enter 2 digit values (like 20), that will then be
 multiplied by 1,000,000 (so 20 = 20,000,000sps), with the caveat
@@ -406,6 +415,8 @@ You can manually set a fixed gain setting after centering the signal with
 `sudo echo 0 >/sys/class/cxadc/cxadc0/device/parameters/level` - Internal Gain (`0`~`31`)
 
 `sudo echo 0 >/sys/class/cxadc/cxadc0/device/parameters/sixdb` - Digital Gain Boost (`1` On / `0` Off)
+
+If using an external amplifyer, set your `gain 0` & `sixdb 0` this also applys for CVBS RAW RF capture which can be tempermental. 
 
 
 ### Command Line Capture (CLI)
