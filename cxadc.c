@@ -1269,7 +1269,7 @@ static void cxadc_remove(struct pci_dev *pci_dev)
 	pci_disable_device(pci_dev);
 }
 
-int cxadc_suspend(struct pci_dev *pci_dev, pm_message_t state)
+static int cxadc_suspend(struct pci_dev *pci_dev, pm_message_t state)
 {
 	struct cxadc *ctd = pci_get_drvdata(pci_dev);
 
@@ -1281,7 +1281,7 @@ int cxadc_suspend(struct pci_dev *pci_dev, pm_message_t state)
 	return 0;
 }
 
-int cxadc_resume(struct pci_dev *pci_dev)
+static int cxadc_resume(struct pci_dev *pci_dev)
 {
 /*
  * I have no idea what state this card is in after resume
