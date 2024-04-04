@@ -49,10 +49,6 @@
 #define default_crystal			28636363
 #define default_center_offset	8
 
-/* ownership for our sysfs files */
-#define SYSFS_UID 0
-#define SYSFS_GID 44
-
 #define cx_read(reg)         readl(ctd->mmio + ((reg) >> 2))
 #define cx_write(reg, value) writel((value), ctd->mmio + ((reg) >> 2))
 
@@ -879,11 +875,6 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	unsigned int pgsize;
 	unsigned long longtenxfsc, longPLLboth, longPLLint;
 	int PLLint, PLLfrac, PLLfin, SConv;
-	kuid_t sysfs_user;
-	kgid_t sysfs_group;
-
-	sysfs_user.val = SYSFS_UID;
-	sysfs_group.val = SYSFS_GID;
 
 	if (PAGE_SIZE != 4096) {
 		dev_err(&pci_dev->dev, "cxadc: only page size of 4096 is supported\n");
@@ -941,15 +932,6 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 		goto fail1;
 	}
 
-	/* change ownership of our sysfs files to root:video */
-
-	if (sysfs_group_change_owner(&pci_dev->dev.kobj, &mycxadc_group,
-			sysfs_user, sysfs_group)) {
-		cx_err("cannot change sysfs ownership\n");
-		/* something is very wrong if we can't change sysfs ownership */
-		rc = -ENOMEM;
-		goto fail1;
-	}
 	/* We can use cx_err/cx_info from here, now ctd has been set up. */
 
 	if (alloc_risc_inst_buffer(ctd)) {
