@@ -841,7 +841,6 @@ static const struct file_operations cxadc_char_fops = {
 
 static irqreturn_t cxadc_irq(int irq, void *dev_id)
 {
-	int count = 0;
 	struct cxadc *ctd = dev_id;
 	u32 allstat = cx_read(MO_VID_INTSTAT);
 	u32 stat  = cx_read(MO_VID_INTMSK);
@@ -854,14 +853,9 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 	if (!astat)
 		return IRQ_RETVAL(0); /* if no interrupt bit set we return */
 
-	for (count = 0; count < 20; count++) {
-		if (astat & 1) {
-			if (count == 3) {
-				ctd->newpage = 1;
-				wake_up_interruptible(&ctd->readQ);
-			}
-		}
-		astat >>= 1;
+	if (astat & 0x8) {
+		ctd->newpage = 1;
+		wake_up_interruptible(&ctd->readQ);
 	}
 	cx_write(MO_VID_INTSTAT, ostat);
 
