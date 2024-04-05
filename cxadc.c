@@ -93,6 +93,9 @@
  */
 #define NUMBER_OF_RISC_PAGE ((NUMBER_OF_WRITE_NEEDED/NUMBER_OF_WRITE_PER_PAGE)+1+1)
 
+/* Must be a power of 2 */
+#define IRQ_PERIOD_IN_PAGES 0x200
+
 struct risc_page {
 	struct risc_page *next;
 	char buffer[PAGE_SIZE - sizeof(struct risc_page *)];
@@ -122,7 +125,7 @@ struct cxadc {
 	void *pgvec_virt[MAX_DMA_PAGE+1];
 	dma_addr_t pgvec_phy[MAX_DMA_PAGE+1];
 
-	int newpage;
+	atomic_t lgpcnt;
 	int initial_page;
 	/* device attributes */
 	int latency;
@@ -603,7 +606,7 @@ static int make_risc_instructions(struct cxadc *ctd)
 	irqt = 0;
 	for (i = 0; i < MAX_DMA_PAGE; i++) {
 		irqt++;
-		irqt &= 0x1ff;
+		irqt &= IRQ_PERIOD_IN_PAGES - 1;
 		*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|(3<<26)|(0<<16);
 
 		dma_addr = ctd->pgvec_phy[i];
@@ -726,8 +729,12 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 
 	file->private_data = ctd;
 
-	ctd->initial_page = cx_read(MO_VBI_GPCNT) - 1;
+	atomic_set(&ctd->lgpcnt, -1);
 	cx_write(MO_PCI_INTMSK, 1); /* enable interrupt */
+
+	wait_event_interruptible(ctd->readQ, atomic_read(&ctd->lgpcnt) != -1);
+
+	ctd->initial_page = atomic_read(&ctd->lgpcnt);
 
 	return 0;
 }
@@ -756,8 +763,7 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt,
 	pnum += ctd->initial_page;
 	pnum %= MAX_DMA_PAGE;
 
-	gp_cnt = cx_read(MO_VBI_GPCNT);
-	gp_cnt = (!gp_cnt) ? (MAX_DMA_PAGE - 1) : (gp_cnt - 1);
+	gp_cnt = atomic_read(&ctd->lgpcnt);
 
 	if ((pnum == gp_cnt) && (file->f_flags & O_NONBLOCK))
 		return rv;
@@ -799,11 +805,9 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt,
 			if (file->f_flags & O_NONBLOCK)
 				return rv;
 
-			ctd->newpage = 0;
-			wait_event_interruptible(ctd->readQ, ctd->newpage);
+			wait_event_interruptible(ctd->readQ, atomic_read(&ctd->lgpcnt) != gp_cnt);
 
-			gp_cnt = cx_read(MO_VBI_GPCNT);
-			gp_cnt = (!gp_cnt) ? (MAX_DMA_PAGE - 1) : (gp_cnt - 1);
+			gp_cnt = atomic_read(&ctd->lgpcnt);
 		}
 	};
 
@@ -841,7 +845,6 @@ static const struct file_operations cxadc_char_fops = {
 
 static irqreturn_t cxadc_irq(int irq, void *dev_id)
 {
-	int count = 0;
 	struct cxadc *ctd = dev_id;
 	u32 allstat = cx_read(MO_VID_INTSTAT);
 	u32 stat  = cx_read(MO_VID_INTMSK);
@@ -854,14 +857,16 @@ static irqreturn_t cxadc_irq(int irq, void *dev_id)
 	if (!astat)
 		return IRQ_RETVAL(0); /* if no interrupt bit set we return */
 
-	for (count = 0; count < 20; count++) {
-		if (astat & 1) {
-			if (count == 3) {
-				ctd->newpage = 1;
-				wake_up_interruptible(&ctd->readQ);
-			}
-		}
-		astat >>= 1;
+	if (astat & 0x8) {
+		int gp_cnt = cx_read(MO_VBI_GPCNT);
+		/* NB: MO_VBI_GPCNT is not guaranteed to be in-sync with resident pages.
+		   i.e. we can get gpcnt == 1 but the first page may not yet have been transferred
+		   to main memory. on the other hand, if an interrupt has occurred, we are guaranteed to have the page
+		   in main memory. so we only retrieve MO_VBI_GPCNT after an interrupt has occurred and then round
+		   it down to the last page that we know should have triggered an interrupt. */
+		gp_cnt &= ~(IRQ_PERIOD_IN_PAGES - 1);
+		atomic_set(&ctd->lgpcnt, gp_cnt);
+		wake_up_interruptible(&ctd->readQ);
 	}
 	cx_write(MO_VID_INTSTAT, ostat);
 
