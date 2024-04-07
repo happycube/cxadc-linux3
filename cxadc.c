@@ -632,7 +632,7 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	int minor = iminor(inode);
 	struct cxadc *ctd = container_of(inode->i_cdev, struct cxadc, cdev);
 	unsigned long longtenxfsc, longPLLboth, longPLLint;
-	int PLLint, PLLfrac, PLLfin, SConv;
+	int PLLint, PLLfrac, PLLfin, SConv, rv;
 
 	for (ctd = cxadcs; ctd != NULL; ctd = ctd->next)
 		if (MINOR(ctd->cdev.dev) == minor)
@@ -728,7 +728,16 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	atomic_set(&ctd->lgpcnt, -1);
 	cx_write(MO_PCI_INTMSK, 1); /* enable interrupt */
 
-	wait_event_interruptible(ctd->readQ, atomic_read(&ctd->lgpcnt) != -1);
+	rv = wait_event_interruptible(ctd->readQ, atomic_read(&ctd->lgpcnt) != -1);
+	if (rv) {
+		cx_write(MO_PCI_INTMSK, 0);
+
+		mutex_lock(&ctd->lock);
+		ctd->in_use = false;
+		mutex_unlock(&ctd->lock);
+
+		return rv;
+	}
 
 	ctd->initial_page = atomic_read(&ctd->lgpcnt);
 
