@@ -798,10 +798,15 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt,
 		cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(ctd->center_offset));
 
 		if (count) {
+			int rv2;
+
 			if (file->f_flags & O_NONBLOCK)
 				return rv;
 
-			wait_event_interruptible(ctd->readQ, atomic_read(&ctd->lgpcnt) != gp_cnt);
+			rv2 = wait_event_interruptible(ctd->readQ, atomic_read(&ctd->lgpcnt) != gp_cnt);
+			if (rv2) {
+				return rv ? rv : rv2;
+			}
 
 			gp_cnt = atomic_read(&ctd->lgpcnt);
 		}
