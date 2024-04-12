@@ -632,7 +632,7 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	int minor = iminor(inode);
 	struct cxadc *ctd = container_of(inode->i_cdev, struct cxadc, cdev);
 	unsigned long longtenxfsc, longPLLboth, longPLLint;
-	int PLLint, PLLfrac, PLLfin, SConv;
+	int PLLint, PLLfrac, PLLfin, SConv, rv;
 
 	for (ctd = cxadcs; ctd != NULL; ctd = ctd->next)
 		if (MINOR(ctd->cdev.dev) == minor)
@@ -728,7 +728,16 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 	atomic_set(&ctd->lgpcnt, -1);
 	cx_write(MO_PCI_INTMSK, 1); /* enable interrupt */
 
-	wait_event_interruptible(ctd->readQ, atomic_read(&ctd->lgpcnt) != -1);
+	rv = wait_event_interruptible(ctd->readQ, atomic_read(&ctd->lgpcnt) != -1);
+	if (rv) {
+		cx_write(MO_PCI_INTMSK, 0);
+
+		mutex_lock(&ctd->lock);
+		ctd->in_use = false;
+		mutex_unlock(&ctd->lock);
+
+		return rv;
+	}
 
 	ctd->initial_page = atomic_read(&ctd->lgpcnt);
 
@@ -798,10 +807,15 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt,
 		cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(ctd->center_offset));
 
 		if (count) {
+			int rv2;
+
 			if (file->f_flags & O_NONBLOCK)
 				return rv;
 
-			wait_event_interruptible(ctd->readQ, atomic_read(&ctd->lgpcnt) != gp_cnt);
+			rv2 = wait_event_interruptible(ctd->readQ, atomic_read(&ctd->lgpcnt) != gp_cnt);
+			if (rv2) {
+				return rv ? rv : rv2;
+			}
 
 			gp_cnt = atomic_read(&ctd->lgpcnt);
 		}
