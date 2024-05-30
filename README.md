@@ -374,8 +374,8 @@ extra cooling required above 40mhz).
 This value is ONLY used to compute the sample rates entered for the tenxfsc parameters other than 0, 1, 2.
 
 
-### `center_offset` (0 to 255, default 2)
 
+### `center_offset` (0 to 63, default 0)
 
 This option allows you to manually adjust DC centre offset or the centring of the RF signal you wish to capture.
 

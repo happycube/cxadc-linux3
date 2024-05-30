@@ -47,7 +47,7 @@
 #define default_tenxfsc			0
 #define default_sixdb			1
 #define default_crystal			28636363
-#define default_center_offset	8
+#define default_center_offset	0
 
 #define cx_read(reg)         readl(ctd->mmio + ((reg) >> 2))
 #define cx_write(reg, value) writel((value), ctd->mmio + ((reg) >> 2))
@@ -56,6 +56,8 @@
 	dev_err(&ctd->pci->dev, fmt, ##__VA_ARGS__)
 #define cx_info(fmt, ...) \
 	dev_info(&ctd->pci->dev, fmt, ##__VA_ARGS__)
+#define cx_notice(fmt, ...) \
+	dev_notice(&ctd->pci->dev, fmt, ##__VA_ARGS__)
 
 /* 64 Mbytes VBI DMA BUFF */
 #define VBI_DMA_BUFF_SIZE (1024*1024*64)
@@ -627,6 +629,31 @@ static int make_risc_instructions(struct cxadc *ctd)
 	return 0;
 }
 
+static void bound_parameters(struct cxadc *ctd)
+{
+	if (ctd->level < 0) {
+		cx_notice("Negative 'level' value: %d, setting to 0\n",
+			  ctd->level);
+		ctd->level = 0;
+	}
+	if (ctd->level > 31) {
+		cx_notice("Excessively large 'level' value: %d, setting to 31\n",
+			  ctd->level);
+		ctd->level = 31;
+	}
+
+	if (ctd->center_offset < 0) {
+		cx_notice("Negative 'center_offset' value: %d, setting to 0\n",
+			  ctd->center_offset);
+		ctd->center_offset = 0;
+	}
+	if (ctd->center_offset > 63) {
+		cx_notice("Excessively large 'center_offset' value: %d, setting to 63\n",
+			  ctd->level);
+		ctd->center_offset = 63;
+	}
+}
+
 static int cxadc_char_open(struct inode *inode, struct file *file)
 {
 	int minor = iminor(inode);
@@ -665,10 +692,7 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 
 	/* re-set the level, clock speed, and bit size */
 
-	if (ctd->level < 0)
-		ctd->level = 0;
-	if (ctd->level > 31)
-		ctd->level = 31;
+	bound_parameters(ctd);
 	/* control gain also bit 16 */
 	cx_write(MO_AGC_GAIN_ADJ4, (ctd->sixdb<<23)|(0<<22)|(0<<21)|(ctd->level<<16)|(0xff<<8)|(0x0<<0));
 	cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(ctd->center_offset));
@@ -799,10 +823,7 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt,
 		 * adding code to allow level change during read, have tested, works with CAV capture
 		 * script i have been working on
 		 */
-		if (ctd->level < 0)
-			ctd->level = 0;
-		if (ctd->level > 31)
-			ctd->level = 31;
+		bound_parameters(ctd);
 		cx_write(MO_AGC_GAIN_ADJ4, (ctd->sixdb<<23)|(0<<22)|(0<<21)|(ctd->level<<16)|(0xff<<8)|(0x0<<0));
 		cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(ctd->center_offset));
 
@@ -1148,10 +1169,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	/* set vbi agc */
 	cx_write(MO_AGC_SYNC_SLICER, 0x0);
 
-	if (ctd->level < 0)
-		ctd->level = 0;
-	if (ctd->level > 31)
-		ctd->level = 31;
+	bound_parameters(ctd);
 
 	cx_write(MO_AGC_BACK_VBI, (0<<27)|(0<<26)|(1<<25)|(0x100<<16)|(0xfff<<0));
 	/* control gain also bit 16 */
@@ -1400,10 +1418,7 @@ static int cxadc_resume(struct pci_dev *pci_dev)
 	/* set vbi agc */
 	cx_write(MO_AGC_SYNC_SLICER, 0x0);
 
-	if (ctd->level < 0)
-		ctd->level = 0;
-	if (ctd->level > 31)
-		ctd->level = 31;
+	bound_parameters(ctd);
 
 	cx_write(MO_AGC_BACK_VBI, (0<<27)|(0<<26)|(1<<25)|(0x100<<16)|(0xfff<<0));
 	/* control gain also bit 16 */
