@@ -671,6 +671,10 @@ static int cxadc_char_open(struct inode *inode, struct file *file)
 		ctd->level = 31;
 	/* control gain also bit 16 */
 	cx_write(MO_AGC_GAIN_ADJ4, (ctd->sixdb<<23)|(0<<22)|(0<<21)|(ctd->level<<16)|(0xff<<8)|(0x0<<0));
+	if (ctd->center_offset < 0)
+		ctd->center_offset = 0;
+	if (ctd->center_offset > 63)
+		ctd->center_offset = 63;
 	cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(ctd->center_offset));
 
 	if (ctd->tenxfsc < 10) {
@@ -804,6 +808,10 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt,
 		if (ctd->level > 31)
 			ctd->level = 31;
 		cx_write(MO_AGC_GAIN_ADJ4, (ctd->sixdb<<23)|(0<<22)|(0<<21)|(ctd->level<<16)|(0xff<<8)|(0x0<<0));
+		if (ctd->center_offset < 0)
+			ctd->center_offset = 0;
+		if (ctd->center_offset > 63)
+			ctd->center_offset = 63;
 		cx_write(MO_AGC_SYNC_TIP3, (0x1e48<<16)|(0xff<<8)|(ctd->center_offset));
 
 		if (count) {
@@ -1153,6 +1161,11 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	if (ctd->level > 31)
 		ctd->level = 31;
 
+	if (ctd->center_offset < 0)
+		ctd->center_offset = 0;
+	if (ctd->center_offset > 63)
+		ctd->center_offset = 63;
+
 	cx_write(MO_AGC_BACK_VBI, (0<<27)|(0<<26)|(1<<25)|(0x100<<16)|(0xfff<<0));
 	/* control gain also bit 16 */
 	cx_write(MO_AGC_GAIN_ADJ4, (ctd->sixdb<<23)|(0<<22)|(0<<21)|(ctd->level<<16)|(0xff<<8)|(0x0<<0));
@@ -1404,6 +1417,11 @@ static int cxadc_resume(struct pci_dev *pci_dev)
 		ctd->level = 0;
 	if (ctd->level > 31)
 		ctd->level = 31;
+
+	if (ctd->center_offset < 0)
+		ctd->center_offset = 0;
+	if (ctd->center_offset > 63)
+		ctd->center_offset = 63;
 
 	cx_write(MO_AGC_BACK_VBI, (0<<27)|(0<<26)|(1<<25)|(0x100<<16)|(0xfff<<0));
 	/* control gain also bit 16 */
