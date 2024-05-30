@@ -47,7 +47,7 @@
 #define default_tenxfsc			0
 #define default_sixdb			1
 #define default_crystal			28636363
-#define default_center_offset	8
+#define default_center_offset	0
 
 #define cx_read(reg)         readl(ctd->mmio + ((reg) >> 2))
 #define cx_write(reg, value) writel((value), ctd->mmio + ((reg) >> 2))
