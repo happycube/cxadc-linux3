@@ -5,7 +5,8 @@ cxadc is an alternative Linux driver for the Conexant CX2388x series of video de
 
 The new driver configures the CX2388x to capture in its raw output mode in 8-bit or 16-bit unsigned samples from the video input ports, allowing these cards to be used as a low-cost 28-54mhz 10bit ADC for SDR and similar applications.
 
-**Note!** `CX23885-xx` & `CX23888-xx` are incompatible chips, however the `CX25800` is a compatible chip.
+> [!NOTE]  
+> `CX23885-xx` & `CX23888-xx` are incompatible chips, however the `CX25800` is a compatible chip.
 
 
 <img src="https://github.com/happycube/cxadc-linux3/wiki/assets/images/CX-Cards/CX-Card-White-Frount-High-Res-Scaled-2022.12.21.png"  width="500" height="">
@@ -13,36 +14,13 @@ The new driver configures the CX2388x to capture in its raw output mode in 8-bit
 <img src="https://raw.githubusercontent.com/wiki/happycube/cxadc-linux3/assets/images/Diagrams/CXADC-Driver-Basic.png"  width="600" height="">
 
 
-Today the cheap PCIe (with 1x bridge chip) capture card market uses these chips at 25-35USD prices per card, directly from China.
+Today the cheap PCIe (with 1x bridge chip) capture card market uses these chips at 16-35USD prices per card, directly from China.
 
 The regular cx88 driver in Linux provides support for capturing composite
 video, digital video, audio and the other normal features of these chips.
 
-**Note!** You shouldn't load both drivers at the same time.
-
-
-## Where to find current PCIe 1x CX2388x cards & notes:
-
-
-Links to buy a CX Card [White Variant](https://www.aliexpress.com/item/1005005186457820.html?) / [Green Variant](https://www.aliexpress.com/item/1005003092946304.html) / [Blue Variant](https://www.aliexpress.com/item/4001286595482.html)
-
-**Note 00:** While `Mhz` is used and is accurate due to crystal used, in reality it should be called `MSPS` (million samples per second) as the actual effective sampling is half the Mhz number.
-
-**Note 01:** The CX chip variant with the least self-noise is the cx23883, mostly found on the White Variation card; most clean captures are at 6dB off, and Digital Gain at 0-10.
-
-**Note 02:** For reliable 40mhz 8-bit & 20mhz 16-bit samples, its recommended to replace the stock crystal with the `ABLS2-40.000MHZ-D4YF-T`.
-
-[For the full list of working crystal replacements, check the wiki page here!](https://github.com/happycube/cxadc-linux3/wiki/Upgraded-Crystals)
-
-**Note 03:** Asmedia PCI to PCIe 1x bridge chips may have support issues on some older PCH chipsets based on Intel 3rd gen; for example, white cards use ITE chips which might not have said issue.
-
-**Note 04:** Added cooling can provide additional stability, more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware. Currently only 40mhz crystal mods have been broadly viable in testing for current PCIe cards.
-
-**Note 05:** For crystals over 54mhz: it might be possible to use higher crystals with self temperature regulated isolated chamber models, but this is still to have proper testing.
-
-**Note 06:** While the term Mhz is used and is hardware accurate, to be clear with Nyquist sampling the crystal frequency should be noted as the MSPS or million samples per second rating, the number is always halved to equal its effective bandwidth of whatever its sampling i.e 28mhz is 28msps with 14mhz of bandwidth and so on you want a 2:1 ratio or higher of whatever your capturing to correctly sample it.
-
-**Note 07:** When using a lower end older systems (Pentium 4 and before era), if there are not enough system resources, you may have dropped samples!
+> [!WARNING]  
+>  You shouldn't load both drivers at the same time.
 
 
 # Wiki
@@ -51,7 +29,31 @@ Links to buy a CX Card [White Variant](https://www.aliexpress.com/item/100500518
 There is now a [wiki](https://github.com/happycube/cxadc-linux3/wiki) about the cards variants and helpful information on modifications cabling and amplification.
 
 
-## Getting Started & Installation
+## Where to find current PCIe 1x CX2388x cards & notes:
+
+
+Links to buy a CX Card [White Variant](https://www.aliexpress.com/item/1005003461248897.html) / [Green Variant](https://www.aliexpress.com/item/1005003092946304.html) / [Blue Variant](https://www.aliexpress.com/item/4001286595482.html)
+
+**Note 00:** While `Mhz` is used and is accurate due to the crystal used, in reality, it should be called `MSPS` (million samples per second) as the actual effective sampled is half the Mhz number of the defined crystal/clock rate.
+
+**Note 01:** The CX chip variant with the least self-noise is the CX25800, mostly found on the White Variation card; most clean captures are at 6dB off, and Digital Gain at 0-10 with external amplification and or proper impedance matching.
+
+**Note 02:** For reliable 40mhz 8-bit & 20mhz 16-bit samples, it is recommended to replace the stock crystal with a `ABLS2-40.000MHZ-D4YF-T` or equivalent fundamental crystal.
+
+[For the full list of working crystal replacements, check the wiki page here!](https://github.com/happycube/cxadc-linux3/wiki/Upgraded-Crystals)
+
+**Note 03:** Asmedia PCI to PCIe 1x bridge chips may have support issues on some older PCH chipsets based on Intel 3rd gen; for example, white cards use ITE chips which might not have said issue.
+
+**Note 04:** Added cooling can provide additional stability, more so with 40-54mhz crystal mods, but within 10° Celsius of room temperature is always preferable for silicone hardware. Currently, only 40-54mhz crystal mods have been broadly viable in testing for current white PCIe cards.
+
+**Note 05:** For crystals over 54mhz: it might be possible to use higher crystals with self-temperature regulated isolated chamber models, but this is still to have proper testing.
+
+**Note 06:** While the term Mhz is used and is hardware accurate, to be clear with Nyquist sampling the crystal frequency should be noted as the MSPS or million samples per second rating, the number is always halved to equal its effective bandwidth of whatever its sampling i.e 28mhz is 28msps with 14mhz of bandwidth and so on you want a 2:1 ratio or higher of whatever your capturing to correctly sample it.
+
+**Note 07:** When using lower-end older systems (Pentium 4 and before era), if there are not enough system resources, you may have dropped samples, this also applies to any use of SoX or FLAC in real-time.
+
+
+# Getting Started & Installation
 
 
 ## Install Dependency's
@@ -75,7 +77,7 @@ Install PV for real-time monitoring of the runtime & datarate output:
 
     sudo apt install pv
 
-Install Sox key for manipulating data in real time or more usefully after captures:
+Install Sox key for manipulating data in real-time or more usefully after captures:
 
     sudo apt install sox
 
@@ -91,20 +93,27 @@ Install FLAC (If you don't already have it!)
 ## Install CXADC
 
 
-Open the directory that you wish to install into, and git clone the repo source:
+Pull the driver via terminal
+
+Open a terminal window and git clone the repository:
 
     git clone https://github.com/happycube/cxadc-linux3 cxadc
 
-For manual or offline use, click Code on the Github page and then download the zip. Move the zip where it's needed, and extract the files.
-Afterwards, open a terminal in said directory and continue below.
+For offline install simply, click `Code` on the GitHub page and then download the zip. 
+
+Move the zip to your home directory into a folder called `cxadc` and extract the files.
+
+Afterward, open a terminal in the said directory and continue below.
+
 
 ## How to Update 
 
 
-You can then use `git pull` inside the directory to update later then re-build the driver with the steps below again.
+You can then use `git pull` inside the directory to update later and then re-build the driver with the steps below again or likewise manually re-download the files.
 
 
 ## Build The Driver
+
 
 If not already inside of the CXADC directory
 
@@ -124,7 +133,6 @@ If you see the following error, ignore it:
 
 This error just means the module could not be signed. It will still be installed.
 
-
 Install configuration files:
 
     sudo cp cxadc.rules /etc/udev/rules.d
@@ -143,7 +151,25 @@ If there is an issue just re-load the CXADC module from the install directory vi
 
 `depmod -a` enables auto load on start-up
 
-## Mint 21+ Users
+You can then install scripted commands to help operate and verify your configuration.
+
+Check the `utils folder` and the associated README for quicker and more simplified commands.
+
+To enable short system wide commands, first change into the utils directory from the cxadc source folder:
+
+    cd utils
+
+Then install the system links with:
+
+    sudo ./inst_scripts 
+
+
+## Troubleshooting
+
+> [!WARNING]  
+> Secure boot is the most common issue with many PCI/PCIe devices on Linux very much so video class devices such as BMD SDI hardware. 
+
+If the kernal is updated, the driver will need a re-install unless [DKMS](https://askubuntu.com/questions/408605/what-does-dkms-do-how-do-i-use-it) is setup.
 
 If you see this error:
 
@@ -155,35 +181,18 @@ If you see this error:
     make[1]: Leaving directory '/usr/src/linux-headers-5.15.0-92-generic'
 
 
+> [!CAUTION]  
+> Ensure secure boot is disabled before doing anything else.
+
 Try Install Binutils 
 
     apt install binutils
 
-If issues with binutills persists just use a diffrent Kernal like [Xanmod](https://xanmod.org/) has been tested and fixed the issue.
+If issues with binutills persists just use a different Kernel like [Xanmod](https://xanmod.org/) has been tested as a fix to the issue.
 
 
-# Configuration
+# Configuration of Capture Settings
 
-
-## Scripted Commands
-
-
-Check the `utils folder` and the associated [README](https://github.com/happycube/cxadc-linux3/blob/master/utils/README.md) for quicker and more simplified commands.
-
-To enable short system wide commands, first change into the utils directory from the cxadc source folder:
-
-    cd utils
-
-Then install the system links with:
-
-    sudo ./inst_scripts
-
-Then exit back to your main CXADC folder with:
-
-    cd.. 
-
-
-## Module Parameters
 
 Most of these parameters (except `latency`) can be changed using sysfs
 after the module has been loaded. Re-opening the device will update the
@@ -192,12 +201,17 @@ as a regular users (e.g. without `sudo`), you need to run the command:
 
     sudo usermod -a -G video YourUbuntuUserName
 
-Parameters cannot be set with parameters specified in the kernel command line or with a configuration file such as one in `/etc/modprobe.d`. If you wish to make settings semi-permanent, see `cxadc.rules`
-for an example of setting a parameter on startup of udev.
-
 To change configuration open the terminal and use the following command to change driver config settings.
 
-Note! Use `cxvalues` to check your current configuration state at anytime.
+
+## Module Parameters
+
+> [!CAUTION]  
+> Configuration will reset on every re-boot of the system, save your config and paste the commands at every start-up ready for capture. 
+
+
+> [!NOTE]  
+> You can use `cxvalues` to check your current configuration state at anytime globally on the terminal. 
 
 X = Number Setting i.e  `0`  `1`  `2`  `3`  etc
 
@@ -207,9 +221,12 @@ echo X >/sys/class/cxadc/cxadc0/device/parameters/Y
 
 Example: `echo 1 >/sys/class/cxadc/cxadc0/device/parameters/vmux`
 
-NOTE: Also see the utils folders for scripts to manipulate these values; sudo will be required unless you add your local user to the `video` group as mentioned above.
+> [!WARNING]  
+> Also see the utils folders for scripts to manipulate these values; sudo will be required unless you add your local user to the `video` group as mentioned above.
 
-### `Multi Card Usage`
+
+## `Multi Card Usage`
+
 
 In single card capture mode this is `cat /dev/cxadc0` 
 
@@ -223,21 +240,22 @@ This changes to
 
 `sudo echo 1 >/sys/class/cxadc/cxadc1/device/parameters/vmux`
 
-This can go up to 256 but in real world we don't expect more then 8-16 per system.
+This can go up to 256, but real world use we don't expect more then 8-16 per system.
 
-### `vmux` (0 to 3, default 2) select physical input to capture.
+
+## `vmux` (0 to 3, default 2) select physical input to capture.
+
 
 [Check the Wiki](https://github.com/happycube/cxadc-linux3/wiki/Types-Of-CX2388x-Cards) for the optimal way to connect your card type!
 
-A typical TV card has a tuner,
-a composite input with RCA/BNC ports and S-Video inputs tied to three of these inputs; you
+A typical TV card has a tuner, a composite input with RCA or BNC ports and S-Video input, tied to three of these inputs; you
 may need to experiment with inputs. The quickest way is to attach a video signal and see a white flash on signal hook-up, and change vmux until you get something.
 
 
-### Commands to Check for Signal Burst
+## Commands to Check for Signal Burst
 
 
-Create a video preview of signal. Depending on the RF signal type, you will get an unstable video or just a white flash on cable hookup. 
+Create a video preview of signal. Depending on the RF signal type, you will get an unstable video or just a white flash on cable connection. 
 
 (Using video_size values to give approximately the correct resolution for the default 28.64 Mhz sample rate)
 
@@ -250,7 +268,7 @@ NTSC:
 `sudo ffplay -hide_banner -async 1 -f rawvideo -pixel_format gray8 -video_size 1820x525 -i /dev/cxadc0 -vf scale=910x525,eq=gamma=0.5:contrast=1.5`
 
 
-### `audsel` (0 to 3, default none)
+## `audsel` (0 to 3, default none)
 
 
 Some TV cards (e.g. the PixelView PlayTV Pro Ultra) have an external
@@ -265,13 +283,13 @@ On the PlayTV Pro Ultra:
 - `audsel=3`: audio in to audio out
 
 
-### `latency` (0 to 255, default 255)
+## `latency` (0 to 255, default 255)
 
 
 The PCI latency timer value for the device.
 
 
-### `sixdb` (0 or 1, default 1)
+## `sixdb` (0 or 1, default 1)
 
 
 Enables or disables a default 6db gain applied to the input signal (Disabling this can result in cleaner capture but may require an external amplifier)
@@ -281,7 +299,7 @@ Enables or disables a default 6db gain applied to the input signal (Disabling th
 `0` = Off
 
 
-### `level` (0 to 31, default 16)
+## `level` (0 to 31, default 16)
 
 
 The fixed digital gain to be applied by the CX2388x
@@ -294,14 +312,14 @@ for you automatically.
 To change the card witch add the `-h` flag followed by the card so `./leveladj -h 1` for card 2 for example.
 
 
-### `tenxfsc` (0 to 2, 10 to 99, or 10022728 to "see below", default 0)
+## `tenxfsc` (0 to 2, 10 to 99, or 10022728 to "see below", default 0)
 
 
 By default, cxadc captures at a rate of 8 x fsc (8 * 315 / 88 Mhz, approximately 28.6 MHz)
 
 tenxfsc - Sets sampling rate of the ADC based on the crystal's native frequency
 
-`0` = Native crystal frequency i.e 28MHz (default), 40, 50, 54, (Modifyed etc)
+`0` = Native crystal frequency i.e 28MHz (default), 40, 50, 54, (Modified etc)
 
 `1` = Native crystal frequency times 1.25
 
@@ -311,7 +329,7 @@ With the Stock 28Mhz Crystal the modes are the following:
 
 `0` = 28.6 MHz 8bit
 
-`1` = 35.8 MHz 8bit (Upsampled not recommended for use actual use)
+`1` = 35.8 MHz 8bit
 
 `2` = 40 MHz 8bit
 
@@ -319,9 +337,7 @@ With the Stock 28Mhz Crystal the modes are the following:
 **Note!**
 
 
-`40Mhz 8-bit & 20Mhz 16-bit modes` have a **very rare** chance of working on stock non-modified cards, with the stock 28Mhz crystal. 
-
-It's recommended to physically replace the stock crystal with an [40/48/54Mhz fundamental crystal or external clock mod](https://github.com/happycube/cxadc-linux3/wiki/Modifications) to achieve higher sample rate capture abbility and lower noise or multi card capture on the same clock source.
+`40Mhz 8-bit & 20Mhz 16-bit modes` have a **very rare** chance of working on stock non-modified cards, with the stock 28Mhz crystal. It's recommended to physically replace the stock crystal with an ABLS2-40.000MHZ-D4YF-T, to achieve said sample rate capture ability and lower noise.
 
 Alternatively, enter 2 digit values (like 20), that will then be
 multiplied by 1,000,000 (so 20 = 20,000,000sps), with the caveat
@@ -333,7 +349,7 @@ For a 40mhz crystal card, the lowest
 rate will be 14,000,000sps. The highest rate is capped at the
 10fsc rate, or:  HW crystal / 8 * 10.
 
-Full range sample values can also be entered: 14318181 for instance.
+Full-range sample values can also be entered: 14318181 for instance.
 Again, the caveat is that the lowest possible rate is:
 HW crystal / 40 * 14 and the highest allowed rate is:
 HW crystal / 8 * 10.
@@ -344,7 +360,7 @@ on individual card and cooling, but can cause system crash for others,
 so are prevented by the driver code (increase at your own risk).
 
 
-### `tenbit`  (0 or 1, default 0)
+## `tenbit`  (0 or 1, default 0)
 
 
 By default, cxadc captures unsigned 8-bit samples.
@@ -364,24 +380,24 @@ When in 16bit sample modes, change to the following:
 `20 MHz 16-bit` - Stock Card
 
 
-### `crystal` (? - 54000000,  default 28636363)
+## `crystal` (? - 54000000,  default 28636363)
 
 
-The Mhz of the actual XTAL crystal affixed to the board. The stock
-crystal is usually 28636363 (28.6Mhz), but a 40mhz replacement crystal is easily available and crystals as high as 54mhz have been shown to work (with
+The Mhz of the physical XTAL crystal on your CX Card.
+The stock crystal is usually a 28636363 (28.6Mhz) fundamental type, but a 40mhz replacement crystal is easily available and crystals as high as 54mhz have been shown to work (with
 extra cooling required above 40mhz).  
 
 This value is ONLY used to compute the sample rates entered for the tenxfsc parameters other than 0, 1, 2.
 
 
-### `center_offset` (0 to 255, default 2)
+## `center_offset` (0 to 255, default 2)
 
 
-This option allows you to manually adjust DC centre offset or the centring of the RF signal you wish to capture.
+This option allows you to manually adjust DC center offset or the centering of the RF signal you wish to capture.
 
-Manual calculation: If the "highest" and "lowest" values returned are equidistant from 0 and 255 respectively, it's centred.
+Manual calculation: If the "highest" and "lowest" values returned are equidistant from 0 and 255 respectively, it's cantered.
 
-Use leveladj to obtain level and centering information 
+Use leveladj to obtain level and centring information 
 
     ./leveladj
 
@@ -395,8 +411,10 @@ Example:
 
 110-110=0  119+110 = 229 = not centred.
 
+You can visually adjust this with a handy GNURadio Script
 
-## Capture
+
+# Capture
 
 
 ### Gain Adjustment
@@ -416,8 +434,6 @@ You can manually set a fixed gain setting after centering the signal with
 
 `sudo echo 0 >/sys/class/cxadc/cxadc0/device/parameters/sixdb` - Digital Gain Boost (`1` On / `0` Off)
 
-If using an external amplifyer, set your `gain 0` & `sixdb 0` this also applys for CVBS RAW RF capture which can be tempermental. 
-
 
 ### Command Line Capture (CLI)
 
@@ -428,9 +444,9 @@ Open a terminal in the directory you wish to write the data to, and use the foll
 
 Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy then <kbd>Ctrl</kbd>+<kbd>P</kbd> to past the command use <kbd><</kbd>+<kbd>></kbd> to move edit position on the command line to edit the name or command and <kbd>Enter</kbd> to run the command.
 
-`cat` is the defualt due to user issues with `dd`
+`cat` is the default due to user issues with `dd`
 
-To use the PV argument that enables datarate/runtime readout, modify the command command with `|pv >`
+To use the PV argument that enables data rate/runtime readout, modify the command command with `|pv >`
 
 It will look like this when in use:
 
@@ -439,26 +455,19 @@ It will look like this when in use:
 
 <kbd>Ctrl</kbd>+<kbd>C</kbd> Will kill the current process, use this to stop the capture manually.
 
-`timeout 10s` defines the capture duration of 10 seconds, this can be defined in `h`ours `m`inutes or `s`econds if a timeout duration is not set it will capture until storage space runs out or stopped manually.
+`timeout 10s` defines the capture duration of 10 seconds, this can be defined in `h`ours `m`inutes or `s`econds if a timeout duration is not set it will capture until storage space runs out or is stopped manually.
 
-`sox -r 28636363` etc can be used to resample to the sample rate specified, whereas cat/dd will just do whatever has been pre-defined by parameters set above.
+`sox -r 28636363` etc can be used to resample to the sample rate specified, whereas cat/dd will just do whatever has been pre-defined by the parameters set above.
 
-Note: For use with [Tape-Decode](https://github.com/oyvindln/vhs-decode/wiki/), [LaserDisc-Decode](https://github.com/happycube/ld-decode) & [CVBS-Decode](https://github.com/oyvindln/vhs-decode/wiki/CVBS-Composite-Decode) projects, filetypes `.u8` for 8-bit & `.u16` for 16-bit samples are used instead of `.raw` extension. 
+Note: For use with the decode projects, filetypes `.u8` for 8-bit & `.u16` for 16-bit samples are used instead of `.raw` extension. 
 
-
-## FLAC Compression
-
-- [Windows Compression Scripts](https://github.com/happycube/cxadc-linux3/tree/master/CXADC-Compression-Scripts/Windows)
-
-- [FLAC Compression Guide](https://github.com/happycube/cxadc-linux3/wiki/FLAC-Compression-Guide) - CXADC Wiki 
-
-- [FLAC Compression Guide](https://github.com/oyvindln/vhs-decode/wiki/RF-Compression-&-Decompression-Guide) - VHS-Decode Wiki 
+This allows the software to correctly detect the data and use it for decoding or flac compression and renaming to `.vhs`/`.svhs` etc.
 
 
 ### Real-Time FLAC Compressed Capture
 
 
-Optional but **not optimal** due to risk of dropped samples even with high end hardware etc, on the fly flac compressed captures are possible with the following commands; edit rates as needed.
+Optional but **not optimal** due to risk of dropped samples even with high-end hardware etc, on the fly FLAC compressed captures are possible with the following commands; edit rates as needed.
 
 8-bit Mode (Stock 28.6 MSPS)
 
@@ -469,11 +478,20 @@ Optional but **not optimal** due to risk of dropped samples even with high end h
     cat /dev/cxadc0 | flac --fast -16 --sample-rate=17898 --sign=unsigned --channels=1 --endian=little --bps=16 --blocksize=65535 --lax -f - -o media-name-17.8msps-16bit-cx-card.flac
 
 
+# Issues & Debugging
+
+
+Secure boot can cause issues.
+
+Kernel updates will break the driver and require a full re-installation, unless DKMS is setup. 
+
+`rules.config` - Inside this file are your defined base settings every time the driver loads
+
+
 ## History
 
 
 ### 2005-09-25 - v0.2
-
 
 cxadc was originally written by Hew How Chee (<how_chee@yahoo.com>).
 See [SDR using a CX2388x TV+FM card](http://web.archive.org/web/20091027150612/http://geocities.com/how_chee/cx23881fc6.htm) for more details.
@@ -541,7 +559,7 @@ New additions by [Tony Anderson](https://github.com/tandersn) (tandersn@uw.edu)
 - Documentation Cleanup
 - More utils additons
 - Added cxlevel (utils/README.md)
-- Added cxfreq (utils/README.md)
+- Added cxfreq  (utils/README.md)
 - Added cxvalues shows the current configuration.
 - Added fortycryst 0 for no, 1 for yes, and then added sample rates 11-27 (14-27 on 40cryst)
 - Added warning messages for high & low gain states
@@ -552,4 +570,11 @@ New multi-card support added by [Adam R](https://github.com/AR1972)
 
 - Multi card support up to 256 cards per system
 - Individual card settings support
-- Documentation & Scripts updated
+- Documentation & Scripts updated 
+
+### 2024 - Hardware Notes
+
+Clockgen Mod Established 
+
+- Software defined 20/28.6/40/50msps modes
+- Shared clock source synchronised capture
