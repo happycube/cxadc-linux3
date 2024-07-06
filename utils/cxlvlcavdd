@@ -30,7 +30,8 @@ def read_in_chunks(file_object):
         yield data
 
 def child16(data):
-    syssyfsfile = open(r"/sys/module/cxadc/parameters/level","r")    
+    #syssyfsfile = open(r"/sys/module/cxadc/parameters/level","r")    
+    syssyfsfile = open(r"/sys/class/cxadc/cxadc0/device/parameters/level","r")    
     GainLevel = int(syssyfsfile.read())
     syssyfsfile.close()
     OldGainLevel = GainLevel
@@ -71,7 +72,8 @@ def child16(data):
         else:
             GainAction = "Raising Gain: " + str(GainLevel) + " "
     if OldGainLevel != GainLevel:
-        syssyfsfile = open(r"/sys/module/cxadc/parameters/level","w")
+        #syssyfsfile = open(r"/sys/module/cxadc/parameters/level","w")
+        syssyfsfile = open(r"/sys/class/cxadc/cxadc0/device/parameters/level","w")
         syssyfsfile.write(str(GainLevel))
         syssyfsfile.close()
 
@@ -80,7 +82,8 @@ def child16(data):
     os._exit(0)
 
 def child(data):
-    syssyfsfile = open(r"/sys/module/cxadc/parameters/level","r")    
+    #syssyfsfile = open(r"/sys/module/cxadc/parameters/level","r")    
+    syssyfsfile = open(r"/sys/class/cxadc/cxadc0/device/parameters/level","r")    
     GainLevel = int(syssyfsfile.read())
     syssyfsfile.close()
     OldGainLevel = GainLevel
@@ -118,7 +121,8 @@ def child(data):
         else:
             GainAction = "Raising Gain: " + str(GainLevel) + " "
     if GainLevel != OldGainLevel:
-        syssyfsfile = open(r"/sys/module/cxadc/parameters/level","w")
+        #syssyfsfile = open(r"/sys/module/cxadc/parameters/level","w")
+        syssyfsfile = open(r"/sys/class/cxadc/cxadc0/device/parameters/level","w")
         syssyfsfile.write(str(GainLevel))
         syssyfsfile.close()
         
@@ -133,10 +137,12 @@ name_out = sys.argv[1]
 CheckInterval = 150 #checking interval 125 = ~7sec@40msps
 CountVar = -150
 BUFSIZE   = 2097152
-syssyfsfile = open(r"/sys/module/cxadc/parameters/tenbit","r")
+#syssyfsfile = open(r"/sys/module/cxadc/parameters/tenbit","r")
+syssyfsfile = open(r"/sys/class/cxadc/cxadc0/device/parameters/tenbit","r")
 tenbit = int(syssyfsfile.read())
 syssyfsfile.close()
 val_compare = (2 ** ((tenbit+1)*8)) -1
+print ("using: /dev/cxadc0")
 print (val_compare,tenbit)
 in_fh = open(name_in, "rb")
 out_fh = open(name_out, "wb")
