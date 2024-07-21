@@ -1,3 +1,3 @@
 #!/bin/bash
-echo $1 > /sys/module/cxadc/parameters/level
+echo $2 > /sys/class/cxadc/cxadc$1/device/parameters/level
 cxvalues

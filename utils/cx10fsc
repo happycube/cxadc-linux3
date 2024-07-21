@@ -1,2 +1,3 @@
-echo 1 > /sys/module/cxadc/parameters/tenxfsc
+#!/bin/bash
+echo 1 > /sys/class/cxadc/cxadc$1/device/parameters/tenxfsc
 cxvalues

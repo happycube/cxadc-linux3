@@ -24,9 +24,11 @@ There's a few steps to using cxlvlcavdd:
 
 ## Command Arguments
 
-cx8fsc = set 8fsc sample rate mode.  1x crystal speed.
+Most commands now take a numerical argument corresponding to the card you want to apply the change to. Commands that previously had an argument, that argument is now the second argument.  cxlvlcavdd assumes card 0 and does not take a numerical argument for the card.
 
-cx10fsc = set 10fsc sample rate mode. 1.25x crystal speed (only recommended when also using 16bit mode).
+cx8fsc = set 8fsc sample rate mode on card 0.  1x crystal speed.
+
+cx10fsc = set 10fsc sample rate mode on card 1. 1.25x crystal speed (only recommended when also using 16bit mode).
 
 cx16bit = set cxadc to return unsigned 16 bit samples.
 
