@@ -41,11 +41,11 @@
 
 #define default_latency			-1
 #define default_audsel			-1
-#define default_vmux			2
+#define default_vmux		        1	
 #define default_level			16
 #define default_tenbit			0
 #define default_tenxfsc			0
-#define default_sixdb			1
+#define default_sixdb			0
 #define default_crystal			28636363
 #define default_center_offset	8
 
