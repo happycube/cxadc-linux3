@@ -956,7 +956,7 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	if (alloc_risc_inst_buffer(ctd)) {
 		cx_err("cannot alloc risc buffer\n");
 		rc = -ENOMEM;
-		goto fail1;
+		goto fail1s;
 	}
 
 	for (i = 0; i < (MAX_DMA_PAGE+1); i++) {
@@ -1195,6 +1195,8 @@ fail2:
 fail1x:
 	free_dma_buffer(ctd);
 	free_risc_inst_buffer(ctd);
+fail1s:
+	sysfs_remove_group(&pci_dev->dev.kobj, &mycxadc_group);
 fail1:
 	kfree(ctd);
 fail0:
