@@ -62,40 +62,10 @@
 /* corresponds to 8192 DMA pages of 4k bytes */
 #define MAX_DMA_PAGE (VBI_DMA_BUFF_SIZE/PAGE_SIZE)
 
-/*
- * 1 sync instruction (first page only) followed by 510 write instruction
- * and finally a 1 jmp instruction to next page/reloop
- * this will give 4 + 510*8 +  8 = 4092 bytes, which fits into a page
- */
-#define WRITE_INST_PER_PAGE 510
-
-/*
- * number of write per page must be even
- * each write risc instruction is 8 byte
- * and the end , there is a jmp to next page which is 8 byte
- * giving a total of 510 * 8 + 8 = 4088
- */
-#define NUMBER_OF_WRITE_PER_PAGE 510
-
 #define CLUSTER_BUFFER_SIZE 2048
-
-#define NUMBER_OF_WRITE_NEEDED (VBI_DMA_BUFF_SIZE/CLUSTER_BUFFER_SIZE)
-
-/*
- * +1 page for additional one write page if
- *   NUMBER_OF_WRITE_NEEDED/NUMBER_OF_WRITE_PER_PAGE is not integer
- * +1 page for first sync and jmp instruction
- *   (we used 12 bytes of 4 kbytes only)
- */
-#define NUMBER_OF_RISC_PAGE ((NUMBER_OF_WRITE_NEEDED/NUMBER_OF_WRITE_PER_PAGE)+1+1)
 
 /* Must be a power of 2 */
 #define IRQ_PERIOD_IN_PAGES 0x200
-
-struct risc_page {
-	struct risc_page *next;
-	char buffer[PAGE_SIZE - sizeof(struct risc_page *)];
-};
 
 struct cxadc {
 	/* linked list */
