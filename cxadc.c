@@ -65,7 +65,7 @@
 #define CLUSTER_BUFFER_SIZE 2048
 
 /* Must be a power of 2 */
-#define IRQ_PERIOD_IN_PAGES 0x200
+#define IRQ_PERIOD_IN_PAGES (0x200000 >> PAGE_SHIFT)
 
 struct cxadc {
 	/* linked list */
@@ -532,7 +532,7 @@ static void free_dma_buffer(struct cxadc *ctd)
 
 	for (i = 0; i < MAX_DMA_PAGE; i++) {
 		if (ctd->pgvec_virt[i])
-			dma_free_coherent(&ctd->pci->dev, 4096, ctd->pgvec_virt[i], ctd->pgvec_phy[i]);
+			dma_free_coherent(&ctd->pci->dev, PAGE_SIZE, ctd->pgvec_virt[i], ctd->pgvec_phy[i]);
 	}
 }
 
@@ -559,7 +559,7 @@ static void free_risc_inst_buffer(struct cxadc *ctd)
 
 static int make_risc_instructions(struct cxadc *ctd)
 {
-	int i;
+	int i, j;
 	int irqt;
 	unsigned int loop_addr;
 	unsigned int dma_addr;
@@ -573,18 +573,21 @@ static int make_risc_instructions(struct cxadc *ctd)
 	for (i = 0; i < MAX_DMA_PAGE; i++) {
 		irqt++;
 		irqt &= IRQ_PERIOD_IN_PAGES - 1;
-		*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|(3<<26)|(0<<16);
-
 		dma_addr = ctd->pgvec_phy[i];
-		*pp++ = dma_addr;
+
+		for (j = 0; j < (PAGE_SIZE / CLUSTER_BUFFER_SIZE) - 1; j++) {
+			*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|(3<<26)|(0<<16);
+			*pp++ = dma_addr;
+			dma_addr += CLUSTER_BUFFER_SIZE;
+		}
 
 		if (i != MAX_DMA_PAGE - 1) {
 			*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|(((irqt == 0) ? 1 : 0)<<24)|(3<<26)|(1<<16);
-			*pp++ = dma_addr+CLUSTER_BUFFER_SIZE;
+			*pp++ = dma_addr;
 		} else {
 			/* reset cnt to 0 */
 			*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|(((irqt == 0) ? 1 : 0)<<24)|(3<<26)|(3<<16);
-			*pp++ = dma_addr+CLUSTER_BUFFER_SIZE;
+			*pp++ = dma_addr;
 		}
 	}
 
@@ -748,13 +751,13 @@ static ssize_t cxadc_char_read(struct file *file, char __user *tgt,
 			unsigned int len;
 
 			/* handle partial pages for either reason */
-			len = (*offset % 4096) ? (4096 - (*offset % 4096)) : 4096;
+			len = (*offset % PAGE_SIZE) ? (PAGE_SIZE - (*offset % PAGE_SIZE)) : PAGE_SIZE;
 			if (len > count)
 				len = count;
 
-			if (copy_to_user(tgt, ctd->pgvec_virt[pnum] + (*offset % 4096), len))
+			if (copy_to_user(tgt, ctd->pgvec_virt[pnum] + (*offset % PAGE_SIZE), len))
 				return -EFAULT;
-			memset(ctd->pgvec_virt[pnum] + (*offset % 4096), 0, len);
+			memset(ctd->pgvec_virt[pnum] + (*offset % PAGE_SIZE), 0, len);
 
 			count -= len;
 			tgt += len;
@@ -861,14 +864,8 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	unsigned char revision, lat;
 	int rc;
 	unsigned int total_size;
-	unsigned int pgsize;
 	unsigned long longtenxfsc, longPLLboth, longPLLint;
 	int PLLint, PLLfrac, PLLfin, SConv;
-
-	if (PAGE_SIZE != 4096) {
-		dev_err(&pci_dev->dev, "cxadc: only page size of 4096 is supported\n");
-		return -EIO;
-	}
 
 	if (pci_enable_device(pci_dev)) {
 		dev_err(&pci_dev->dev, "cxadc: enable device failed\n");
@@ -935,17 +932,16 @@ static int cxadc_probe(struct pci_dev *pci_dev,
 	}
 
 	total_size = 0;
-	pgsize = 4096;
 
 	for (i = 0; i < MAX_DMA_PAGE; i++) {
 		dma_addr_t dma_handle;
 
-		ctd->pgvec_virt[i] = dma_zalloc_coherent(&ctd->pci->dev, 4096,
+		ctd->pgvec_virt[i] = dma_zalloc_coherent(&ctd->pci->dev, PAGE_SIZE,
 				&dma_handle, GFP_KERNEL);
 
 		if (ctd->pgvec_virt[i] != 0) {
 			ctd->pgvec_phy[i] = dma_handle;
-			total_size += pgsize;
+			total_size += PAGE_SIZE;
 		} else {
 			cx_err("alloc dma buffer failed. index = %u\n", i);
 
