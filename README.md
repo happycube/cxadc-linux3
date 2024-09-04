@@ -56,10 +56,10 @@ Links to buy a CX Card [White Variant](https://www.aliexpress.com/item/100500346
 # Getting Started & Installation
 
 
-## Install Dependency's
+## Install Dependencies
 
 
-Updated for Ubuntu 22.04
+### Ubuntu 22.04
 
 Update your package manager
 
@@ -88,6 +88,15 @@ Install FFmpeg (If you don't already have it!)
 Install FLAC (If you don't already have it!)
 
     sudo apt install flac 
+
+
+### Raspberry Pi OS on Raspberry Pi 4 or 5 with PCIe adapter
+
+As above, but install `raspberrypi-kernel-headers` instead of `linux-headers-generic`,
+and then add the following to the end of `/boot/firmware/config.txt`:
+
+    [all]
+    dtoverlay=pcie-32bit-dma
 
 
 ## Install CXADC
