@@ -559,41 +559,39 @@ static void free_risc_inst_buffer(struct cxadc *ctd)
 
 static int make_risc_instructions(struct cxadc *ctd)
 {
-	int i, j;
-	int irqt;
-	unsigned int loop_addr;
+	int page, wr;
 	unsigned int dma_addr;
 	unsigned int *pp = (unsigned int *)ctd->risc_inst_virt;
 
-	loop_addr = ctd->risc_inst_phy+4;
+	/* The RISC program is just a long sequence of WRITEs that fill each DMA page in
+	   sequence. It begins with a SYNC and ends with a JUMP back to the first WRITE. */
 
-	*pp++ = RISC_SYNC|(3<<16);
+	*pp++ = RISC_SYNC|RISC_CNT_RESET;
 
-	irqt = 0;
-	for (i = 0; i < MAX_DMA_PAGE; i++) {
-		irqt++;
-		irqt &= IRQ_PERIOD_IN_PAGES - 1;
-		dma_addr = ctd->pgvec_phy[i];
+	for (page = 0; page < MAX_DMA_PAGE; page++) {
+		dma_addr = ctd->pgvec_phy[page];
 
-		for (j = 0; j < (PAGE_SIZE / CLUSTER_BUFFER_SIZE) - 1; j++) {
-			*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|(3<<26)|(0<<16);
+		/* Each WRITE is CLUSTER_BUFFER_SIZE bytes so each DMA page requires
+		   n = (PAGE_SIZE / CLUSTER_BUFFER_SIZE) WRITEs to fill it. */
+
+		/* Generate n - 1 WRITEs. */
+		for (wr = 0; wr < (PAGE_SIZE / CLUSTER_BUFFER_SIZE) - 1; wr++) {
+			*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|RISC_SOL|RISC_EOL|RISC_CNT_NONE;
 			*pp++ = dma_addr;
 			dma_addr += CLUSTER_BUFFER_SIZE;
 		}
 
-		if (i != MAX_DMA_PAGE - 1) {
-			*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|(((irqt == 0) ? 1 : 0)<<24)|(3<<26)|(1<<16);
-			*pp++ = dma_addr;
-		} else {
-			/* reset cnt to 0 */
-			*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|(((irqt == 0) ? 1 : 0)<<24)|(3<<26)|(3<<16);
-			*pp++ = dma_addr;
-		}
+		/* Generate the final write which may trigger side effects. */
+		*pp++ = RISC_WRITE|CLUSTER_BUFFER_SIZE|RISC_SOL|RISC_EOL|
+			/* If this is the last DMA page, reset counter, otherwise increment it. */
+			(page == (MAX_DMA_PAGE - 1) ? RISC_CNT_RESET : RISC_CNT_INC)|
+			/* If we've filled enough pages, trigger IRQ1. */
+			((((page + 1) % IRQ_PERIOD_IN_PAGES) == 0) ? RISC_IRQ1 : 0);
+		*pp++ = dma_addr;
 	}
 
-	/* 1<<24 = irq , 11<<16 = cnt */
-	*pp++ = RISC_JUMP|(0<<24)|(0<<16); /* interrupt and increment counter */
-	*pp++ = loop_addr;
+	*pp++ = RISC_JUMP; /* Jump back to first WRITE (+4 skips the SYNC command.) */
+	*pp++ = ctd->risc_inst_phy + 4;
 
 	cx_info("end of risc inst 0x%p total size %lu kbyte\n",
 		pp, (unsigned long)((char *)pp - (char *)ctd->risc_inst_virt) / 1024);
