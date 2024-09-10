@@ -32,7 +32,10 @@ There is now a [wiki](https://github.com/happycube/cxadc-linux3/wiki) about the 
 ## Where to find current PCIe 1x CX2388x cards & notes:
 
 
-Links to buy a CX Card [White Variant](https://www.aliexpress.com/item/1005003461248897.html) / [Green Variant](https://www.aliexpress.com/item/1005003092946304.html) / [Blue Variant](https://www.aliexpress.com/item/4001286595482.html)
+Links to buy a CX Card: 
+
+- [White Variant](https://s.click.aliexpress.com/e/_DFDQaJh) (Recommended as it has the better CX25800 IC)
+- [Blue Variant](https://s.click.aliexpress.com/e/_DFDQaJh)
 
 **Note 00:** While `Mhz` is used and is accurate due to the crystal used, in reality, it should be called `MSPS` (million samples per second) as the actual effective sampled is half the Mhz number of the defined crystal/clock rate.
 
@@ -587,3 +590,4 @@ Clockgen Mod Established
 
 - Software defined 20/28.6/40/50msps modes
 - Shared clock source synchronised capture
+- Rasberry Pi5 Support
