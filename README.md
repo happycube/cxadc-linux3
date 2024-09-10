@@ -590,4 +590,4 @@ Clockgen Mod Established
 
 - Software defined 20/28.6/40/50msps modes
 - Shared clock source synchronised capture
-- Rasberry Pi5 Support
+- Raspberry Pi 4 & 5 support added by [Alistair Buxton](https://github.com/ali1234)
