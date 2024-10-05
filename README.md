@@ -34,7 +34,7 @@ There is now a [wiki](https://github.com/happycube/cxadc-linux3/wiki) about the 
 
 Links to buy a CX Card: 
 
-- [White Variant](https://s.click.aliexpress.com/e/_DFDQaJh) (Recommended as it has the better CX25800 IC)
+- Current CX White CX25800 Card Order Links [Link 1](https://s.click.aliexpress.com/e/_DBXJ7Cl) [Link 2](https://s.click.aliexpress.com/e/_DBBRKPR) [Link 3](https://s.click.aliexpress.com/e/_Dkhwebf) (16~30 USD) (Recommended as it has the better CX25800 IC)
 - [Blue Variant](https://s.click.aliexpress.com/e/_DFDQaJh)
 
 **Note 00:** While `Mhz` is used and is accurate due to the crystal used, in reality, it should be called `MSPS` (million samples per second) as the actual effective sampled is half the Mhz number of the defined crystal/clock rate.
