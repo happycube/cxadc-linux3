@@ -4,7 +4,7 @@
  *
  * Copyright (C) 2005-2007 Hew How Chee <how_chee@yahoo.com>
  * Copyright (C) 2013-2015 Chad Page <Chad.Page@gmail.com>
- * Copyright (C) 2019-2023 Adam Sampson <ats@offog.org>
+ * Copyright (C) 2019-2024 Adam Sampson <ats@offog.org>
  * Copyright (C) 2020-2022 Tony Anderson  <tandersn@cs.washington.edu>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -817,7 +817,9 @@ static long cxadc_char_ioctl(struct file *file, unsigned int cmd, unsigned long 
 
 static const struct file_operations cxadc_char_fops = {
 	.owner    = THIS_MODULE,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 12, 0)
 	.llseek   = no_llseek,
+#endif
 	.unlocked_ioctl = cxadc_char_ioctl,
 	.open     = cxadc_char_open,
 	.release  = cxadc_char_release,
