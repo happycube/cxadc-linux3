@@ -32,9 +32,10 @@ There is now a [wiki](https://github.com/happycube/cxadc-linux3/wiki) about the 
 ## Where to find current PCIe 1x CX2388x cards & notes:
 
 
+
 Links to buy a CX Card: 
 
-- Current CX White CX25800 Card Order Links [Link 1](https://s.click.aliexpress.com/e/_DBXJ7Cl) [Link 2](https://s.click.aliexpress.com/e/_DBBRKPR) [Link 3](https://s.click.aliexpress.com/e/_Dkhwebf) (16~30 USD) (Recommended as it has the better CX25800 IC)
+- Current CX White CX25800 Card Order Links [Link 1](https://s.click.aliexpress.com/e/_olUXYFh) / [Link 2](https://s.click.aliexpress.com/e/_DBBRKPR) / [Link 3](https://s.click.aliexpress.com/e/_Dkhwebf) (16~30 USD) (Recommended as it has the better CX25800 IC)
 - [Blue Variant](https://s.click.aliexpress.com/e/_DFDQaJh)
 
 **Note 00:** While `Mhz` is used and is accurate due to the crystal used, in reality, it should be called `MSPS` (million samples per second) as the actual effective sampled is half the Mhz number of the defined crystal/clock rate.
@@ -62,7 +63,11 @@ Links to buy a CX Card:
 ## Install Dependencies
 
 
-### Ubuntu 22.04
+</details>
+
+<details closed>
+<summary>Ubuntu 22.04</summary>
+<br>
 
 Update your package manager
 
@@ -92,14 +97,20 @@ Install FLAC (If you don't already have it!)
 
     sudo apt install flac 
 
+</details>
 
-### Raspberry Pi OS on Raspberry Pi 4 or 5 with PCIe adapter
+<details closed>
+<summary>Raspberry Pi OS on Raspberry Pi 4 or 5 with PCIe adapter</summary>
+<br>
 
-As above, but install `raspberrypi-kernel-headers` instead of `linux-headers-generic`,
+As Ubuntu 22.04, but install `raspberrypi-kernel-headers` instead of `linux-headers-generic`,
 and then add the following to the end of `/boot/firmware/config.txt`:
 
     [all]
     dtoverlay=pcie-32bit-dma
+
+
+</details>
 
 
 ## Install CXADC
@@ -218,9 +229,10 @@ To change configuration open the terminal and use the following command to chang
 
 ## Module Parameters
 
-> [!CAUTION]  
-> Configuration will reset on every re-boot of the system, save your config and paste the commands at every start-up ready for capture. 
 
+> [!CAUTION]  
+> - Configuration will reset on every re-boot of the system.
+> - If using a fixed input/gain configuration update the `cxadc.rules` file inside the `etc/udev/rules.d` directory, this will save you from having to manually copy-paste change values on each system restart. 
 
 > [!NOTE]  
 > You can use `cxvalues` to check your current configuration state at anytime globally on the terminal. 
@@ -234,7 +246,7 @@ echo X >/sys/class/cxadc/cxadc0/device/parameters/Y
 Example: `echo 1 >/sys/class/cxadc/cxadc0/device/parameters/vmux`
 
 > [!WARNING]  
-> Also see the utils folders for scripts to manipulate these values; sudo will be required unless you add your local user to the `video` group as mentioned above.
+> Also see the `utils` folders for scripts to manipulate these values; sudo will be required unless you add your local user to the `video` group as mentioned above.
 
 
 ## `Multi Card Usage`
@@ -254,6 +266,9 @@ This changes to
 
 This can go up to 256, but real world use we don't expect more then 8-16 per system.
 
+> [!NOTE]  
+> Each card has a separate set of entries in the `cxadc.rules` file also.
+
 
 ## `vmux` (0 to 3, default 2) select physical input to capture.
 
@@ -263,6 +278,9 @@ This can go up to 256, but real world use we don't expect more then 8-16 per sys
 A typical TV card has a tuner, a composite input with RCA or BNC ports and S-Video input, tied to three of these inputs; you
 may need to experiment with inputs. The quickest way is to attach a video signal and see a white flash on signal hook-up, and change vmux until you get something.
 
+
+> [!TIP]  
+> On current White CX cards `VMUX 0 is S-Video` and `VMUX 1 is RCA input`. 
 
 ## Commands to Check for Signal Burst
 
@@ -331,25 +349,20 @@ By default, cxadc captures at a rate of 8 x fsc (8 * 315 / 88 Mhz, approximately
 
 tenxfsc - Sets sampling rate of the ADC based on the crystal's native frequency
 
-`0` = Native crystal frequency i.e 28MHz (default), 40, 50, 54, (Modified etc)
+`0` = Native crystal frequency i.e 28MHz (default), 40, 50, 54, (if hardware modified)
 
 `1` = Native crystal frequency times 1.25
 
-`2` = Native crystal frequency times ~1.4
 
-With the Stock 28Mhz Crystal the modes are the following:
+With the Stock 28.6Mhz Crystal the modes are the following:
 
-`0` = 28.6 MHz 8bit
+`0` = 28.6 MHz 8-bit
 
-`1` = 35.8 MHz 8bit
-
-`2` = 40 MHz 8bit
+`1` = 35.8 MHz 8-bit (Upsampled)
 
 
-**Note!**
-
-
-`40Mhz 8-bit & 20Mhz 16-bit modes` have a **very rare** chance of working on stock non-modified cards, with the stock 28Mhz crystal. It's recommended to physically replace the stock crystal with an ABLS2-40.000MHZ-D4YF-T, to achieve said sample rate capture ability and lower noise.
+> [!NOTE]  
+> For 40mhz 8-bit native or 20mhz 16-bit (10-bit scaled to 16-bits) sampling please use the [clockgen or crystal replacement](https://github.com/happycube/cxadc-linux3/wiki/Modifications) hardware mods for reliable results & lower noise.
 
 Alternatively, enter 2 digit values (like 20), that will then be
 multiplied by 1,000,000 (so 20 = 20,000,000sps), with the caveat
@@ -389,8 +402,6 @@ When in 16bit sample modes, change to the following:
 
 `17.9 MHz 16-bit` - Stock Card
 
-`20 MHz 16-bit` - Stock Card
-
 
 ## `crystal` (? - 54000000,  default 28636363)
 
@@ -406,6 +417,9 @@ This value is ONLY used to compute the sample rates entered for the tenxfsc para
 
 
 This option allows you to manually adjust DC center offset or the centering of the RF signal you wish to capture.
+
+> [!TIP]  
+> You can visually adjust the DC offset line with this handy [GNURadio Script](https://github.com/tandersn/GNRC-Flowgraphs/tree/main/test_cxadc)!
 
 Manual calculation: If the "highest" and "lowest" values returned are equidistant from 0 and 255 respectively, it's cantered.
 
@@ -423,13 +437,11 @@ Example:
 
 110-110=0  119+110 = 229 = not centred.
 
-You can visually adjust this with a handy GNURadio Script
-
 
 # Capture
 
 
-### Gain Adjustment
+## Gain Adjustment
 
 
 Connect a live or playing signal to the input you've selected, and run `leveladj` to adjust the gain automatically:
@@ -440,14 +452,20 @@ To use this on multiple different cards
 
 `./leveladj -d 1` (1 means for device 2/3/4 and so on device 0 is assumed when `-d` is not used)
 
+
+### Fixed Gain & External Amplifyer Use
+
+
 You can manually set a fixed gain setting after centering the signal with
 
 `sudo echo 0 >/sys/class/cxadc/cxadc0/device/parameters/level` - Internal Gain (`0`~`31`)
 
 `sudo echo 0 >/sys/class/cxadc/cxadc0/device/parameters/sixdb` - Digital Gain Boost (`1` On / `0` Off)
 
+This is critical to note when trying capture [RAW CVBS](https://github.com/oyvindln/vhs-decode/wiki/CVBS-Composite-Decode) or using an [AD4857](https://github.com/happycube/cxadc-linux3/wiki/Modifications#external-amplification) amplifier with a videotape deck.
 
-### Command Line Capture (CLI)
+
+## Command Line Capture (CLI)
 
 
 Open a terminal in the directory you wish to write the data to, and use the following example command to capture 10 seconds of test samples.
@@ -458,7 +476,7 @@ Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy then <kbd>Ctrl</kbd>+<kbd>P</kbd> to 
 
 `cat` is the default due to user issues with `dd`
 
-To use the PV argument that enables data rate/runtime readout, modify the command command with `|pv >`
+To use the PV argument that enables data rate/runtime readout, modify the command with `|pv >`
 
 It will look like this when in use:
 
@@ -497,7 +515,7 @@ Secure boot can cause issues.
 
 Kernel updates will break the driver and require a full re-installation, unless DKMS is setup. 
 
-`rules.config` - Inside this file are your defined base settings every time the driver loads
+`rules.config` - Inside this file are your defined base settings every time the driver loads.
 
 
 ## History
@@ -586,8 +604,12 @@ New multi-card support added by [Adam R](https://github.com/AR1972)
 
 ### 2024 - Hardware Notes
 
-Clockgen Mod Established 
+[Clockgen Mod](https://github.com/happycube/cxadc-linux3/wiki/Modifications#clockgen-mod---external-clock) Established.
 
 - Software defined 20/28.6/40/50msps modes
 - Shared clock source synchronised capture
 - Raspberry Pi 4 & 5 support added by [Alistair Buxton](https://github.com/ali1234)
+
+### 2024-12-11
+
+- [Windows Port](https://github.com/JuniorIsAJitterbug/cxadc-win) of CXADC established by Jitterbug
