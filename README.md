@@ -43,7 +43,7 @@ Links to buy a CX Card:
 
 **Note 02:** For reliable 40mhz 8-bit & 20mhz 16-bit samples, it is recommended to replace the stock crystal with a `ABLS2-40.000MHZ-D4YF-T` or equivalent fundamental crystal.
 
-[For the full list of working crystal replacements, check the wiki page here!](https://github.com/happycube/cxadc-linux3/wiki/Upgraded-Crystals)
+[For the full list of working crystal replacements, check the wiki page here!](https://github.com/happycube/cxadc-linux3/wiki/Crystal-Upgrades)
 
 **Note 03:** Asmedia PCI to PCIe 1x bridge chips may have support issues on some older PCH chipsets based on Intel 3rd gen; for example, white cards use ITE chips which might not have said issue.
 
