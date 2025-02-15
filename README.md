@@ -385,7 +385,7 @@ on individual card and cooling, but can cause system crash for others,
 so are prevented by the driver code (increase at your own risk).
 
 
-## `tenbit`  (0 or 1, default 0)
+## `tenbit` (0 or 1, default 0)
 
 
 By default, cxadc captures unsigned 8-bit samples.
@@ -497,15 +497,18 @@ This allows the software to correctly detect the data and use it for decoding or
 ### Real-Time FLAC Compressed Capture
 
 
-Optional but **not optimal** due to risk of dropped samples even with high-end hardware etc, on the fly FLAC compressed captures are possible with the following commands; edit rates as needed.
+Optional but **not optimal** due to risk of dropped samples even with high-end hardware, on the fly FLAC compressed captures are possible with the following commands; edit rates and modes as needed.
+
+> [!WARNING]  
+> You need to be on FLAC 1.5.0 or newer to leverage multi-threading for higher reliability capture and real-time compression. 
 
 8-bit Mode (Stock 28.6 MSPS)
 
-    cat /dev/cxadc0 | flac --fast -16 --sample-rate=28636 --sign=unsigned --channels=1 --endian=little --bps=8 --blocksize=65535 --lax -f - -o media-name-28msps-8bit-cx-card.flac
+    cat /dev/cxadc0 | flac --threads 64 -6 --sample-rate=28636 --sign=unsigned --channels=1 --endian=little --bps=8 --blocksize=65535 --lax -f - -o media-name-28msps-8bit-cx-card.flac
 
 16-bit Mode (Stock 17.8 MSPS)
 
-    cat /dev/cxadc0 | flac --fast -16 --sample-rate=17898 --sign=unsigned --channels=1 --endian=little --bps=16 --blocksize=65535 --lax -f - -o media-name-17.8msps-16bit-cx-card.flac
+    cat /dev/cxadc0 | flac --threads 64 -6 --sample-rate=17898 --sign=unsigned --channels=1 --endian=little --bps=16 --blocksize=65535 --lax -f - -o media-name-17.8msps-16bit-cx-card.flac
 
 
 # Issues & Debugging
@@ -613,3 +616,7 @@ New multi-card support added by [Adam R](https://github.com/AR1972)
 ### 2024-12-11
 
 - [Windows Port](https://github.com/JuniorIsAJitterbug/cxadc-win) of CXADC established by Jitterbug
+
+### 2025-02-11
+
+- [FLAC V1.5.0 released](https://github.com/xiph/flac/releases/tag/1.5.0) enabling CPU multi-threading for FM RF archival capture with FLAC.
