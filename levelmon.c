@@ -1,12 +1,12 @@
 #include <fcntl.h>
 #include <getopt.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include "utils.h"
 
 // this needs to be one over the ring buffer size to work
 #define READ_LEN (40000000 / 4)
@@ -16,10 +16,9 @@ unsigned short *wbuf = (void *)buf;
 int readlen = READ_LEN;
 
 int main(int argc, char *argv[]) {
-	FILE *syssfys;
 	int fd;
-	char *device;
-	char *device_path;
+	char device[64];
+	char device_path[128];
 	char str[512];
 	struct timeval t1, t2;
 	double elapsedTime;
@@ -28,8 +27,6 @@ int main(int argc, char *argv[]) {
 	int c;
 
 	opterr = 0;
-	device = (char *)malloc(64);
-	device_path = (char *)malloc(128);
 	sprintf(device, "cxadc0");
 	sprintf(device_path, "/dev/cxadc0");
 
@@ -44,32 +41,18 @@ int main(int argc, char *argv[]) {
 		};
 	}
 
-	// open the cxadc device
+	// test if the cxadc device is available
 	fd = open(device_path, O_RDWR);
 	if (fd <= 0) {
 		fprintf(stderr, "%s not found\n", device_path);
-		if (device_path)
-			free(device_path);
-		if (device)
-			free(device);
 		return -1;
 	}
 	close(fd);
 
 	// read tenbit
-	sprintf(str, "/sys/class/cxadc/%s/device/parameters/tenbit", device);
-	syssfys = fopen(str, "r");
-
-	if (syssfys == NULL) {
-		fprintf(stderr, "no sysfs paramerters\n");
-		if (device_path)
-			free(device_path);
-		if (device)
-			free(device);
+    if (read_cxadc_param("tenbit", device, &tenbit)) {
 		return -1;
 	}
-	fscanf(syssfys, "%d", &tenbit);
-	fclose(syssfys);
 
 	fd = open(device_path, O_RDONLY);
 
@@ -149,16 +132,11 @@ int main(int argc, char *argv[]) {
 
 		printf(
 			"lo |%d| [%7.3f%%] (%7.3f%%) center %.2f%% hi (%7.3f%%) [%7.3f%%] "
-			"|%d|\tnsamp %d\trate %.2f\n",
+			"|%d|\tnsamp %ld\trate %.2f\n",
 			clip_lo, low_pct, avg_lo, avg_center, avg_hi, high_pct, clip_hi,
 			total_samples, rate);
 	}
 
 	close(fd);
-
-	if (device_path)
-		free(device_path);
-	if (device)
-		free(device);
 	return 0;
 }
