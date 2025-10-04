@@ -465,6 +465,35 @@ You can manually set a fixed gain setting after centering the signal with
 This is critical to note when trying capture [RAW CVBS](https://github.com/oyvindln/vhs-decode/wiki/CVBS-Composite-Decode) or using an [AD4857](https://github.com/happycube/cxadc-linux3/wiki/Modifications#external-amplification) amplifier with a videotape deck.
 
 
+### Level Monitoring
+
+Connect a live or playing signal to the input you've selected, and run `levelmon` to monitor the levels:
+
+    ./levelmon
+
+The levels are read from the card and printed to the terminal every 1/4 second.
+
+#### Example Output
+```
+    / clipped samples low
+    |     / min amplitude
+    |     |         / avg amplitude (positive side of center)
+    |     |         |                / dc offset
+    |     |         |                |
+lo |0| [  3.906%] ( 33.429%) center -0.54% hi ( 65.764%) [ 95.312%] |0|	nsamp 10000000	rate 44.58
+    ^     ^^^^^     ^^^^^^           ^^^^       ^^^^^^     ^^^^^^    ^        ^^^^^^^^       ^^^^^
+                                                |          |         |        |              \ calculated sample rate in msps
+                                                |          |         |        \ total number of samples collected
+                                                |          |         \ clipped samples high
+                                                |          \ max amplitude
+                                                \ avg amplitude (positive side of center)
+```
+
+To use this on multiple different cards 
+
+`./levelmon -d 1` (1 means for device 2/3/4 and so on device 0 is assumed when `-d` is not used)
+
+
 ## Command Line Capture (CLI)
 
 
@@ -620,3 +649,10 @@ New multi-card support added by [Adam R](https://github.com/AR1972)
 ### 2025-02-11
 
 - [FLAC V1.5.0 released](https://github.com/xiph/flac/releases/tag/1.5.0) enabling CPU multi-threading for FM RF archival capture with FLAC.
+
+### 2025-10-04 - Add `levelmon`, support kernel 6.12
+
+Add `levelmon` [Ethan Halsall](https://github.com/eshaz) (ethanshalsall@gmail.com)
+
+- Add `levelmon` tool that monitors the levels and clipping
+- Small fix to support kernel 6.12.0 and up
