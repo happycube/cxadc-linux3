@@ -34,7 +34,27 @@ int main(int argc, char *argv[]) {
 				sprintf(device, "%s", optarg);
 			}
 			break;
-		};
+		case '?':
+			// clang-format off
+			fputs("levelmon continuously monitors levels from the specified cxadc card.\n", stderr);
+			fputs("\n", stderr);
+			fputs("levelmon -d <cxadc_device>\n", stderr);
+			fputs("\n", stderr);
+			fputs("Output format:\n", stderr);
+			fputs(".   / clipped samples low\n", stderr);
+			fputs(".   |     / min amplitude\n", stderr);
+			fputs(".   |     |         / avg amplitude (negative side of center)\n", stderr);
+			fputs(".   |     |         |                / dc offset\n", stderr);
+			fputs(".   |     |         |                |\n", stderr);
+			fputs("lo |0| [  3.906%] ( 33.429%) center -0.54% hi ( 65.764%) [ 95.312%] |0|	nsamp 10000000	rate 44.58\n", stderr);
+			fputs(".   ^     ^^^^^     ^^^^^^           ^^^^       ^^^^^^     ^^^^^^    ^        ^^^^^^^^       ^^^^^\n", stderr);
+			fputs(".                                               |          |         |        |              \\ calculated sample rate in msps\n", stderr);
+			fputs(".                                               |          |         |        \\ total number of samples collected\n", stderr);
+			fputs(".                                               |          |         \\ clipped samples high\n", stderr);
+			fputs(".                                               |          \\ max amplitude\n", stderr);
+			// clang-format on
+			return -1;
+		}
 	}
 
 	// test if the cxadc device is available

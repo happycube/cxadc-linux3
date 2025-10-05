@@ -469,7 +469,7 @@ This is critical to note when trying capture [RAW CVBS](https://github.com/oyvin
 
 Connect a live or playing signal to the input you've selected, and run `levelmon` to monitor the levels:
 
-    ./levelmon
+    ./levelmon -d cxadc0
 
 The levels are read from the card and printed to the terminal every 1/4 second.
 
@@ -477,7 +477,7 @@ The levels are read from the card and printed to the terminal every 1/4 second.
 ```
     / clipped samples low
     |     / min amplitude
-    |     |         / avg amplitude (positive side of center)
+    |     |         / avg amplitude (negative side of center)
     |     |         |                / dc offset
     |     |         |                |
 lo |0| [  3.906%] ( 33.429%) center -0.54% hi ( 65.764%) [ 95.312%] |0|	nsamp 10000000	rate 44.58
