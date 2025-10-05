@@ -1,19 +1,14 @@
+#include "utils.h"
 #include <fcntl.h>
 #include <getopt.h>
-#include <stdlib.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include "utils.h"
 
-// this needs to be one over the ring buffer size to work
-#define READ_LEN (40000000 / 4)
-unsigned char buf[READ_LEN + 1];
-unsigned short *wbuf = (void *)buf;
-
-int readlen = READ_LEN;
+#define READ_SECONDS 0.25
 
 int main(int argc, char *argv[]) {
 	int fd;
@@ -24,6 +19,7 @@ int main(int argc, char *argv[]) {
 	double elapsedTime;
 
 	int tenbit = 0;
+	int crystal = 0;
 	int c;
 
 	opterr = 0;
@@ -49,12 +45,21 @@ int main(int argc, char *argv[]) {
 	}
 	close(fd);
 
-	// read tenbit
-    if (read_cxadc_param("tenbit", device, &tenbit)) {
+	if (read_cxadc_param("tenbit", device, &tenbit)) {
 		return -1;
 	}
 
-	fd = open(device_path, O_RDONLY);
+	if (read_cxadc_param("crystal", device, &crystal)) {
+		return -1;
+	}
+
+	int readlen = crystal * READ_SECONDS;
+	uint8_t *buf = malloc(readlen + 1);
+	if (!buf) {
+		fprintf(stderr, "failed to allocate %d bytes of memory\n", readlen + 1);
+		return -1;
+	}
+	uint16_t *wbuf = (void *)buf;
 
 	uint16_t min, center, max;
 	if (tenbit) {
@@ -66,16 +71,22 @@ int main(int argc, char *argv[]) {
 	}
 	center = max / 2;
 
+	fd = open(device_path, O_RDONLY);
+
 	while (1) {
 		uint32_t lo_count = 0, clip_lo = 0;
 		uint32_t hi_count = 0, clip_hi = 0;
-
 		uint64_t lo = 0, hi = 0, average = 0;
 		uint16_t low, high;
 
-		// read a bit
 		gettimeofday(&t1, NULL);
 		size_t total_samples = read(fd, buf, readlen);
+		if (total_samples < 0) {
+			printf("failed to read from device %s\n", device);
+			free(buf);
+			close(fd);
+			return -1;
+		}
 		gettimeofday(&t2, NULL);
 
 		elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;	   // sec to ms
@@ -89,13 +100,13 @@ int main(int argc, char *argv[]) {
 		high = min;
 
 		for (size_t i = 0; i < total_samples; i++) {
-            uint16_t value;
-            if (tenbit) {
-                value = wbuf[i] >> 6;
-            } else {
-                value = buf[i];
-            }
-            value += 1;
+			uint16_t value;
+			if (tenbit) {
+				value = wbuf[i] >> 6;
+			} else {
+				value = buf[i];
+			}
+			value += 1;
 
 			// find the average
 			average += value;
@@ -137,6 +148,7 @@ int main(int argc, char *argv[]) {
 			total_samples, rate);
 	}
 
+	free(buf);
 	close(fd);
 	return 0;
 }
