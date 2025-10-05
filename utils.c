@@ -13,8 +13,12 @@ int set_cxadc_param(char *name, char *device, int level)
 	}
 
 	sprintf(str, "%d", level);
-	write(fd, str, strlen(str) + 1);
-
+    if (write(fd, str, strlen(str) + 1) < 0) {
+		fprintf(stderr, "failed to set parameter %s\n", str);
+	    close(fd);
+		return -1;
+    }
+	
 	close(fd);
     return 0;
 }
@@ -27,11 +31,11 @@ int read_cxadc_param(char *param_name, char *device, int *param_value) {
 	syssfys = fopen(str, "r");
 
 	if (syssfys == NULL) {
-		fprintf(stderr, "no sysfs paramerters\n");
+		fprintf(stderr, "failed to open %s\n", str);
 		return -1;
 	}
 	
-    if (fscanf(syssfys, "%d", &param_value)) {
+    if (!fscanf(syssfys, "%d", param_value)) {
 		fprintf(stderr, "failed to read %s\n", param_name);
 	    fclose(syssfys);
 		return -1;

@@ -1,6 +1,4 @@
-#include <unistd.h>
 #include <sys/ioctl.h>
-#include <string.h>
 #include <getopt.h>
 #include <stdlib.h>
 #include "utils.h"
@@ -101,7 +99,11 @@ int main(int argc, char *argv[])
 		printf("testing level %d\n", level);
 
 		// read a bit
-		read(fd, buf, readlen);
+		if (read(fd, buf, readlen) < 0) {
+			printf("failed to read from device %s\n", device);
+			close(fd);
+			return -1;
+		}
 
 		if (tenbit) {
 			unsigned short *wbuf = (void *)buf;
