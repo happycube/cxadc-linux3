@@ -32,7 +32,6 @@ There is now a [wiki](https://github.com/happycube/cxadc-linux3/wiki) about the 
 ## Where to find current PCIe 1x CX2388x cards & notes:
 
 
-
 Links to buy a CX Card: 
 
 - Current CX White CX25800 Card Order Links [Link 1](https://s.click.aliexpress.com/e/_olUXYFh) / [Link 2](https://s.click.aliexpress.com/e/_DBBRKPR) / [Link 3](https://s.click.aliexpress.com/e/_Dkhwebf) (16~30 USD) (Recommended as it has the better CX25800 IC)
@@ -93,9 +92,29 @@ Install FFmpeg (If you don't already have it!)
 
     sudo apt install ffmpeg
 
-Install FLAC (If you don't already have it!)
 
-    sudo apt install flac 
+## FLAC V1.5.0
+
+Since the v1.5.0 update FLAC now supports multi-threaded encoding allowing for virtually all modern 4 Core systems to real-time encode FLAC from 2 or even more CX Cards capturing.
+
+
+> [!WARNING]
+> FLAC v1.4.x is normally the default package used by Linux dependency repository's so manual installation is still required. 
+
+    sudo apt update && sudo apt install -y build-essential cmake libogg-dev
+
+Install FLAC
+
+    wget https://github.com/xiph/flac/releases/download/1.5.0/flac-1.5.0.tar.xz
+    tar -xf flac-1.5.0.tar.xz
+    cd flac-1.5.0
+    mkdir build && cd build
+    cmake .. -DCMAKE_BUILD_TYPE=Release
+    make -j$(nproc)
+    sudo make install
+    sudo ldconfig
+
+
 
 </details>
 
@@ -494,13 +513,11 @@ Note: For use with the decode projects, filetypes `.u8` for 8-bit & `.u16` for 1
 This allows the software to correctly detect the data and use it for decoding or flac compression and renaming to `.vhs`/`.svhs` etc.
 
 
-### Real-Time FLAC Compressed Capture
+### Real-Time FLAC Compressed Capturing
 
-
-Optional but **not optimal** due to risk of dropped samples even with high-end hardware, on the fly FLAC compressed captures are possible with the following commands; edit rates and modes as needed.
 
 > [!WARNING]  
-> You need to be on FLAC 1.5.0 or newer to leverage multi-threading for higher reliability capture and real-time compression. 
+> You need to be on FLAC 1.5.0 or newer to leverage multi-threading for reliable real-time FLAC encoding.
 
 8-bit Mode (Stock 28.6 MSPS)
 
