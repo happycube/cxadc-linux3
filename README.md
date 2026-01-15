@@ -298,9 +298,6 @@ A typical TV card has a tuner, a composite input with RCA or BNC ports and S-Vid
 may need to experiment with inputs. The quickest way is to attach a video signal and see a white flash on signal hook-up, and change vmux until you get something.
 
 
-> [!TIP]  
-> On current White CX cards `VMUX 0 is S-Video` and `VMUX 1 is RCA input`. 
-
 ## Commands to Check for Signal Burst
 
 
@@ -544,6 +541,8 @@ This allows the software to correctly detect the data and use it for decoding or
 
 ### Real-Time FLAC Compressed Capturing
 
+> [!NOTE]  
+> This can have a 40~60% reduction in file sizes compared to just RAW 8-bit or 16-bit scaled files.
 
 > [!WARNING]  
 > You need to be on FLAC 1.5.0 or newer to leverage multi-threading for reliable real-time FLAC encoding.
@@ -673,3 +672,4 @@ Add `levelmon` [Ethan Halsall](https://github.com/eshaz) (ethanshalsall@gmail.co
 
 - Add `levelmon` tool that monitors the levels and clipping
 - Small fix to support kernel 6.12.0 and up
+
