@@ -34,7 +34,7 @@ There is now a [wiki](https://github.com/happycube/cxadc-linux3/wiki) about the 
 
 Links to buy a CX Card: 
 
-- Current CX White CX25800 Card Order Links [Link 1](https://s.click.aliexpress.com/e/_olUXYFh) / [Link 2](https://s.click.aliexpress.com/e/_DBBRKPR) / [Link 3](https://s.click.aliexpress.com/e/_Dkhwebf) (16~30 USD) (Recommended as it has the better CX25800 IC)
+- Current CX White CX25800 Card Order Links [Link 1](https://s.click.aliexpress.com/e/_olUXYFh) / [Link 2](https://s.click.aliexpress.com/e/_DBBRKPR) / [Link 3][(https://s.click.aliexpress.com/e/_Dkhwebf](https://s.click.aliexpress.com/e/_c3BssBXV) (16~30 USD) (Recommended as it has the better CX25800 IC)
 - [Blue Variant](https://s.click.aliexpress.com/e/_DFDQaJh)
 
 **Note 00:** While `Mhz` is used and is accurate due to the crystal used, in reality, it should be called `MSPS` (million samples per second) as the actual effective sampled is half the Mhz number of the defined crystal/clock rate.
@@ -113,8 +113,6 @@ Install FLAC
     make -j$(nproc)
     sudo make install
     sudo ldconfig
-
-
 
 </details>
 
@@ -457,6 +455,24 @@ Example:
 # Capture
 
 
+## GUI
+
+Thanks to [MISRC GUI](https://github.com/harrypm/MISRC-GUI) shifting to a universal design supporting all oprating systems and hardware across the decode projects, CX Cards with or without the Clockgen mod now have a fully working GUI for RF/Audio to level 8 FLAC directly.
+
+- Realtime RF & CVBS Preview
+- Realtime audio monitoring
+- Realtime DC offset and amplitude feedback
+- Record timer controls. 
+
+<img width="1425" height="752" alt="MISRC_GUI_2026_Clockgen" src="https://github.com/user-attachments/assets/fda94c75-7d8c-4bbc-907b-8a6f016bbe50" />
+
+> [!NOTE]  
+> Ch3 is used as headswitch input, it can also be used as a sync/trigger source.
+
+> [!CAUTION]  
+> MISRC GUI requires that the CXADC driver has correct group permissions, if not set correctly cards will not be detected outside of running the GUI in SUDO mode.
+
+
 ## Gain Adjustment
 
 
@@ -655,7 +671,7 @@ New multi-card support added by [Adam R](https://github.com/AR1972)
 [Clockgen Mod](https://github.com/happycube/cxadc-linux3/wiki/Modifications#clockgen-mod---external-clock) Established.
 
 - Software defined 20/28.6/40/50msps modes
-- Shared clock source synchronised capture
+- Shared clock source synchronized capture
 - Raspberry Pi 4 & 5 support added by [Alistair Buxton](https://github.com/ali1234)
 
 ### 2024-12-11
@@ -673,3 +689,6 @@ Add `levelmon` [Ethan Halsall](https://github.com/eshaz) (ethanshalsall@gmail.co
 - Add `levelmon` tool that monitors the levels and clipping
 - Small fix to support kernel 6.12.0 and up
 
+### 2026-07-04
+
+- MISRC GUI gets CXADC driver support by [Harry Munday](https://github.com/harrypm) (harry@opcomedia.com)
